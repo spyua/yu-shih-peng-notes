@@ -1,0 +1,75 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit(index.html)",
+      "Edit(src/**)",
+      "Edit(.claude/rules/**)",
+      "Edit(src/data/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(README.md)",
+      "Write(tutorials/**)",
+
+      "Bash(cp *)",
+      "Bash(copy *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh api *)",
+      "Bash(gh repo *)",
+
+      "Bash(ls *)",
+      "Bash(dir *)",
+      "Bash(pwd)",
+      "Bash(cd *)",
+      "Bash(mkdir *)",
+      "Bash(type *)",
+
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:fonts.googleapis.com)",
+      "WebSearch"
+    ],
+    "deny": [
+
+      "Bash(rm -rf *)",
+      "Bash(rm -r *)",
+      "Bash(del /s *)",
+      "Bash(rmdir /s *)",
+      "Bash(sudo *)",
+      "Bash(runas *)",
+
+      "Bash(npm install *)",
+      "Bash(yarn *)",
+      "Bash(pnpm *)",
+      "Bash(npx *)",
+
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(Invoke-WebRequest *)",
+
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -f *)",
+
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/.ssh/**)",
+      "Read(**/credentials*)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}

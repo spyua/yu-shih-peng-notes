@@ -1,0 +1,1019 @@
+{
+  "meta": {
+    "version": "1.0",
+    "gridColumns": 7,
+    "gridRows": 50,
+    "title": "Backend Developer Roadmap"
+  },
+  "sections": [
+    {
+      "id": "sec-internet",
+      "title": "Internet",
+      "row": 1,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-language",
+      "title": "Pick a Language",
+      "row": 5,
+      "col": 2,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-vcs",
+      "title": "Version Control Systems",
+      "row": 5,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-database",
+      "title": "Relational Databases",
+      "row": 9,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-api",
+      "title": "Learn about APIs",
+      "row": 13,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-caching",
+      "title": "Caching",
+      "row": 13,
+      "col": 2,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-security",
+      "title": "Web Security",
+      "row": 17,
+      "col": 2,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-testing",
+      "title": "Testing",
+      "row": 17,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-more-db",
+      "title": "More about Databases",
+      "row": 17,
+      "col": 6,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-cicd",
+      "title": "CI / CD",
+      "row": 21,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-design",
+      "title": "Design and Development Principles",
+      "row": 25,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-arch",
+      "title": "Architectural Patterns",
+      "row": 29,
+      "col": 6,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-container",
+      "title": "Containerization vs Virtualization",
+      "row": 33,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-webserver",
+      "title": "Web Servers",
+      "row": 37,
+      "col": 2,
+      "colSpan": 1,
+      "isMain": true
+    },
+    {
+      "id": "sec-search",
+      "title": "Search Engines",
+      "row": 37,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-mq",
+      "title": "Message Brokers",
+      "row": 37,
+      "col": 6,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-nosql",
+      "title": "NoSQL Databases",
+      "row": 41,
+      "col": 2,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-realtime",
+      "title": "Real-Time Data",
+      "row": 41,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-scale",
+      "title": "Building For Scale",
+      "row": 45,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": true
+    }
+  ],
+  "nodes": [
+    {
+      "id": "how-internet-works",
+      "name": "How does the internet work?",
+      "skillRef": "01-Internet/How Internet Works",
+      "row": 2,
+      "col": 4,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "what-is-http",
+      "name": "What is HTTP?",
+      "skillRef": "01-Internet/What is HTTP",
+      "row": 2,
+      "col": 5,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "domain-name",
+      "name": "What is Domain Name?",
+      "skillRef": "01-Internet/Domain Name & Hosting",
+      "row": 2,
+      "col": 6,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "dns",
+      "name": "DNS and how it works?",
+      "skillRef": "01-Internet/DNS How it Works",
+      "row": 3,
+      "col": 5,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "browsers",
+      "name": "Browsers and how they work?",
+      "skillRef": "01-Internet/How Browsers Work",
+      "row": 3,
+      "col": 6,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "osi-model",
+      "name": "OSI 模型",
+      "skillRef": "01-Internet/OSI 模型",
+      "row": 3,
+      "col": 4,
+      "type": "recommended",
+      "level": "初級",
+      "link": "tutorials/01-internet/osi-model-tutorial.html"
+    },
+    {
+      "id": "lang-java",
+      "name": "Java",
+      "skillRef": "04-Languages/Java",
+      "row": 6,
+      "col": 2,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "lang-python",
+      "name": "Python",
+      "skillRef": null,
+      "row": 6,
+      "col": 1,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "lang-javascript",
+      "name": "JavaScript",
+      "skillRef": null,
+      "row": 7,
+      "col": 1,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "lang-go",
+      "name": "Go",
+      "skillRef": null,
+      "row": 7,
+      "col": 2,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "skillRef": "05-Version-Control/Git Basics",
+      "row": 6,
+      "col": 4,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "skillRef": "05-Version-Control/GitHub/GitLab Usage",
+      "row": 6,
+      "col": 5,
+      "type": "recommended",
+      "level": "初級"
+    },
+    {
+      "id": "gitlab",
+      "name": "GitLab",
+      "skillRef": null,
+      "row": 7,
+      "col": 5,
+      "type": "alternative",
+      "level": "初級"
+    },
+    {
+      "id": "bitbucket",
+      "name": "Bitbucket",
+      "skillRef": null,
+      "row": 7,
+      "col": 6,
+      "type": "alternative",
+      "level": "初級"
+    },
+    {
+      "id": "postgresql",
+      "name": "PostgreSQL",
+      "skillRef": "06-Relational-Databases/Database Engines",
+      "row": 10,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "mysql",
+      "name": "MySQL",
+      "skillRef": null,
+      "row": 10,
+      "col": 5,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "mssql",
+      "name": "MS SQL",
+      "skillRef": null,
+      "row": 10,
+      "col": 6,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "oracle",
+      "name": "Oracle",
+      "skillRef": null,
+      "row": 11,
+      "col": 5,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "acid",
+      "name": "ACID & Transactions",
+      "skillRef": "06-Relational-Databases/ACID & Transactions",
+      "row": 11,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "redis-cache",
+      "name": "Redis",
+      "skillRef": "09-Caching/Redis / Memcached",
+      "row": 14,
+      "col": 1,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "memcached",
+      "name": "Memcached",
+      "skillRef": null,
+      "row": 14,
+      "col": 2,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "cdn",
+      "name": "CDN",
+      "skillRef": null,
+      "row": 15,
+      "col": 1,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "client-cache",
+      "name": "Client Side Caching",
+      "skillRef": "09-Caching/Client Side / HTTP Caching",
+      "row": 15,
+      "col": 2,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "rest-api",
+      "name": "REST",
+      "skillRef": "07-API-Styles/REST / JSON API",
+      "row": 14,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "graphql",
+      "name": "GraphQL",
+      "skillRef": "07-API-Styles/GraphQL",
+      "row": 14,
+      "col": 5,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "grpc",
+      "name": "gRPC",
+      "skillRef": "07-API-Styles/gRPC",
+      "row": 15,
+      "col": 4,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "soap",
+      "name": "SOAP",
+      "skillRef": "07-API-Styles/SOAP",
+      "row": 15,
+      "col": 5,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "jwt",
+      "name": "JWT",
+      "skillRef": "08-Authentication/JWT Deep Dive",
+      "row": 14,
+      "col": 6,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "oauth",
+      "name": "OAuth",
+      "skillRef": "08-Authentication/OAuth 2.0 / OpenID",
+      "row": 14,
+      "col": 7,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "basic-auth",
+      "name": "Basic Authentication",
+      "skillRef": "08-Authentication/Basic Token/Cookie Auth",
+      "row": 15,
+      "col": 6,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "saml",
+      "name": "SAML",
+      "skillRef": "08-Authentication/SAML",
+      "row": 15,
+      "col": 7,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "hashing",
+      "name": "Hashing Algorithms",
+      "skillRef": "10-Web-Security/Hashing Algorithms",
+      "row": 18,
+      "col": 1,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "https",
+      "name": "HTTPS / SSL / TLS",
+      "skillRef": "10-Web-Security/HTTPS / SSL / TLS",
+      "row": 18,
+      "col": 2,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "cors",
+      "name": "CORS / CSP",
+      "skillRef": "10-Web-Security/CORS / CSP Security",
+      "row": 19,
+      "col": 1,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "owasp",
+      "name": "OWASP Risks",
+      "skillRef": "10-Web-Security/OWASP Top 10 Risks",
+      "row": 19,
+      "col": 2,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "unit-test",
+      "name": "Unit Testing",
+      "skillRef": "11-Testing/Unit/Integration/Functional Test",
+      "row": 18,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "integration-test",
+      "name": "Integration Testing",
+      "skillRef": null,
+      "row": 18,
+      "col": 5,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "functional-test",
+      "name": "Functional Testing",
+      "skillRef": null,
+      "row": 19,
+      "col": 4,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "orm",
+      "name": "ORMs",
+      "skillRef": "06-Relational-Databases/ORM Usage",
+      "row": 18,
+      "col": 6,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "normalization",
+      "name": "Normalization",
+      "skillRef": "06-Relational-Databases/Database Normalization",
+      "row": 18,
+      "col": 7,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "n-plus-one",
+      "name": "N+1 Problem",
+      "skillRef": null,
+      "row": 19,
+      "col": 6,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "db-index",
+      "name": "Database Indexes",
+      "skillRef": "06-Relational-Databases/Database Index Strategies",
+      "row": 19,
+      "col": 7,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "cicd-pipeline",
+      "name": "CI/CD Pipelines",
+      "skillRef": "12-DevOps-CI-CD/CI/CD Pipelines",
+      "row": 22,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "gof-patterns",
+      "name": "GOF Design Patterns",
+      "skillRef": "19-Design-Principles/GOF Design Patterns",
+      "row": 26,
+      "col": 3,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "ddd",
+      "name": "Domain Driven Design",
+      "skillRef": "19-Design-Principles/Domain Driven Design",
+      "row": 26,
+      "col": 4,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "tdd",
+      "name": "Test Driven Development",
+      "skillRef": "19-Design-Principles/Test Driven Development",
+      "row": 26,
+      "col": 5,
+      "type": "flexible",
+      "level": "進階"
+    },
+    {
+      "id": "cqrs",
+      "name": "CQRS",
+      "skillRef": "19-Design-Principles/CQRS & Event Sourcing",
+      "row": 27,
+      "col": 3,
+      "type": "flexible",
+      "level": "進階"
+    },
+    {
+      "id": "event-sourcing",
+      "name": "Event Sourcing",
+      "skillRef": null,
+      "row": 27,
+      "col": 4,
+      "type": "flexible",
+      "level": "進階"
+    },
+    {
+      "id": "monolith",
+      "name": "Monolithic Apps",
+      "skillRef": "13-Architectural-Patterns/Monolith vs Microservices vs SOA",
+      "row": 30,
+      "col": 6,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "microservices",
+      "name": "Microservices",
+      "skillRef": null,
+      "row": 30,
+      "col": 7,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "soa",
+      "name": "SOA",
+      "skillRef": null,
+      "row": 31,
+      "col": 6,
+      "type": "alternative",
+      "level": "進階"
+    },
+    {
+      "id": "serverless",
+      "name": "Serverless",
+      "skillRef": "13-Architectural-Patterns/Serverless Computing",
+      "row": 31,
+      "col": 7,
+      "type": "alternative",
+      "level": "進階"
+    },
+    {
+      "id": "service-mesh",
+      "name": "Service Mesh",
+      "skillRef": "13-Architectural-Patterns/Service Mesh",
+      "row": 32,
+      "col": 6,
+      "type": "flexible",
+      "level": "進階"
+    },
+    {
+      "id": "twelve-factor",
+      "name": "Twelve Factor Apps",
+      "skillRef": "13-Architectural-Patterns/Twelve Factor Apps",
+      "row": 32,
+      "col": 7,
+      "type": "flexible",
+      "level": "進階"
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "skillRef": "12-DevOps-CI-CD/Docker & Containerization",
+      "row": 34,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "kubernetes",
+      "name": "Kubernetes",
+      "skillRef": "12-DevOps-CI-CD/Kubernetes Orchestration",
+      "row": 35,
+      "col": 4,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "lxc",
+      "name": "LXC",
+      "skillRef": null,
+      "row": 34,
+      "col": 5,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "nginx",
+      "name": "Nginx",
+      "skillRef": "20-Web-Servers/Nginx / Apache / Caddy",
+      "row": 38,
+      "col": 1,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "apache",
+      "name": "Apache",
+      "skillRef": null,
+      "row": 38,
+      "col": 2,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "caddy",
+      "name": "Caddy",
+      "skillRef": null,
+      "row": 39,
+      "col": 1,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "elasticsearch",
+      "name": "Elasticsearch",
+      "skillRef": "14-Message-Brokers-Search/Elasticsearch / Solr",
+      "row": 38,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "solr",
+      "name": "Solr",
+      "skillRef": null,
+      "row": 38,
+      "col": 5,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "rabbitmq",
+      "name": "RabbitMQ",
+      "skillRef": "14-Message-Brokers-Search/RabbitMQ / Kafka",
+      "row": 38,
+      "col": 6,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "kafka",
+      "name": "Kafka",
+      "skillRef": null,
+      "row": 38,
+      "col": 7,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "mongodb",
+      "name": "MongoDB",
+      "skillRef": "15-Scaling-Databases/NoSQL (Document, Key-Value)",
+      "row": 42,
+      "col": 1,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "redis-db",
+      "name": "Redis (DB)",
+      "skillRef": null,
+      "row": 42,
+      "col": 2,
+      "type": "alternative",
+      "level": "進階"
+    },
+    {
+      "id": "cassandra",
+      "name": "Cassandra",
+      "skillRef": null,
+      "row": 43,
+      "col": 1,
+      "type": "alternative",
+      "level": "進階"
+    },
+    {
+      "id": "neo4j",
+      "name": "Neo4j",
+      "skillRef": "15-Scaling-Databases/Graph & Time Series DBs",
+      "row": 43,
+      "col": 2,
+      "type": "alternative",
+      "level": "進階"
+    },
+    {
+      "id": "websockets",
+      "name": "WebSockets",
+      "skillRef": "21-Real-Time-Data/WebSockets / SSE / Polling",
+      "row": 42,
+      "col": 4,
+      "type": "recommended",
+      "level": "中級"
+    },
+    {
+      "id": "sse",
+      "name": "Server Sent Events",
+      "skillRef": null,
+      "row": 42,
+      "col": 5,
+      "type": "alternative",
+      "level": "中級"
+    },
+    {
+      "id": "long-polling",
+      "name": "Long Polling",
+      "skillRef": null,
+      "row": 43,
+      "col": 4,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "short-polling",
+      "name": "Short Polling",
+      "skillRef": null,
+      "row": 43,
+      "col": 5,
+      "type": "flexible",
+      "level": "中級"
+    },
+    {
+      "id": "cap-theorem",
+      "name": "CAP Theorem",
+      "skillRef": "15-Scaling-Databases/CAP Theorem",
+      "row": 46,
+      "col": 3,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "sharding",
+      "name": "Sharding Strategies",
+      "skillRef": "15-Scaling-Databases/Replication & Sharding",
+      "row": 46,
+      "col": 4,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "replication",
+      "name": "Data Replication",
+      "skillRef": null,
+      "row": 46,
+      "col": 5,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "rate-limiter",
+      "name": "Rate Limiter / Throttling",
+      "skillRef": "17-Scaling-Strategies/Rate Limiter / Throttling",
+      "row": 47,
+      "col": 3,
+      "type": "recommended",
+      "level": "進階",
+      "link": "tutorials/17-scaling-strategies/rate-limiter-tutorial.html"
+    },
+    {
+      "id": "circuit-breaker",
+      "name": "Circuit Breaker",
+      "skillRef": null,
+      "row": 47,
+      "col": 4,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "load-balancing",
+      "name": "Load Balancing",
+      "skillRef": "16-System-Design/Load Balancing",
+      "row": 47,
+      "col": 5,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "observability",
+      "name": "Observability & Monitoring",
+      "skillRef": "17-Scaling-Strategies/Observability & Monitoring",
+      "row": 48,
+      "col": 4,
+      "type": "recommended",
+      "level": "進階"
+    },
+    {
+      "id": "telemetry",
+      "name": "Instrumentation & Telemetry",
+      "skillRef": "17-Scaling-Strategies/Instrumentation & Telemetry",
+      "row": 48,
+      "col": 5,
+      "type": "flexible",
+      "level": "進階"
+    }
+  ],
+  "edges": [
+    { "from": "sec-internet", "to": "how-internet-works", "style": "solid" },
+    { "from": "how-internet-works", "to": "what-is-http", "style": "solid" },
+    { "from": "what-is-http", "to": "domain-name", "style": "solid" },
+    { "from": "what-is-http", "to": "dns", "style": "solid" },
+    { "from": "domain-name", "to": "browsers", "style": "solid" },
+    { "from": "how-internet-works", "to": "osi-model", "style": "solid" },
+
+    { "from": "osi-model", "to": "sec-language", "style": "solid" },
+    { "from": "osi-model", "to": "sec-vcs", "style": "solid" },
+
+    { "from": "sec-language", "to": "lang-java", "style": "solid" },
+    { "from": "sec-language", "to": "lang-python", "style": "dashed" },
+    { "from": "sec-language", "to": "lang-javascript", "style": "dashed" },
+    { "from": "sec-language", "to": "lang-go", "style": "dashed" },
+
+    { "from": "sec-vcs", "to": "git", "style": "solid" },
+    { "from": "git", "to": "github", "style": "solid" },
+    { "from": "github", "to": "gitlab", "style": "dashed" },
+    { "from": "github", "to": "bitbucket", "style": "dashed" },
+
+    { "from": "git", "to": "sec-database", "style": "solid" },
+
+    { "from": "sec-database", "to": "postgresql", "style": "solid" },
+    { "from": "postgresql", "to": "mysql", "style": "dashed" },
+    { "from": "postgresql", "to": "mssql", "style": "dashed" },
+    { "from": "mysql", "to": "oracle", "style": "dashed" },
+    { "from": "postgresql", "to": "acid", "style": "solid" },
+
+    { "from": "acid", "to": "sec-api", "style": "solid" },
+    { "from": "acid", "to": "sec-caching", "style": "solid" },
+
+    { "from": "sec-caching", "to": "redis-cache", "style": "solid" },
+    { "from": "redis-cache", "to": "memcached", "style": "dashed" },
+    { "from": "redis-cache", "to": "cdn", "style": "dashed" },
+    { "from": "memcached", "to": "client-cache", "style": "dashed" },
+
+    { "from": "sec-api", "to": "rest-api", "style": "solid" },
+    { "from": "rest-api", "to": "graphql", "style": "dashed" },
+    { "from": "rest-api", "to": "grpc", "style": "dashed" },
+    { "from": "graphql", "to": "soap", "style": "dashed" },
+
+    { "from": "rest-api", "to": "jwt", "style": "solid" },
+    { "from": "jwt", "to": "oauth", "style": "solid" },
+    { "from": "jwt", "to": "basic-auth", "style": "dashed" },
+    { "from": "oauth", "to": "saml", "style": "dashed" },
+
+    { "from": "oauth", "to": "sec-security", "style": "solid" },
+    { "from": "oauth", "to": "sec-testing", "style": "solid" },
+    { "from": "oauth", "to": "sec-more-db", "style": "solid" },
+
+    { "from": "sec-security", "to": "hashing", "style": "solid" },
+    { "from": "hashing", "to": "https", "style": "solid" },
+    { "from": "hashing", "to": "cors", "style": "solid" },
+    { "from": "https", "to": "owasp", "style": "solid" },
+
+    { "from": "sec-testing", "to": "unit-test", "style": "solid" },
+    { "from": "unit-test", "to": "integration-test", "style": "solid" },
+    { "from": "unit-test", "to": "functional-test", "style": "dashed" },
+
+    { "from": "sec-more-db", "to": "orm", "style": "dashed" },
+    { "from": "sec-more-db", "to": "normalization", "style": "solid" },
+    { "from": "orm", "to": "n-plus-one", "style": "solid" },
+    { "from": "normalization", "to": "db-index", "style": "solid" },
+
+    { "from": "owasp", "to": "sec-cicd", "style": "solid" },
+    { "from": "functional-test", "to": "sec-cicd", "style": "solid" },
+    { "from": "db-index", "to": "sec-cicd", "style": "solid" },
+
+    { "from": "sec-cicd", "to": "cicd-pipeline", "style": "solid" },
+
+    { "from": "cicd-pipeline", "to": "sec-design", "style": "solid" },
+
+    { "from": "sec-design", "to": "gof-patterns", "style": "solid" },
+    { "from": "gof-patterns", "to": "ddd", "style": "solid" },
+    { "from": "ddd", "to": "tdd", "style": "dashed" },
+    { "from": "gof-patterns", "to": "cqrs", "style": "dashed" },
+    { "from": "cqrs", "to": "event-sourcing", "style": "dashed" },
+
+    { "from": "ddd", "to": "sec-arch", "style": "solid" },
+
+    { "from": "sec-arch", "to": "monolith", "style": "solid" },
+    { "from": "monolith", "to": "microservices", "style": "solid" },
+    { "from": "monolith", "to": "soa", "style": "dashed" },
+    { "from": "microservices", "to": "serverless", "style": "dashed" },
+    { "from": "soa", "to": "service-mesh", "style": "dashed" },
+    { "from": "serverless", "to": "twelve-factor", "style": "dashed" },
+
+    { "from": "microservices", "to": "sec-container", "style": "solid" },
+
+    { "from": "sec-container", "to": "docker", "style": "solid" },
+    { "from": "docker", "to": "kubernetes", "style": "solid" },
+    { "from": "docker", "to": "lxc", "style": "dashed" },
+
+    { "from": "kubernetes", "to": "sec-webserver", "style": "solid" },
+    { "from": "kubernetes", "to": "sec-search", "style": "solid" },
+    { "from": "kubernetes", "to": "sec-mq", "style": "solid" },
+
+    { "from": "sec-webserver", "to": "nginx", "style": "solid" },
+    { "from": "nginx", "to": "apache", "style": "dashed" },
+    { "from": "nginx", "to": "caddy", "style": "dashed" },
+
+    { "from": "sec-search", "to": "elasticsearch", "style": "solid" },
+    { "from": "elasticsearch", "to": "solr", "style": "dashed" },
+
+    { "from": "sec-mq", "to": "rabbitmq", "style": "solid" },
+    { "from": "rabbitmq", "to": "kafka", "style": "solid" },
+
+    { "from": "nginx", "to": "sec-nosql", "style": "solid" },
+    { "from": "elasticsearch", "to": "sec-realtime", "style": "solid" },
+
+    { "from": "sec-nosql", "to": "mongodb", "style": "solid" },
+    { "from": "mongodb", "to": "redis-db", "style": "dashed" },
+    { "from": "mongodb", "to": "cassandra", "style": "dashed" },
+    { "from": "redis-db", "to": "neo4j", "style": "dashed" },
+
+    { "from": "sec-realtime", "to": "websockets", "style": "solid" },
+    { "from": "websockets", "to": "sse", "style": "dashed" },
+    { "from": "websockets", "to": "long-polling", "style": "dashed" },
+    { "from": "sse", "to": "short-polling", "style": "dashed" },
+
+    { "from": "cassandra", "to": "sec-scale", "style": "solid" },
+    { "from": "short-polling", "to": "sec-scale", "style": "solid" },
+
+    { "from": "sec-scale", "to": "cap-theorem", "style": "solid" },
+    { "from": "cap-theorem", "to": "sharding", "style": "solid" },
+    { "from": "sharding", "to": "replication", "style": "solid" },
+    { "from": "cap-theorem", "to": "rate-limiter", "style": "solid" },
+    { "from": "rate-limiter", "to": "circuit-breaker", "style": "solid" },
+    { "from": "circuit-breaker", "to": "load-balancing", "style": "solid" },
+    { "from": "load-balancing", "to": "observability", "style": "solid" },
+    { "from": "observability", "to": "telemetry", "style": "dashed" }
+  ]
+}

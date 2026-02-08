@@ -1,0 +1,536 @@
+/* ==================== Roadmap Page Styles ==================== */
+/* 複用 main.css 的 CSS Variables */
+
+/* ==================== Header ==================== */
+.roadmap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-left h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.header-left p {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* ==================== View Toggle ==================== */
+.view-toggle {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.toggle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-btn.active {
+    background: var(--bg-card);
+    color: var(--primary-color);
+}
+
+/* ==================== Legend ==================== */
+.roadmap-legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem 2rem;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.legend-color.recommended {
+    background: var(--secondary-color);
+}
+
+.legend-color.alternative {
+    background: var(--success-color);
+}
+
+.legend-color.flexible {
+    background: var(--text-muted);
+}
+
+/* ==================== Roadmap Container ==================== */
+.roadmap-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: 2rem;
+    min-height: calc(100vh - 140px);
+    -webkit-overflow-scrolling: touch;
+}
+
+.roadmap-container {
+    position: relative;
+    min-width: 1200px;
+    min-height: 2500px;
+    margin: 0 auto;
+}
+
+/* ==================== SVG Connections Layer ==================== */
+.connections-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.connection {
+    fill: none;
+    stroke: var(--border-color);
+    stroke-width: 2;
+}
+
+.connection.solid {
+    stroke: var(--primary-color);
+    stroke-opacity: 0.6;
+}
+
+.connection.dashed {
+    stroke: var(--text-muted);
+    stroke-dasharray: 8 4;
+    stroke-opacity: 0.5;
+}
+
+/* ==================== Roadmap Grid ==================== */
+.roadmap-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(7, 160px);
+    grid-template-rows: repeat(50, 60px);
+    gap: 20px;
+    justify-content: center;
+    z-index: 2;
+}
+
+/* ==================== Section Headers ==================== */
+.roadmap-section {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #1a2435 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.roadmap-section.main-section {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+}
+
+/* ==================== Roadmap Nodes ==================== */
+.roadmap-node {
+    position: relative;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: default;
+    min-height: 50px;
+}
+
+.roadmap-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Node Types */
+.roadmap-node.node-recommended {
+    border-color: var(--secondary-color);
+    background: rgba(124, 58, 237, 0.15);
+}
+
+.roadmap-node.node-alternative {
+    border-color: var(--success-color);
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.roadmap-node.node-flexible {
+    border-color: var(--text-muted);
+    background: rgba(100, 116, 139, 0.15);
+}
+
+/* Node with Link */
+.roadmap-node.has-link {
+    cursor: pointer;
+}
+
+.roadmap-node.has-link:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
+}
+
+.roadmap-node.has-link::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+/* Node Content */
+.node-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.roadmap-node .skill-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+}
+
+/* Category Node (larger) */
+.roadmap-node.node-category {
+    background: var(--bg-card);
+    border-width: 2px;
+    padding: 0.75rem 1rem;
+}
+
+.roadmap-node.node-category .node-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* ==================== Node Detail Panel ==================== */
+.node-detail-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-color);
+    z-index: 200;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+.node-detail-panel.show {
+    right: 0;
+}
+
+.node-detail-panel .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+}
+
+.node-detail-panel .close-btn:hover {
+    color: var(--text-primary);
+}
+
+.detail-content {
+    margin-top: 2rem;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-header h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.detail-category {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.detail-status {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 1rem;
+    background: var(--bg-dark);
+    border-radius: 8px;
+}
+
+.detail-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.detail-link:hover {
+    transform: translateY(-2px);
+}
+
+.panel-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 150;
+}
+
+.panel-overlay.show {
+    display: block;
+}
+
+/* ==================== Mobile Fallback List ==================== */
+.roadmap-list-fallback {
+    display: none;
+    padding: 1rem;
+}
+
+.fallback-section {
+    margin-bottom: 1.5rem;
+}
+
+.fallback-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border-radius: 8px 8px 0 0;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+}
+
+.fallback-items {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+.fallback-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    text-decoration: none;
+    color: var(--text-secondary);
+    transition: background 0.2s;
+}
+
+.fallback-item:last-child {
+    border-bottom: none;
+}
+
+.fallback-item:hover {
+    background: var(--bg-hover);
+}
+
+.fallback-item.has-link {
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.fallback-item.has-link:hover {
+    color: var(--primary-color);
+}
+
+.fallback-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.fallback-type-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.fallback-type-indicator.recommended {
+    background: var(--secondary-color);
+}
+
+.fallback-type-indicator.alternative {
+    background: var(--success-color);
+}
+
+.fallback-type-indicator.flexible {
+    background: var(--text-muted);
+}
+
+.fallback-item-name {
+    font-size: 0.9rem;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+    .roadmap-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .header-left {
+        text-align: center;
+    }
+
+    .roadmap-legend {
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .legend-item {
+        font-size: 0.75rem;
+    }
+
+    .roadmap-wrapper {
+        padding: 1rem;
+    }
+
+    .roadmap-grid {
+        grid-template-columns: repeat(7, 120px);
+        grid-template-rows: repeat(50, 50px);
+        gap: 15px;
+    }
+
+    .roadmap-node {
+        padding: 0.4rem 0.5rem;
+    }
+
+    .node-name {
+        font-size: 0.65rem;
+    }
+
+    .roadmap-node .skill-badge {
+        font-size: 0.55rem;
+    }
+
+    .node-detail-panel {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .roadmap-wrapper {
+        display: none;
+    }
+
+    .roadmap-list-fallback {
+        display: block;
+    }
+
+    .roadmap-legend {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .view-toggle {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .toggle-btn {
+        text-align: center;
+    }
+}
+
+/* ==================== Loading State ==================== */
+.roadmap-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: var(--text-muted);
+}
+
+.roadmap-loading::before {
+    content: '';
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

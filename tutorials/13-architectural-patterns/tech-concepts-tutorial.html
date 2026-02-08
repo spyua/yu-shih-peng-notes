@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>庫、框架、架構、平台 - 後端工程師必懂的四大概念</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-hover: #252532;
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent-library: #00d4aa;
+            --accent-framework: #7c5cff;
+            --accent-architecture: #ff6b6b;
+            --accent-platform: #ffd93d;
+            --border-color: #2a2a3a;
+            --gradient-library: linear-gradient(135deg, #00d4aa 0%, #00a080 100%);
+            --gradient-framework: linear-gradient(135deg, #7c5cff 0%, #5a3fd4 100%);
+            --gradient-architecture: linear-gradient(135deg, #ff6b6b 0%, #d44545 100%);
+            --gradient-platform: linear-gradient(135deg, #ffd93d 0%, #e6b800 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        /* 背景裝飾 */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-decoration::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 212, 170, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(124, 92, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 107, 107, 0.02) 0%, transparent 50%);
+            animation: bgMove 30s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-2%, -2%) rotate(1deg); }
+        }
+
+        /* 導航列 */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .nav-logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-library), var(--accent-framework));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-link {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .nav-link.active {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 1;
+            padding: 140px 2rem 80px;
+            text-align: center;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease 0.1s both;
+        }
+
+        .header h1 span {
+            display: inline-block;
+        }
+
+        .header h1 .library { color: var(--accent-library); }
+        .header h1 .framework { color: var(--accent-framework); }
+        .header h1 .architecture { color: var(--accent-architecture); }
+        .header h1 .platform { color: var(--accent-platform); }
+
+        .header-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 主要內容 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+        }
+
+        /* Section 標題 */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-top: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+        }
+
+        /* 互動圖解區 */
+        #diagram {
+            scroll-margin-top: 90px;
+        }
+
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .concept-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .concept-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .concept-card.library::before { background: var(--gradient-library); }
+        .concept-card.framework::before { background: var(--gradient-framework); }
+        .concept-card.architecture::before { background: var(--gradient-architecture); }
+        .concept-card.platform::before { background: var(--gradient-platform); }
+
+        .concept-card:hover {
+            transform: translateY(-8px);
+            border-color: transparent;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .concept-card:hover::before {
+            opacity: 1;
+        }
+
+        .concept-card.active {
+            border-color: transparent;
+        }
+
+        .concept-card.library.active { box-shadow: 0 0 0 2px var(--accent-library), 0 20px 60px rgba(0, 212, 170, 0.2); }
+        .concept-card.framework.active { box-shadow: 0 0 0 2px var(--accent-framework), 0 20px 60px rgba(124, 92, 255, 0.2); }
+        .concept-card.architecture.active { box-shadow: 0 0 0 2px var(--accent-architecture), 0 20px 60px rgba(255, 107, 107, 0.2); }
+        .concept-card.platform.active { box-shadow: 0 0 0 2px var(--accent-platform), 0 20px 60px rgba(255, 217, 61, 0.2); }
+
+        .concept-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .concept-card.library .concept-icon { background: rgba(0, 212, 170, 0.15); }
+        .concept-card.framework .concept-icon { background: rgba(124, 92, 255, 0.15); }
+        .concept-card.architecture .concept-icon { background: rgba(255, 107, 107, 0.15); }
+        .concept-card.platform .concept-icon { background: rgba(255, 217, 61, 0.15); }
+
+        .concept-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .concept-card.library h3 { color: var(--accent-library); }
+        .concept-card.framework h3 { color: var(--accent-framework); }
+        .concept-card.architecture h3 { color: var(--accent-architecture); }
+        .concept-card.platform h3 { color: var(--accent-platform); }
+
+        .concept-card .english {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .concept-card .analogy {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .concept-card .analogy-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .concept-card .key-point {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* 詳細說明面板 */
+        .detail-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: -0.5rem;
+        }
+
+        .detail-panel.active {
+            max-height: 2000px;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+
+        .detail-content {
+            padding: 2.5rem;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-header .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .detail-header h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .detail-section {
+            margin-bottom: 2rem;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .detail-section ul {
+            list-style: none;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .detail-section li {
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .detail-section li::before {
+            content: '→';
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .example-tag {
+            padding: 0.6rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .example-tag:hover {
+            transform: scale(1.05);
+        }
+
+        .library .example-tag:hover { background: rgba(0, 212, 170, 0.2); color: var(--accent-library); }
+        .framework .example-tag:hover { background: rgba(124, 92, 255, 0.2); color: var(--accent-framework); }
+        .architecture .example-tag:hover { background: rgba(255, 107, 107, 0.2); color: var(--accent-architecture); }
+        .platform .example-tag:hover { background: rgba(255, 217, 61, 0.2); color: var(--accent-platform); }
+
+        /* 比較表區塊 */
+        #compare {
+            scroll-margin-top: 90px;
+        }
+
+        .compare-table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .compare-table th,
+        .compare-table td {
+            padding: 1.25rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .compare-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .compare-table th:first-child {
+            border-radius: 20px 0 0 0;
+        }
+
+        .compare-table th:last-child {
+            border-radius: 0 20px 0 0;
+        }
+
+        .compare-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .compare-table td:first-child {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .compare-table .library-col { color: var(--accent-library); }
+        .compare-table .framework-col { color: var(--accent-framework); }
+        .compare-table .architecture-col { color: var(--accent-architecture); }
+        .compare-table .platform-col { color: var(--accent-platform); }
+
+        /* 實戰區塊 */
+        #practice {
+            scroll-margin-top: 90px;
+        }
+
+        .practice-cards {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .practice-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .practice-card-header {
+            padding: 1.5rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .practice-card-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .practice-card-header h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .practice-card-header .toggle {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .practice-card.open .toggle {
+            transform: rotate(45deg);
+        }
+
+        .practice-card-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .practice-card.open .practice-card-body {
+            max-height: 2000px;
+        }
+
+        .practice-card-content {
+            padding: 2rem;
+        }
+
+        .scenario {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .scenario-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .scenario p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .decision-guide {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .decision-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border-left: 3px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .decision-item:hover {
+            transform: translateX(8px);
+        }
+
+        .decision-item.library { border-left-color: var(--accent-library); }
+        .decision-item.framework { border-left-color: var(--accent-framework); }
+        .decision-item.architecture { border-left-color: var(--accent-architecture); }
+        .decision-item.platform { border-left-color: var(--accent-platform); }
+
+        .decision-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .decision-item.library .decision-icon { background: rgba(0, 212, 170, 0.15); }
+        .decision-item.framework .decision-icon { background: rgba(124, 92, 255, 0.15); }
+        .decision-item.architecture .decision-icon { background: rgba(255, 107, 107, 0.15); }
+        .decision-item.platform .decision-icon { background: rgba(255, 217, 61, 0.15); }
+
+        .decision-content h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .decision-item.library .decision-content h5 { color: var(--accent-library); }
+        .decision-item.framework .decision-content h5 { color: var(--accent-framework); }
+        .decision-item.architecture .decision-content h5 { color: var(--accent-architecture); }
+        .decision-item.platform .decision-content h5 { color: var(--accent-platform); }
+
+        .decision-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* 快速參考 */
+        #reference {
+            scroll-margin-top: 90px;
+        }
+
+        .cheatsheet {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .cheatsheet h4 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .memory-tips {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .memory-tip {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .memory-tip .emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .memory-tip h5 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .memory-tip.library h5 { color: var(--accent-library); }
+        .memory-tip.framework h5 { color: var(--accent-framework); }
+        .memory-tip.architecture h5 { color: var(--accent-architecture); }
+        .memory-tip.platform h5 { color: var(--accent-platform); }
+
+        .memory-tip .phrase {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .memory-tip p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* 測驗區 */
+        #quiz {
+            scroll-margin-top: 90px;
+        }
+
+        .quiz-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .quiz-progress {
+            padding: 1.5rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quiz-progress-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-hover);
+            border-radius: 4px;
+            margin-right: 1.5rem;
+            overflow: hidden;
+        }
+
+        .quiz-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-library), var(--accent-framework));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .quiz-score {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .quiz-question {
+            padding: 2.5rem;
+        }
+
+        .question-number {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .quiz-option {
+            padding: 1.25rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quiz-option:hover:not(.disabled) {
+            border-color: var(--text-muted);
+            transform: translateX(8px);
+        }
+
+        .quiz-option.selected {
+            border-color: var(--accent-framework);
+            background: rgba(124, 92, 255, 0.1);
+        }
+
+        .quiz-option.correct {
+            border-color: var(--accent-library);
+            background: rgba(0, 212, 170, 0.1);
+        }
+
+        .quiz-option.wrong {
+            border-color: var(--accent-architecture);
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .quiz-option.disabled {
+            cursor: default;
+        }
+
+        .option-letter {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .quiz-option.correct .option-letter {
+            background: var(--accent-library);
+            color: var(--bg-primary);
+        }
+
+        .quiz-option.wrong .option-letter {
+            background: var(--accent-architecture);
+            color: var(--bg-primary);
+        }
+
+        .quiz-feedback {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .quiz-feedback.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .quiz-feedback.correct {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid var(--accent-library);
+        }
+
+        .quiz-feedback.wrong {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid var(--accent-architecture);
+        }
+
+        .quiz-feedback h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quiz-feedback.correct h5 { color: var(--accent-library); }
+        .quiz-feedback.wrong h5 { color: var(--accent-architecture); }
+
+        .quiz-feedback p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .quiz-actions {
+            padding: 1.5rem 2.5rem 2.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .quiz-btn {
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .quiz-btn.primary {
+            background: linear-gradient(135deg, var(--accent-framework), #5a3fd4);
+            color: white;
+        }
+
+        .quiz-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(124, 92, 255, 0.3);
+        }
+
+        .quiz-btn.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .quiz-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .quiz-result {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .quiz-result .emoji {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .quiz-result h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .quiz-result .final-score {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+        }
+
+        .quiz-result .final-score .correct {
+            color: var(--accent-library);
+        }
+
+        .quiz-result p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .nav-content {
+                height: 60px;
+            }
+
+            .nav-logo {
+                font-size: 1rem;
+            }
+
+            .nav-link {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .nav-link span {
+                display: none;
+            }
+
+            .header {
+                padding: 120px 1.5rem 60px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header-subtitle {
+                font-size: 1rem;
+            }
+
+            .main-content {
+                padding: 0 1rem 3rem;
+            }
+
+            .concept-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-content {
+                padding: 1.5rem;
+            }
+
+            .compare-table th,
+            .compare-table td {
+                padding: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .memory-tips {
+                grid-template-columns: 1fr;
+            }
+
+            .quiz-question {
+                padding: 1.5rem;
+            }
+
+            .question-text {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration"></div>
+
+    <!-- 導航列 -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="../../index.html" class="nav-link" style="margin-right: 1rem; background: var(--bg-card); border: 1px solid var(--border-color);">← 返回首頁</a>
+            <div class="nav-logo" style="margin-right: auto;">Tech Concepts</div>
+            <div class="nav-links">
+                <a href="#diagram" class="nav-link active">📊 <span>圖解</span></a>
+                <a href="#compare" class="nav-link">📋 <span>比較</span></a>
+                <a href="#practice" class="nav-link">🔧 <span>實戰</span></a>
+                <a href="#reference" class="nav-link">💡 <span>記憶</span></a>
+                <a href="#quiz" class="nav-link">🎯 <span>測驗</span></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-badge">🚀 後端工程師必懂概念</div>
+        <h1>
+            <span class="library">庫</span>、<span class="framework">框架</span>、<span class="architecture">架構</span>、<span class="platform">平台</span>
+        </h1>
+        <p class="header-subtitle">用生活化比喻，搞懂這四個容易混淆的技術概念</p>
+    </header>
+
+    <!-- 主要內容 -->
+    <main class="main-content">
+        <!-- 互動圖解區 -->
+        <section id="diagram">
+            <div class="section-header">
+                <h2>📊 互動式概念圖解</h2>
+                <p>點擊卡片展開詳細說明</p>
+            </div>
+
+            <div class="concept-grid">
+                <!-- 庫 -->
+                <div class="concept-card library" data-concept="library">
+                    <div class="concept-icon">🔧</div>
+                    <h3>庫（Library）</h3>
+                    <div class="english">Library</div>
+                    <div class="analogy">
+                        <span class="analogy-icon">🧰</span>
+                        <strong>比喻：工具箱</strong><br>
+                        像宜家買了架子要自己裝，螺絲刀拧得手痛，買個電動螺絲刀，生產力立刻躍遷！
+                    </div>
+                    <div class="key-point">✨ 你呼叫它，想換就換</div>
+                </div>
+
+                <!-- 框架 -->
+                <div class="concept-card framework" data-concept="framework">
+                    <div class="concept-icon">🏗️</div>
+                    <h3>框架（Framework）</h3>
+                    <div class="english">Framework</div>
+                    <div class="analogy">
+                        <span class="analogy-icon">🗄️</span>
+                        <strong>比喻：宜家架子</strong><br>
+                        可以放書、放花、放 DVD，還能裝門、裝抽屜，但它還是個架子，不能在上面睡覺。
+                    </div>
+                    <div class="key-point">✨ 它呼叫你，規定好做事方式</div>
+                </div>
+
+                <!-- 架構 -->
+                <div class="concept-card architecture" data-concept="architecture">
+                    <div class="concept-icon">🏠</div>
+                    <h3>架構（Architecture）</h3>
+                    <div class="english">Architecture</div>
+                    <div class="analogy">
+                        <span class="analogy-icon">📐</span>
+                        <strong>比喻：房型圖</strong><br>
+                        70 坪二房一廳，可以裝修北歐風、中國風，但承重牆不能動，70 坪不會變多。
+                    </div>
+                    <div class="key-point">✨ 高度抽象，系統的不變量</div>
+                </div>
+
+                <!-- 平台 -->
+                <div class="concept-card platform" data-concept="platform">
+                    <div class="concept-icon">🏢</div>
+                    <h3>平台（Platform）</h3>
+                    <div class="english">Platform</div>
+                    <div class="analogy">
+                        <span class="analogy-icon">🏘️</span>
+                        <strong>比喻：社區</strong><br>
+                        想溜娃去社區滑梯，想運動去健身角，想游泳？物業說你得出門去奧體。
+                    </div>
+                    <div class="key-point">✨ 提供服務，也設下限制</div>
+                </div>
+            </div>
+
+            <!-- 詳細說明面板 -->
+            <div class="detail-panel" id="detail-library">
+                <div class="detail-content">
+                    <div class="detail-header">
+                        <div class="icon" style="background: rgba(0, 212, 170, 0.15);">🔧</div>
+                        <div>
+                            <h3 style="color: var(--accent-library);">庫（Library）</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>📖 定義</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.8;">
+                            庫是預先編寫好的程式碼集合，供開發者在程式中呼叫，大幅減少重複工作量。<br>
+                            <strong>最大特點：你呼叫它</strong>——控制權在你手上。
+                        </p>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>🎯 核心特性</h4>
+                        <ul>
+                            <li>你主動呼叫庫的功能，控制流程由你掌控</li>
+                            <li>可以同時使用多個庫，互不衝突</li>
+                            <li>更換庫相對容易，改動通常不大</li>
+                            <li>概念範圍很寬泛，從單一函式到完整 SDK 都算</li>
+                        </ul>
+                    </div>
+
+                    <div class="detail-section library">
+                        <h4>💻 常見範例</h4>
+                        <div class="example-grid">
+                            <div class="example-tag">printf (C)</div>
+                            <div class="example-tag">jQuery</div>
+                            <div class="example-tag">Lodash</div>
+                            <div class="example-tag">Axios</div>
+                            <div class="example-tag">NumPy</div>
+                            <div class="example-tag">Moment.js</div>
+                            <div class="example-tag">各種 SDK</div>
+                            <div class="example-tag">npm 套件</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-panel" id="detail-framework">
+                <div class="detail-content">
+                    <div class="detail-header">
+                        <div class="icon" style="background: rgba(124, 92, 255, 0.15);">🏗️</div>
+                        <div>
+                            <h3 style="color: var(--accent-framework);">框架（Framework）</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>📖 定義</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.8;">
+                            框架是庫的一種，但有本質區別：框架會接管程式的主控制流，開發者只需編寫業務邏輯，具體執行由框架呼叫。<br>
+                            <strong>最大特點：它呼叫你</strong>——這叫「控制反轉（IoC）」。
+                        </p>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>🎯 核心特性</h4>
+                        <ul>
+                            <li>框架掌控主流程，你的程式碼被框架呼叫</li>
+                            <li>一個專案通常只能用一個同類型框架</li>
+                            <li>更換框架成本很高，需要大量重構</li>
+                            <li>通常使用 IoC、模板方法等設計模式</li>
+                        </ul>
+                    </div>
+
+                    <div class="detail-section framework">
+                        <h4>💻 常見範例</h4>
+                        <div class="example-grid">
+                            <div class="example-tag">Spring</div>
+                            <div class="example-tag">Vue.js</div>
+                            <div class="example-tag">React</div>
+                            <div class="example-tag">Angular</div>
+                            <div class="example-tag">Django</div>
+                            <div class="example-tag">Rails</div>
+                            <div class="example-tag">Express</div>
+                            <div class="example-tag">Laravel</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>⚠️ 常見誤區</h4>
+                        <ul>
+                            <li>jQuery 規模大但不是框架，因為不接管控制流</li>
+                            <li>Vue 和 React 不能同時用，因為主控制流只有一個</li>
+                            <li>ORM（如 MyBatis）嚴格來說是庫，但因接管資料庫操作常被稱為框架</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-panel" id="detail-architecture">
+                <div class="detail-content">
+                    <div class="detail-header">
+                        <div class="icon" style="background: rgba(255, 107, 107, 0.15);">🏠</div>
+                        <div>
+                            <h3 style="color: var(--accent-architecture);">架構（Architecture）</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>📖 定義</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.8;">
+                            架構是高度抽象的需求，是系統中的<strong>不變量</strong>。它是抽象概念，不涉及具體語言和程式碼實作。<br>
+                            <strong>最大特點：定義邊界</strong>——決定什麼能做、什麼不能做。
+                        </p>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>🎯 核心特性</h4>
+                        <ul>
+                            <li>架構定義系統的基本結構和約束</li>
+                            <li>更換架構成本極高，類似換房子</li>
+                            <li>設計不好會長期被虐，需求超出架構就只能認栽</li>
+                            <li>與語言無關，任何語言都可以實作同一種架構</li>
+                        </ul>
+                    </div>
+
+                    <div class="detail-section architecture">
+                        <h4>💻 架構類型</h4>
+                        <div class="example-grid">
+                            <div class="example-tag">MVC</div>
+                            <div class="example-tag">MVVM</div>
+                            <div class="example-tag">B/S 架構</div>
+                            <div class="example-tag">C/S 架構</div>
+                            <div class="example-tag">微服務</div>
+                            <div class="example-tag">分散式</div>
+                            <div class="example-tag">事件驅動</div>
+                            <div class="example-tag">Serverless</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>💡 架構師的價值</h4>
+                        <ul>
+                            <li>不在於寫程式快、bug 少、熟練使用框架和庫</li>
+                            <li>在於掌握並評估專案什麼地方適合用什麼架構</li>
+                            <li>大方向一旦出問題，比寫錯幾處程式碼影響大多了</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-panel" id="detail-platform">
+                <div class="detail-content">
+                    <div class="detail-header">
+                        <div class="icon" style="background: rgba(255, 217, 61, 0.15);">🏢</div>
+                        <div>
+                            <h3 style="color: var(--accent-platform);">平台（Platform）</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>📖 定義</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.8;">
+                            平台是所有可能做的事的集合。它是運行中的程式，通過本機或網路 API 對外提供服務。<br>
+                            <strong>最大特點：業務層概念</strong>——既提供服務，也設下限制。
+                        </p>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>🎯 核心特性</h4>
+                        <ul>
+                            <li>屬於業務領域概念，不是純技術概念</li>
+                            <li>定義你能做什麼、不能做什麼</li>
+                            <li>平台選擇通常不多，受限於業務需求</li>
+                            <li>同樣的程式碼在不同平台有不同能力</li>
+                        </ul>
+                    </div>
+
+                    <div class="detail-section platform">
+                        <h4>💻 常見範例</h4>
+                        <div class="example-grid">
+                            <div class="example-tag">作業系統</div>
+                            <div class="example-tag">瀏覽器</div>
+                            <div class="example-tag">JVM</div>
+                            <div class="example-tag">Node.js</div>
+                            <div class="example-tag">微信小程式</div>
+                            <div class="example-tag">AWS/GCP</div>
+                            <div class="example-tag">Docker</div>
+                            <div class="example-tag">Kubernetes</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>🌟 經典例子</h4>
+                        <ul>
+                            <li>JS 在瀏覽器裡操作 DOM 風生水起，但想動硬碟檔案就難了</li>
+                            <li>同樣是 JS，跑在 Node.js 平台上，操作檔案就不是問題</li>
+                            <li>微信之於小程式、瀏覽器之於前端、JVM 之於 Java 都是平台</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 比較表區塊 -->
+        <section id="compare">
+            <div class="section-header">
+                <h2>📋 概念比較表</h2>
+                <p>一目瞭然的對照</p>
+            </div>
+
+            <div class="compare-table-wrapper">
+                <table class="compare-table">
+                    <thead>
+                        <tr>
+                            <th>面向</th>
+                            <th class="library-col">🔧 庫</th>
+                            <th class="framework-col">🏗️ 框架</th>
+                            <th class="architecture-col">🏠 架構</th>
+                            <th class="platform-col">🏢 平台</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>控制權</td>
+                            <td>你呼叫它</td>
+                            <td>它呼叫你</td>
+                            <td>定義邊界</td>
+                            <td>提供/限制能力</td>
+                        </tr>
+                        <tr>
+                            <td>生活比喻</td>
+                            <td>螺絲刀工具箱</td>
+                            <td>宜家組裝架子</td>
+                            <td>房子的格局圖</td>
+                            <td>社區的設施</td>
+                        </tr>
+                        <tr>
+                            <td>可更換性</td>
+                            <td>✅ 容易，改動小</td>
+                            <td>⚠️ 困難，要重構</td>
+                            <td>❌ 極難，等於換系統</td>
+                            <td>🔄 視情況而定</td>
+                        </tr>
+                        <tr>
+                            <td>可共存性</td>
+                            <td>✅ 可同時用多個</td>
+                            <td>❌ 同類只能用一個</td>
+                            <td>🔀 可組合不同架構</td>
+                            <td>📦 通常單一平台</td>
+                        </tr>
+                        <tr>
+                            <td>概念層級</td>
+                            <td>技術層</td>
+                            <td>技術層</td>
+                            <td>設計層（抽象）</td>
+                            <td>業務層</td>
+                        </tr>
+                        <tr>
+                            <td>決策優先級</td>
+                            <td>④ 最後選</td>
+                            <td>③ 看團隊偏好</td>
+                            <td>② 很考驗人</td>
+                            <td>① 沒多少可選</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 實戰應用區 -->
+        <section id="practice">
+            <div class="section-header">
+                <h2>🔧 實戰決策指南</h2>
+                <p>實際工作中如何選擇</p>
+            </div>
+
+            <div class="practice-cards">
+                <div class="practice-card open">
+                    <div class="practice-card-header" onclick="togglePractice(this)">
+                        <h4>🚀 情境一：新專案技術選型</h4>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="practice-card-body">
+                        <div class="practice-card-content">
+                            <div class="scenario">
+                                <div class="scenario-title">💼 情境描述</div>
+                                <p>你要開發一個新的電商網站，從零開始，該怎麼決定技術棧？</p>
+                            </div>
+
+                            <div class="decision-guide">
+                                <div class="decision-item platform">
+                                    <div class="decision-icon">🏢</div>
+                                    <div class="decision-content">
+                                        <h5>① 先決定平台</h5>
+                                        <p>雲端還是自建？AWS、GCP 還是阿里雲？這決定了你的上限和限制。</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item architecture">
+                                    <div class="decision-icon">🏠</div>
+                                    <div class="decision-content">
+                                        <h5>② 設計架構</h5>
+                                        <p>單體還是微服務？MVC 還是 DDD？這個決定影響深遠，要謹慎評估。</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item framework">
+                                    <div class="decision-icon">🏗️</div>
+                                    <div class="decision-content">
+                                        <h5>③ 選擇框架</h5>
+                                        <p>後端 Spring Boot 還是 Express？前端 Vue 還是 React？通常選團隊熟悉的。</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item library">
+                                    <div class="decision-icon">🔧</div>
+                                    <div class="decision-content">
+                                        <h5>④ 挑選庫</h5>
+                                        <p>HTTP 客戶端用 Axios？日期處理用 Day.js？選順手的就好。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="practice-card">
+                    <div class="practice-card-header" onclick="togglePractice(this)">
+                        <h4>🔄 情境二：系統需要擴展</h4>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="practice-card-body">
+                        <div class="practice-card-content">
+                            <div class="scenario">
+                                <div class="scenario-title">💼 情境描述</div>
+                                <p>業務成長太快，原本的系統撐不住了，該怎麼辦？</p>
+                            </div>
+
+                            <div class="decision-guide">
+                                <div class="decision-item library">
+                                    <div class="decision-icon">🔧</div>
+                                    <div class="decision-content">
+                                        <h5>換庫：最小改動</h5>
+                                        <p>ORM 太慢？從 Sequelize 換成 Prisma。HTTP 庫有問題？從 request 換成 axios。</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item framework">
+                                    <div class="decision-icon">🏗️</div>
+                                    <div class="decision-content">
+                                        <h5>換框架：中等改動</h5>
+                                        <p>Express 性能不夠？換成 Fastify。整個前端重寫？Vue 2 升級 Vue 3。</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item architecture">
+                                    <div class="decision-icon">🏠</div>
+                                    <div class="decision-content">
+                                        <h5>換架構：大改動</h5>
+                                        <p>單體拆微服務。這就像房子格局不夠住了，只能換房子。通常需要漸進式重構。</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item platform">
+                                    <div class="decision-icon">🏢</div>
+                                    <div class="decision-content">
+                                        <h5>換平台：策略性決策</h5>
+                                        <p>從自建機房搬到雲端，或從 AWS 搬到 GCP。這通常是公司策略層級的決定。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="practice-card">
+                    <div class="practice-card-header" onclick="togglePractice(this)">
+                        <h4>🤔 情境三：技術面試這樣答</h4>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="practice-card-body">
+                        <div class="practice-card-content">
+                            <div class="scenario">
+                                <div class="scenario-title">💼 面試官問</div>
+                                <p>「請解釋庫和框架的區別」或「什麼是架構」</p>
+                            </div>
+
+                            <div class="decision-guide">
+                                <div class="decision-item library">
+                                    <div class="decision-icon">💬</div>
+                                    <div class="decision-content">
+                                        <h5>庫：工具箱，你呼叫它</h5>
+                                        <p>「庫是預寫好的程式碼，我們主動呼叫它來完成特定功能。控制權在我們手上，可以同時用多個庫。」</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item framework">
+                                    <div class="decision-icon">💬</div>
+                                    <div class="decision-content">
+                                        <h5>框架：架子，它呼叫你</h5>
+                                        <p>「框架接管主控制流，我們只寫業務邏輯，由框架來呼叫。這叫控制反轉（IoC）。同類框架通常只能選一個。」</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item architecture">
+                                    <div class="decision-icon">💬</div>
+                                    <div class="decision-content">
+                                        <h5>架構：藍圖，抽象的邊界</h5>
+                                        <p>「架構是系統的高階設計，定義基本結構和約束，與具體語言無關。像 MVC、微服務都是架構模式。」</p>
+                                    </div>
+                                </div>
+                                <div class="decision-item platform">
+                                    <div class="decision-icon">💬</div>
+                                    <div class="decision-content">
+                                        <h5>平台：環境，提供並限制能力</h5>
+                                        <p>「平台是程式的運行環境，決定你能做什麼。同樣的 JS 在瀏覽器和 Node.js 能力就不同。」</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速參考 -->
+        <section id="reference">
+            <div class="section-header">
+                <h2>💡 記憶口訣</h2>
+                <p>一句話記住每個概念</p>
+            </div>
+
+            <div class="cheatsheet">
+                <h4>🧠 用比喻秒懂四大概念</h4>
+                <div class="memory-tips">
+                    <div class="memory-tip library">
+                        <span class="emoji">🔧</span>
+                        <h5>庫 Library</h5>
+                        <div class="phrase">「工具箱，拿來用」</div>
+                        <p>像電動螺絲刀，想用就用，不順手就換一把</p>
+                    </div>
+                    <div class="memory-tip framework">
+                        <span class="emoji">🏗️</span>
+                        <h5>框架 Framework</h5>
+                        <div class="phrase">「架子，按規矩來」</div>
+                        <p>像宜家的架子，可以放東西，但不能當床睡</p>
+                    </div>
+                    <div class="memory-tip architecture">
+                        <span class="emoji">🏠</span>
+                        <h5>架構 Architecture</h5>
+                        <div class="phrase">「房型圖，改不了」</div>
+                        <p>承重牆動不了，70 坪變不成 100 坪</p>
+                    </div>
+                    <div class="memory-tip platform">
+                        <span class="emoji">🏢</span>
+                        <h5>平台 Platform</h5>
+                        <div class="phrase">「社區，有邊界」</div>
+                        <p>有滑梯但沒泳池，想游泳得出門去奧體</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 測驗區 -->
+        <section id="quiz">
+            <div class="section-header">
+                <h2>🎯 概念小測驗</h2>
+                <p>測試一下你的理解</p>
+            </div>
+
+            <div class="quiz-container" id="quizContainer">
+                <div class="quiz-progress">
+                    <div class="quiz-progress-bar">
+                        <div class="quiz-progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="quiz-score" id="quizScore">0 / 8</div>
+                </div>
+
+                <div class="quiz-question" id="quizQuestion">
+                    <!-- 動態載入題目 -->
+                </div>
+
+                <div class="quiz-actions">
+                    <button class="quiz-btn secondary" id="prevBtn" onclick="prevQuestion()" style="display: none;">上一題</button>
+                    <button class="quiz-btn primary" id="nextBtn" onclick="nextQuestion()" disabled>下一題</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>💡 記住：邊做邊學，不用追求完美，誰知道以後需求怎麼變呢？</p>
+    </footer>
+
+    <script>
+        // 概念卡片互動
+        const conceptCards = document.querySelectorAll('.concept-card');
+        const detailPanels = document.querySelectorAll('.detail-panel');
+
+        conceptCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const concept = card.dataset.concept;
+                const panel = document.getElementById(`detail-${concept}`);
+                
+                // 切換當前卡片的活躍狀態
+                const wasActive = card.classList.contains('active');
+                
+                // 關閉所有
+                conceptCards.forEach(c => c.classList.remove('active'));
+                detailPanels.forEach(p => p.classList.remove('active'));
+                
+                // 如果之前不是活躍的，則開啟
+                if (!wasActive) {
+                    card.classList.add('active');
+                    panel.classList.add('active');
+                    
+                    // 滾動到面板
+                    setTimeout(() => {
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+                }
+            });
+        });
+
+        // 實戰卡片切換
+        function togglePractice(header) {
+            const card = header.parentElement;
+            card.classList.toggle('open');
+        }
+
+        // 導航列活躍狀態
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('section');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 150) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // 測驗系統
+        const quizData = [
+            {
+                question: '以下哪個說法正確描述了「庫」和「框架」的主要差異？',
+                options: [
+                    '庫的程式碼量比框架大',
+                    '庫由你呼叫，框架呼叫你的程式碼',
+                    '框架是開源的，庫是閉源的',
+                    '庫只能用於後端，框架只能用於前端'
+                ],
+                correct: 1,
+                explanation: '庫和框架的核心差異在於「控制權」。使用庫時，你掌控主流程並呼叫庫的功能；使用框架時，框架掌控主流程，你的程式碼被框架呼叫，這叫做「控制反轉（IoC）」。'
+            },
+            {
+                question: 'jQuery 為什麼被歸類為「庫」而非「框架」？',
+                options: [
+                    '因為它的檔案比較小',
+                    '因為它沒有接管程式的主控制流',
+                    '因為它比較老舊',
+                    '因為它只能操作 DOM'
+                ],
+                correct: 1,
+                explanation: 'jQuery 雖然功能強大且規模不小，但它沒有接管程式的主控制流。你仍然自己寫主邏輯，只是呼叫 jQuery 來操作 DOM，所以它是庫而非框架。'
+            },
+            {
+                question: '為什麼說「同一個專案不能同時用 Vue 和 React」？',
+                options: [
+                    '因為它們的語法不相容',
+                    '因為它們是競爭對手的產品',
+                    '因為它們都要接管主控制流，而主控制流只有一個',
+                    '因為會讓專案檔案太大'
+                ],
+                correct: 2,
+                explanation: 'Vue 和 React 都是前端框架，都需要接管應用的主控制流來管理狀態和渲染。一個應用只有一個主控制流，所以只能選其一。但庫（如 jQuery 和 Lodash）可以同時使用。'
+            },
+            {
+                question: '架構師的核心價值是什麼？',
+                options: [
+                    '寫程式的速度最快',
+                    '熟練使用各種庫和框架',
+                    '評估並決定專案適合用什麼架構',
+                    '修 Bug 的能力最強'
+                ],
+                correct: 2,
+                explanation: '架構師的價值不在於寫程式快或 Bug 少，而在於能評估專案需求，決定什麼地方適合用什麼架構。架構的大方向一旦出問題，影響遠比寫錯幾行程式碼大得多。'
+            },
+            {
+                question: '「同樣是 JavaScript，在瀏覽器裡操作 DOM 風生水起，但想操作硬碟檔案就難了」，這說明了什麼概念？',
+                options: [
+                    '庫的限制',
+                    '框架的限制',
+                    '架構的限制',
+                    '平台的限制'
+                ],
+                correct: 3,
+                explanation: '這是平台限制的經典例子。瀏覽器是一個平台，它提供 DOM API 但限制檔案系統存取。同樣的 JS 跑在 Node.js 平台上，操作檔案就不是問題。平台既提供服務，也設下限制。'
+            },
+            {
+                question: '「MVC」應該被歸類為以下哪一項？',
+                options: [
+                    '庫',
+                    '框架',
+                    '架構',
+                    '平台'
+                ],
+                correct: 2,
+                explanation: 'MVC（Model-View-Controller）是一種架構模式，它定義了程式碼如何進行邏輯分離。它是抽象概念，不涉及具體語言，任何語言都可以實作 MVC 架構。'
+            },
+            {
+                question: '新專案技術選型時，正確的決策順序應該是？',
+                options: [
+                    '庫 → 框架 → 架構 → 平台',
+                    '框架 → 庫 → 平台 → 架構',
+                    '平台 → 架構 → 框架 → 庫',
+                    '架構 → 平台 → 庫 → 框架'
+                ],
+                correct: 2,
+                explanation: '正確順序是：平台（沒多少可選）→ 架構（最考驗人）→ 框架（看團隊偏好）→ 庫（選順手的）。平台決定邊界，架構定義結構，框架提供骨架，庫補充細節。'
+            },
+            {
+                question: '以下關於「架構」的說法，哪一項是錯誤的？',
+                options: [
+                    '架構是高度抽象的需求，是系統中的不變量',
+                    '架構與具體程式語言無關',
+                    '更換架構的成本很低，隨時可以換',
+                    '架構設計不好會長期被虐'
+                ],
+                correct: 2,
+                explanation: '更換架構的成本極高！這就像房子格局不合用了，只能換房子。架構一旦定下來就是「不變量」，需求超出架構的承載能力就會很痛苦，所以架構設計需要特別謹慎。'
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function renderQuestion() {
+            const question = quizData[currentQuestion];
+            const questionEl = document.getElementById('quizQuestion');
+            
+            let optionsHTML = '';
+            question.options.forEach((option, index) => {
+                const letter = String.fromCharCode(65 + index);
+                optionsHTML += `
+                    <div class="quiz-option" onclick="selectOption(${index})" data-index="${index}">
+                        <span class="option-letter">${letter}</span>
+                        <span>${option}</span>
+                    </div>
+                `;
+            });
+
+            questionEl.innerHTML = `
+                <div class="question-number">第 ${currentQuestion + 1} 題，共 ${quizData.length} 題</div>
+                <div class="question-text">${question.question}</div>
+                <div class="quiz-options">
+                    ${optionsHTML}
+                </div>
+                <div class="quiz-feedback" id="feedback"></div>
+            `;
+
+            // 更新進度條
+            const progress = ((currentQuestion) / quizData.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('quizScore').textContent = `${score} / ${quizData.length}`;
+
+            // 更新按鈕狀態
+            document.getElementById('prevBtn').style.display = currentQuestion > 0 ? 'block' : 'none';
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('nextBtn').textContent = currentQuestion === quizData.length - 1 ? '查看結果' : '下一題';
+
+            answered = false;
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            answered = true;
+
+            const question = quizData[currentQuestion];
+            const options = document.querySelectorAll('.quiz-option');
+            const feedback = document.getElementById('feedback');
+
+            options.forEach((opt, i) => {
+                opt.classList.add('disabled');
+                if (i === question.correct) {
+                    opt.classList.add('correct');
+                }
+                if (i === index && i !== question.correct) {
+                    opt.classList.add('wrong');
+                }
+            });
+
+            const isCorrect = index === question.correct;
+            if (isCorrect) {
+                score++;
+                document.getElementById('quizScore').textContent = `${score} / ${quizData.length}`;
+            }
+
+            feedback.className = `quiz-feedback show ${isCorrect ? 'correct' : 'wrong'}`;
+            feedback.innerHTML = `
+                <h5>${isCorrect ? '✅ 答對了！' : '❌ 答錯了'}</h5>
+                <p>${question.explanation}</p>
+            `;
+
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < quizData.length - 1) {
+                currentQuestion++;
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function showResult() {
+            const container = document.getElementById('quizContainer');
+            const percentage = Math.round((score / quizData.length) * 100);
+            
+            let emoji, message;
+            if (percentage === 100) {
+                emoji = '🏆';
+                message = '完美！你已經完全掌握這四個概念了！';
+            } else if (percentage >= 75) {
+                emoji = '🎉';
+                message = '很棒！你對這些概念有很好的理解！';
+            } else if (percentage >= 50) {
+                emoji = '💪';
+                message = '不錯！再複習一下可以更好！';
+            } else {
+                emoji = '📚';
+                message = '建議再看看上面的教學內容喔！';
+            }
+
+            container.innerHTML = `
+                <div class="quiz-result">
+                    <span class="emoji">${emoji}</span>
+                    <h3>測驗完成！</h3>
+                    <div class="final-score">
+                        <span class="correct">${score}</span> / ${quizData.length}
+                    </div>
+                    <p>${message}</p>
+                    <button class="quiz-btn primary" onclick="restartQuiz()">重新測驗</button>
+                </div>
+            `;
+
+            // 更新進度條到 100%
+            document.getElementById('progressFill').style.width = '100%';
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            
+            // 重建測驗容器
+            const container = document.getElementById('quizContainer');
+            container.innerHTML = `
+                <div class="quiz-progress">
+                    <div class="quiz-progress-bar">
+                        <div class="quiz-progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="quiz-score" id="quizScore">0 / 8</div>
+                </div>
+                <div class="quiz-question" id="quizQuestion"></div>
+                <div class="quiz-actions">
+                    <button class="quiz-btn secondary" id="prevBtn" onclick="prevQuestion()" style="display: none;">上一題</button>
+                    <button class="quiz-btn primary" id="nextBtn" onclick="nextQuestion()" disabled>下一題</button>
+                </div>
+            `;
+            
+            renderQuestion();
+        }
+
+        // 初始化測驗
+        renderQuestion();
+
+        // 平滑滾動
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
