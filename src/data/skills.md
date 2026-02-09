@@ -102,6 +102,7 @@
 - Observability & Monitoring | 進階
 - Instrumentation & Telemetry | 進階
 - Rate Limiter / Throttling | 進階 | tutorials/17-scaling-strategies/rate-limiter-tutorial.html
+- API Rate Limiter 系統設計 | 進階 | tutorials/17-scaling-strategies/api-rate-limiter-system-design-tutorial.html
 
 # 🔄 全端整合 {#18-Full-Stack}
 
@@ -121,3 +122,11 @@
 # ⏱️ 即時資料 {#21-Real-Time-Data}
 
 - WebSockets / SSE / Polling | 中級
+
+# 🏛️ 系統設計案例 {#22-System-Design-Cases}
+
+- Amazon Prime Video 系統設計 | 進階 | tutorials/22-system-design-cases/prime-video-system-design-tutorial.html
+
+# 🧮 資料結構與演算法 {#23-DSA}
+
+- DFS / BFS 統一框架 | 中級 | tutorials/23-dsa/dfs-bfs-tutorial.html

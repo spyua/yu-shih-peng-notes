@@ -1,0 +1,2508 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Prime Video — System Design Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ========== CSS VARIABLES ========== */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --border-light: #f1f5f9;
+
+  /* Accent — Prime Video blue-teal */
+  --accent: #00a8e1;
+  --accent-light: #e0f4fd;
+  --accent-dark: #0077a8;
+
+  /* Component Colors */
+  --client: #3b82f6;
+  --lb: #8b5cf6;
+  --services: #10b981;
+  --queue: #ef4444;
+  --cache: #f59e0b;
+  --search: #06b6d4;
+  --storage: #6366f1;
+  --database: #ec4899;
+  --cdn: #14b8a6;
+  --encoder: #f97316;
+
+  /* Info boxes */
+  --concept-bg: #eff6ff;
+  --concept-border: #3b82f6;
+  --important-bg: #fffbeb;
+  --important-border: #f59e0b;
+  --tip-bg: #ecfdf5;
+  --tip-border: #10b981;
+  --warning-bg: #fef2f2;
+  --warning-border: #ef4444;
+}
+
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== STICKY NAV ========== */
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.nav-brand-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-tab {
+  padding: 16px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.nav-tab:hover { color: var(--text-secondary); }
+
+.nav-tab.active {
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
+
+/* ========== HEADER ========== */
+.hero {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 3rem 2rem 2.5rem;
+  text-align: center;
+}
+
+.hero-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hero-tag .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ========== PAGE CONTAINERS ========== */
+.page { display: none; }
+.page.active { display: block; }
+
+.page-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-inner.narrow { max-width: 900px; }
+
+/* ========== SECTIONS ========== */
+.section {
+  margin-bottom: 3rem;
+}
+
+.section-alt {
+  background: var(--bg-secondary);
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding: 2.5rem 2rem;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* ========== LEGEND ========== */
+.legend-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .legend-grid { grid-template-columns: 1fr; }
+}
+
+.legend-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.legend-card h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.legend-swatch {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-line {
+  width: 28px; height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-line.dashed {
+  background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 10px);
+  height: 2.5px;
+}
+
+/* ========== SVG DIAGRAM ========== */
+.diagram-wrap {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.diagram-wrap svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ========== COMPONENT CARDS ========== */
+.comp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.comp-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem 1.25rem 1.25rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.comp-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.comp-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+
+.comp-card .comp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.6rem;
+}
+
+.comp-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.comp-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.comp-role {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.comp-desc {
+  font-size: 0.87rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.7rem;
+  line-height: 1.6;
+}
+
+.comp-bullets {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 0.8rem;
+}
+
+.comp-bullets li {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.comp-bullets li::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.comp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.comp-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+/* ========== FLOW TABS ========== */
+.flow-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.flow-tab {
+  padding: 10px 18px;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.flow-tab:hover { color: var(--text-secondary); }
+.flow-tab.active {
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
+
+.flow-panel { display: none; }
+.flow-panel.active { display: block; }
+
+.flow-steps { position: relative; padding-left: 2rem; }
+
+.flow-step {
+  position: relative;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.flow-step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.flow-step::before {
+  content: attr(data-step);
+  position: absolute;
+  left: -2rem;
+  top: 2px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.flow-step-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 4px;
+}
+
+.flow-step-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.flow-step-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  margin-right: 4px;
+}
+
+/* ========== ALGO CARDS ========== */
+.algo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.algo-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.algo-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+
+.algo-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  display: inline-block;
+  margin-bottom: 0.6rem;
+}
+
+.algo-card h4 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.algo-card .algo-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.8rem;
+}
+
+.algo-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.algo-proscons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.algo-pros, .algo-cons {
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.algo-pros-title, .algo-cons-title {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.algo-pros-title { color: var(--tip-border); }
+.algo-cons-title { color: var(--warning-border); }
+
+.algo-pros li, .algo-cons li {
+  list-style: none;
+  padding-left: 14px;
+  position: relative;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.algo-pros li::before {
+  content: '+';
+  position: absolute;
+  left: 0;
+  color: var(--tip-border);
+  font-weight: 700;
+}
+
+.algo-cons li::before {
+  content: '−';
+  position: absolute;
+  left: 0;
+  color: var(--warning-border);
+  font-weight: 700;
+}
+
+/* ========== DESIGN DECISIONS ========== */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.decision-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.decision-card h4 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.decision-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ========== CAPACITY DASHBOARD ========== */
+.cap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cap-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.cap-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  line-height: 1.2;
+}
+
+.cap-unit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cap-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.cap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.cap-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cap-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+.cap-table tr:last-child td { border-bottom: none; }
+
+.cap-table .mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--accent-dark);
+  font-weight: 500;
+}
+
+/* ========== DEEP DIVE PLACEHOLDER ========== */
+.placeholder {
+  text-align: center;
+  padding: 6rem 2rem;
+  color: var(--text-muted);
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.placeholder h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.placeholder p {
+  font-size: 0.95rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 640px) {
+  .top-nav { padding: 0 1rem; }
+  .page-inner { padding: 1.5rem 1rem; }
+  .comp-grid { grid-template-columns: 1fr; }
+  .decision-grid { grid-template-columns: 1fr; }
+  .algo-grid { grid-template-columns: 1fr; }
+  .cap-grid { grid-template-columns: 1fr 1fr; }
+  .dd-toc-grid { grid-template-columns: 1fr !important; }
+  .dd-compare-table { font-size: 0.75rem; }
+}
+
+/* ========== DEEP DIVE STYLES ========== */
+.dd-toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dd-toc-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; text-decoration: none; color: var(--text-primary); font-size: 0.88rem; font-weight: 500; transition: border-color 0.2s, box-shadow 0.2s; }
+.dd-toc-item:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(0,168,225,0.1); }
+.dd-toc-num { width: 28px; height: 28px; border-radius: 7px; background: var(--accent-light); color: var(--accent-dark); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 600; flex-shrink: 0; }
+
+.dd-info { border-left: 4px solid; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin: 1.2rem 0; font-size: 0.88rem; line-height: 1.7; }
+.dd-info.concept { border-color: var(--concept-border); background: var(--concept-bg); }
+.dd-info.important { border-color: var(--important-border); background: var(--important-bg); }
+.dd-info.tip { border-color: var(--tip-border); background: var(--tip-bg); }
+.dd-info.warning { border-color: var(--warning-border); background: var(--warning-bg); }
+.dd-info strong { display: block; margin-bottom: 4px; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.dd-info.concept strong { color: var(--concept-border); }
+.dd-info.important strong { color: var(--important-border); }
+.dd-info.tip strong { color: var(--tip-border); }
+.dd-info.warning strong { color: var(--warning-border); }
+
+.dd-section { padding-top: 2.5rem; margin-bottom: 2rem; scroll-margin-top: 72px; }
+.dd-section-alt { background: var(--bg-secondary); margin-left: -2rem; margin-right: -2rem; padding: 2.5rem 2rem; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); scroll-margin-top: 72px; }
+.dd-h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem; letter-spacing: -0.02em; }
+.dd-h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 1.5rem 0 0.6rem; }
+.dd-sub { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.2rem; }
+.dd-text { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.75; margin-bottom: 1rem; }
+
+.dd-code-block { border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; margin: 1.2rem 0; }
+.dd-code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #e2e8f0; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; }
+.dd-code-lang { background: var(--bg-primary); padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; }
+.dd-code-body { background: #f8fafc; padding: 1rem 1.25rem; overflow-x: auto; user-select: text; -webkit-user-select: text; }
+.dd-code-body::selection, .dd-code-body *::selection { background: #bfdbfe; color: #1e293b; }
+.dd-code-body pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; color: var(--text-primary); white-space: pre; tab-size: 2; }
+.kw { color: #7c3aed; font-weight: 500; } .str { color: #16a34a; } .num { color: #d97706; } .fn { color: #2563eb; } .cm { color: #94a3b8; font-style: italic; } .type { color: #0891b2; } .op { color: #64748b; } .dec { color: #be185d; }
+
+.dd-compare-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin: 1.2rem 0; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+.dd-compare-table th { padding: 10px 14px; background: var(--bg-secondary); font-weight: 600; text-align: left; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); }
+.dd-compare-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); vertical-align: top; }
+.dd-compare-table tr:last-child td { border-bottom: none; }
+.dd-compare-table .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-dark); }
+.dd-compare-table .good { color: var(--tip-border); font-weight: 600; }
+.dd-compare-table .mid { color: var(--important-border); font-weight: 600; }
+.dd-compare-table .bad { color: var(--warning-border); font-weight: 600; }
+
+.dd-kp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin: 1.2rem 0; }
+.dd-kp-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.1rem; }
+.dd-kp-card h4 { font-family: 'Space Grotesk', sans-serif; font-size: 0.92rem; font-weight: 600; margin-bottom: 0.4rem; }
+.dd-kp-card p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+
+.dd-accordion { border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+.dd-accordion-header { width: 100%; padding: 14px 18px; background: var(--bg-primary); border: none; text-align: left; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
+.dd-accordion-header:hover { background: var(--bg-secondary); }
+.dd-accordion-chevron { transition: transform 0.25s; font-size: 0.8rem; color: var(--text-muted); }
+.dd-accordion.open .dd-accordion-chevron { transform: rotate(180deg); }
+.dd-accordion-body { display: none; padding: 0 18px 16px; font-size: 0.87rem; color: var(--text-secondary); line-height: 1.75; background: var(--bg-primary); }
+.dd-accordion.open .dd-accordion-body { display: block; }
+.dd-accordion-body ul { padding-left: 1.2rem; margin: 0.5rem 0; }
+.dd-accordion-body li { margin-bottom: 4px; }
+
+.dd-svg-wrap { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin: 1.2rem 0; overflow-x: auto; }
+.dd-svg-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+.dd-placement-step { display: flex; align-items: flex-start; gap: 14px; padding: 1rem 0; border-bottom: 1px solid var(--border-light); }
+.dd-placement-step:last-child { border-bottom: none; }
+.dd-placement-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+.dd-placement-text h4 { font-size: 0.92rem; font-weight: 600; margin-bottom: 2px; }
+.dd-placement-text p { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.6; }
+.back-btn { position: fixed; top: 20px; left: 20px; z-index: 9999; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 10px 20px; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; border-radius: 8px; }
+.back-btn:hover { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+</style>
+</head>
+<body>
+    <a href="../../index.html" class="back-btn">← 返回首頁</a>
+
+<!-- ========== STICKY NAV ========== -->
+<nav class="top-nav">
+  <a href="#" class="nav-brand" onclick="return false;">
+    <div class="nav-brand-icon">▶</div>
+    Video Streaming — System Design
+  </a>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPage('overview', this)">📊 Overview</button>
+    <button class="nav-tab" onclick="switchPage('deepdive', this)">📚 Deep Dive</button>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<header class="hero">
+  <h1 class="hero-title">Amazon Prime Video</h1>
+  <p class="hero-subtitle">大規模影音串流平台系統設計 — Video Streaming Platform Architecture</p>
+  <div class="hero-tags">
+    <span class="hero-tag"><span class="dot" style="background:var(--cdn)"></span>CDN</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--queue)"></span>Processing Queue</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--encoder)"></span>Video Encoding</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--search)"></span>Elasticsearch</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--cache)"></span>Cache</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--storage)"></span>Object Store (S3)</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--database)"></span>Metadata DB</span>
+    <span class="hero-tag"><span class="dot" style="background:var(--lb)"></span>Load Balancer</span>
+  </div>
+</header>
+
+<!-- ==================== PAGE 1: OVERVIEW ==================== -->
+<div id="page-overview" class="page active">
+<div class="page-inner">
+
+<!-- ===== 1.1 LEGENDS ===== -->
+<section class="section">
+  <h2 class="section-title">圖例說明 Legends</h2>
+  <p class="section-subtitle">元件與連線的色彩對應 — Color coding for components and connections</p>
+
+  <div class="legend-grid">
+    <!-- Component Legend -->
+    <div class="legend-card">
+      <h3>元件圖例 Component Legend</h3>
+      <div class="legend-items">
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--client)"></span>Client（用戶端）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--lb)"></span>Load Balancer</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--services)"></span>Services（服務）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--queue)"></span>Queue（訊息佇列）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--encoder)"></span>Encoder（編碼器）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--cache)"></span>Cache（快取）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--search)"></span>Search（搜尋）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--storage)"></span>Object Store</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--database)"></span>Database（資料庫）</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--cdn)"></span>CDN</span>
+      </div>
+    </div>
+    <!-- Line Legend -->
+    <div class="legend-card">
+      <h3>連線說明 Connection Legend</h3>
+      <div class="legend-items" style="flex-direction:column; gap:8px;">
+        <span class="legend-item"><span class="legend-line" style="background:var(--text-muted)"></span>同步請求 Sync Request（灰）</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--queue)"></span>寫入路徑 Write Path（紅）</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--cache)"></span>快取讀寫 Cache R/W（橙）</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--search)"></span>搜尋查詢 Search Query（青）</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--services)"></span>DB 讀寫 DB Read/Write（綠）</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--cdn)"></span>CDN / 靜態資源（藍綠）</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--storage)"></span>Object Store（靛藍）</span>
+        <span class="legend-item"><span class="legend-line dashed" style="color:var(--encoder)"></span>非同步處理 Async（橘虛線）</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 1.2 SVG DIAGRAM ===== -->
+<section class="section">
+  <h2 class="section-title">系統架構圖 Architecture Diagram</h2>
+  <p class="section-subtitle">互動式架構概覽 — Hover 連線查看說明</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 1120 760" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <defs>
+        <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.07"/>
+        </filter>
+        <!-- Arrow markers -->
+        <marker id="arr-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#94a3b8"/></marker>
+        <marker id="arr-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#ef4444"/></marker>
+        <marker id="arr-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#10b981"/></marker>
+        <marker id="arr-cyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#06b6d4"/></marker>
+        <marker id="arr-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f59e0b"/></marker>
+        <marker id="arr-indigo" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#6366f1"/></marker>
+        <marker id="arr-teal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#14b8a6"/></marker>
+        <marker id="arr-pink" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#ec4899"/></marker>
+        <marker id="arr-encoder" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f97316"/></marker>
+        <marker id="arr-lb" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#8b5cf6"/></marker>
+      </defs>
+
+      <!-- Tier labels -->
+      <text x="16" y="24" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">CLIENTS</text>
+      <line x1="80" y1="20" x2="1100" y2="20" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <text x="16" y="190" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">GATEWAY</text>
+      <line x1="90" y1="186" x2="1100" y2="186" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <text x="16" y="330" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">SERVICES</text>
+      <line x1="90" y1="326" x2="1100" y2="326" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <text x="16" y="510" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">PROCESSING</text>
+      <line x1="105" y1="506" x2="1100" y2="506" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <text x="16" y="650" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">DATA LAYER</text>
+      <line x1="105" y1="646" x2="1100" y2="646" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- ===== NODES ===== -->
+      <!-- Content Creators -->
+      <g filter="url(#shadow)">
+        <rect x="60" y="50" width="150" height="54" rx="8" fill="#fff" stroke="#3b82f6" stroke-width="1.5"/>
+        <rect x="60" y="50" width="5" height="54" rx="3" fill="#3b82f6"/>
+        <text x="135" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Content Creators</text>
+        <text x="135" y="90" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">上傳者 Uploaders</text>
+      </g>
+
+      <!-- Viewers -->
+      <g filter="url(#shadow)">
+        <rect x="60" y="120" width="150" height="54" rx="8" fill="#fff" stroke="#3b82f6" stroke-width="1.5"/>
+        <rect x="60" y="120" width="5" height="54" rx="3" fill="#3b82f6"/>
+        <text x="135" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Viewers</text>
+        <text x="135" y="160" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">觀看者 Watchers</text>
+      </g>
+
+      <!-- Load Balancer -->
+      <g filter="url(#shadow)">
+        <rect x="300" y="85" width="150" height="54" rx="8" fill="#fff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <rect x="300" y="85" width="5" height="54" rx="3" fill="#8b5cf6"/>
+        <text x="375" y="107" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Load Balancer</text>
+        <text x="375" y="125" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">負載均衡器 L7 LB</text>
+      </g>
+
+      <!-- Upload Video Service -->
+      <g filter="url(#shadow)">
+        <rect x="200" y="350" width="160" height="54" rx="8" fill="#fff" stroke="#10b981" stroke-width="1.5"/>
+        <rect x="200" y="350" width="5" height="54" rx="3" fill="#10b981"/>
+        <text x="280" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Upload Video Service</text>
+        <text x="280" y="390" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">影片上傳服務</text>
+      </g>
+
+      <!-- Video Splitter -->
+      <g filter="url(#shadow)">
+        <rect x="410" y="350" width="150" height="54" rx="8" fill="#fff" stroke="#10b981" stroke-width="1.5"/>
+        <rect x="410" y="350" width="5" height="54" rx="3" fill="#10b981"/>
+        <text x="485" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Video Splitter</text>
+        <text x="485" y="390" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">影片切割器</text>
+      </g>
+
+      <!-- Search Service -->
+      <g filter="url(#shadow)">
+        <rect x="610" y="350" width="150" height="54" rx="8" fill="#fff" stroke="#06b6d4" stroke-width="1.5"/>
+        <rect x="610" y="350" width="5" height="54" rx="3" fill="#06b6d4"/>
+        <text x="685" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Search Service</text>
+        <text x="685" y="390" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">搜尋服務</text>
+      </g>
+
+      <!-- View Video Service -->
+      <g filter="url(#shadow)">
+        <rect x="810" y="350" width="160" height="54" rx="8" fill="#fff" stroke="#10b981" stroke-width="1.5"/>
+        <rect x="810" y="350" width="5" height="54" rx="3" fill="#10b981"/>
+        <text x="890" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">View Video Service</text>
+        <text x="890" y="390" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">影片觀看服務</text>
+      </g>
+
+      <!-- Processing Queue -->
+      <g filter="url(#shadow)">
+        <rect x="280" y="520" width="160" height="54" rx="8" fill="#fff" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="280" y="520" width="5" height="54" rx="3" fill="#ef4444"/>
+        <text x="360" y="542" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Processing Queue</text>
+        <text x="360" y="560" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">處理佇列 Kafka / SQS</text>
+      </g>
+
+      <!-- Video Encoder -->
+      <g filter="url(#shadow)">
+        <rect x="520" y="520" width="150" height="54" rx="8" fill="#fff" stroke="#f97316" stroke-width="1.5"/>
+        <rect x="520" y="520" width="5" height="54" rx="3" fill="#f97316"/>
+        <text x="595" y="542" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Video Encoder</text>
+        <text x="595" y="560" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">影片編碼器 FFmpeg</text>
+      </g>
+
+      <!-- Elasticsearch -->
+      <g filter="url(#shadow)">
+        <rect x="620" y="520" width="190" height="54" rx="8" fill="#fff" stroke="#06b6d4" stroke-width="1.5"/>
+        <rect x="620" y="520" width="5" height="54" rx="3" fill="#06b6d4"/>
+        <text x="715" y="542" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Elasticsearch Video API</text>
+        <text x="715" y="560" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">全文搜尋引擎</text>
+      </g>
+
+      <!-- Cache -->
+      <g filter="url(#shadow)">
+        <rect x="860" y="520" width="130" height="54" rx="8" fill="#fff" stroke="#f59e0b" stroke-width="1.5"/>
+        <rect x="860" y="520" width="5" height="54" rx="3" fill="#f59e0b"/>
+        <text x="925" y="542" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Cache</text>
+        <text x="925" y="560" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">快取 Redis</text>
+      </g>
+
+      <!-- Object Store (S3) -->
+      <g filter="url(#shadow)">
+        <rect x="150" y="670" width="160" height="54" rx="8" fill="#fff" stroke="#6366f1" stroke-width="1.5"/>
+        <rect x="150" y="670" width="5" height="54" rx="3" fill="#6366f1"/>
+        <text x="230" y="692" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Object Store (S3)</text>
+        <text x="230" y="710" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">物件儲存 AWS S3</text>
+      </g>
+
+      <!-- Metadata DB -->
+      <g filter="url(#shadow)">
+        <rect x="530" y="670" width="160" height="54" rx="8" fill="#fff" stroke="#ec4899" stroke-width="1.5"/>
+        <rect x="530" y="670" width="5" height="54" rx="3" fill="#ec4899"/>
+        <text x="610" y="692" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Metadata DB</text>
+        <text x="610" y="710" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">中繼資料庫 PostgreSQL</text>
+      </g>
+
+      <!-- CDN -->
+      <g filter="url(#shadow)">
+        <rect x="870" y="670" width="130" height="54" rx="8" fill="#fff" stroke="#14b8a6" stroke-width="1.5"/>
+        <rect x="870" y="670" width="5" height="54" rx="3" fill="#14b8a6"/>
+        <text x="935" y="692" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">CDN</text>
+        <text x="935" y="710" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'JetBrains Mono', monospace">CloudFront</text>
+      </g>
+
+      <!-- ===== CONNECTIONS ===== -->
+      <!-- Content Creators → Load Balancer -->
+      <line x1="210" y1="77" x2="300" y2="105" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr-gray)"/>
+      <text x="248" y="85" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono', monospace">HTTP</text>
+
+      <!-- Viewers → Load Balancer -->
+      <line x1="210" y1="147" x2="300" y2="119" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr-gray)"/>
+      <text x="248" y="142" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono', monospace">HTTP</text>
+
+      <!-- LB → Upload Video Service -->
+      <path d="M 340 139 L 340 270 L 280 270 L 280 350" stroke="#8b5cf6" stroke-width="2" fill="none" marker-end="url(#arr-lb)"/>
+      <text x="295" y="265" font-size="8" fill="#8b5cf6" font-family="'JetBrains Mono', monospace">route</text>
+
+      <!-- LB → Video Splitter -->
+      <path d="M 375 139 L 375 270 L 485 270 L 485 350" stroke="#8b5cf6" stroke-width="2" fill="none" marker-end="url(#arr-lb)"/>
+      <text x="430" y="265" font-size="8" fill="#8b5cf6" font-family="'JetBrains Mono', monospace">route</text>
+
+      <!-- LB → Search Service -->
+      <path d="M 410 139 L 410 280 L 685 280 L 685 350" stroke="#8b5cf6" stroke-width="2" fill="none" marker-end="url(#arr-lb)"/>
+      <text x="548" y="275" font-size="8" fill="#8b5cf6" font-family="'JetBrains Mono', monospace">route</text>
+
+      <!-- LB → View Video Service -->
+      <path d="M 440 139 L 440 290 L 890 290 L 890 350" stroke="#8b5cf6" stroke-width="2" fill="none" marker-end="url(#arr-lb)"/>
+      <text x="665" y="285" font-size="8" fill="#8b5cf6" font-family="'JetBrains Mono', monospace">route</text>
+
+      <!-- Upload Video Service → Object Store (S3) -->
+      <path d="M 230 404 L 230 670" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#arr-indigo)"/>
+      <text x="236" y="545" font-size="8" fill="#6366f1" font-family="'JetBrains Mono', monospace" transform="rotate(-90, 236, 545)">raw upload</text>
+
+      <!-- Upload Video Service → Processing Queue -->
+      <path d="M 310 404 L 310 460 L 360 460 L 360 520" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arr-red)"/>
+      <text x="316" y="458" font-size="8" fill="#ef4444" font-family="'JetBrains Mono', monospace">enqueue</text>
+
+      <!-- Video Splitter → Processing Queue -->
+      <path d="M 485 404 L 485 460 L 400 460 L 400 520" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arr-red)"/>
+      <text x="440" y="453" font-size="8" fill="#ef4444" font-family="'JetBrains Mono', monospace">chunks</text>
+
+      <!-- Processing Queue → Video Encoder -->
+      <line x1="440" y1="547" x2="520" y2="547" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-encoder)"/>
+      <text x="470" y="540" font-size="8" fill="#f97316" font-family="'JetBrains Mono', monospace">dequeue</text>
+
+      <!-- Video Encoder → Object Store (S3) -->
+      <path d="M 545 574 L 545 620 L 290 620 L 290 670" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#arr-indigo)"/>
+      <text x="420" y="615" font-size="8" fill="#6366f1" font-family="'JetBrains Mono', monospace">encoded videos</text>
+
+      <!-- Video Encoder → Metadata DB -->
+      <path d="M 620 574 L 620 670" stroke="#ec4899" stroke-width="2" fill="none" marker-end="url(#arr-pink)"/>
+      <text x="626" y="630" font-size="8" fill="#ec4899" font-family="'JetBrains Mono', monospace" transform="rotate(-90, 626, 630)">write meta</text>
+
+      <!-- Search Service → Elasticsearch -->
+      <line x1="685" y1="404" x2="710" y2="520" stroke="#06b6d4" stroke-width="2" marker-end="url(#arr-cyan)"/>
+      <text x="690" y="465" font-size="8" fill="#06b6d4" font-family="'JetBrains Mono', monospace">query</text>
+
+      <!-- View Video Service → Cache -->
+      <line x1="925" y1="404" x2="925" y2="520" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr-orange)"/>
+      <text x="932" y="465" font-size="8" fill="#f59e0b" font-family="'JetBrains Mono', monospace">read</text>
+
+      <!-- Cache → Metadata DB -->
+      <path d="M 860" y1="555" x2="690" y2="685" stroke="none"/>
+      <path d="M 860 555 L 780 555 L 780 697 L 690 697" stroke="#10b981" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arr-green)"/>
+      <text x="785" y="630" font-size="8" fill="#10b981" font-family="'JetBrains Mono', monospace" transform="rotate(-90, 785, 630)">cache miss</text>
+
+      <!-- Viewers ← CDN -->
+      <path d="M 935 670 L 935 640 L 100 640 L 100 174" stroke="#14b8a6" stroke-width="2" fill="none" marker-end="url(#arr-teal)"/>
+      <text x="520" y="635" font-size="8" fill="#14b8a6" font-family="'JetBrains Mono', monospace">stream video to viewer</text>
+
+      <!-- CDN ← Object Store (origin pull) -->
+      <path d="M 310 710 L 550 710 L 550 730 L 870 730 L 870 710" stroke="#14b8a6" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arr-teal)"/>
+      <text x="590" y="743" font-size="8" fill="#14b8a6" font-family="'JetBrains Mono', monospace">origin pull</text>
+
+      <!-- Elasticsearch → Metadata DB (CDC / indexing) -->
+      <path d="M 700 574 L 700 620 L 660 620 L 660 670" stroke="#06b6d4" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arr-cyan)"/>
+      <text x="660" y="610" font-size="8" fill="#06b6d4" font-family="'JetBrains Mono', monospace">CDC sync</text>
+
+    </svg>
+  </div>
+</section>
+
+<!-- ===== 1.3 COMPONENT DESCRIPTIONS ===== -->
+<section class="section">
+  <h2 class="section-title">元件與服務說明 Component Descriptions</h2>
+  <p class="section-subtitle">各元件的職責、互動方式與擴展策略</p>
+
+  <div class="comp-grid">
+
+    <!-- Content Creators -->
+    <div class="comp-card" style="--c:var(--client)">
+      <style>.comp-card[style*="--client"]::before{background:var(--client)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#eff6ff;color:var(--client)">🎬</div>
+        <div><div class="comp-name">Content Creators</div><div class="comp-role">用戶端 — 內容上傳者</div></div>
+      </div>
+      <p class="comp-desc">影片上傳者透過客戶端（Web / App）將原始影片檔案上傳至平台。</p>
+      <ul class="comp-bullets">
+        <li>使用 presigned URL 直接上傳至 S3，減少伺服器負擔</li>
+        <li>支援斷點續傳（resumable upload）提升可靠性</li>
+        <li>上傳後觸發 Processing Queue 進行轉碼</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Web</span><span class="comp-tag">Mobile App</span><span class="comp-tag">tus.io</span></div>
+    </div>
+
+    <!-- Viewers -->
+    <div class="comp-card" style="--c:var(--client)">
+      <style>.comp-card:nth-child(2)::before{background:var(--client)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#eff6ff;color:var(--client)">👁️</div>
+        <div><div class="comp-name">Viewers</div><div class="comp-role">用戶端 — 觀看者</div></div>
+      </div>
+      <p class="comp-desc">觀看者從 CDN 邊緣節點取得影片串流，享受低延遲播放體驗。</p>
+      <ul class="comp-bullets">
+        <li>使用 ABR（Adaptive Bitrate）自動切換解析度</li>
+        <li>搜尋請求走 Search Service → Elasticsearch</li>
+        <li>影片 metadata 由 View Video Service 經 Cache 取得</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">HLS / DASH</span><span class="comp-tag">Multi-device</span></div>
+    </div>
+
+    <!-- Load Balancer -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(3)::before{background:var(--lb)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#f5f3ff;color:var(--lb)">⚖️</div>
+        <div><div class="comp-name">Load Balancer</div><div class="comp-role">L7 負載均衡器</div></div>
+      </div>
+      <p class="comp-desc">將請求根據路徑路由到對應的後端服務，並分散流量至多個服務實例。</p>
+      <ul class="comp-bullets">
+        <li>/upload → Upload Video Service</li>
+        <li>/search → Search Service</li>
+        <li>/watch → View Video Service</li>
+        <li>支援健康檢查與自動移除不健康節點</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">NGINX</span><span class="comp-tag">ALB</span><span class="comp-tag">L7 Routing</span></div>
+    </div>
+
+    <!-- Upload Video Service -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(4)::before{background:var(--services)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#ecfdf5;color:var(--services)">📤</div>
+        <div><div class="comp-name">Upload Video Service</div><div class="comp-role">影片上傳服務</div></div>
+      </div>
+      <p class="comp-desc">接收上傳請求，將原始影片存入 Object Store，並將轉碼任務推入 Processing Queue。</p>
+      <ul class="comp-bullets">
+        <li>產生 presigned URL 讓客戶端直傳 S3</li>
+        <li>驗證影片格式、大小限制</li>
+        <li>寫入初始 metadata 記錄</li>
+        <li>水平擴展以應對高峰上傳流量</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Go / Java</span><span class="comp-tag">S3 SDK</span><span class="comp-tag">Kafka Producer</span></div>
+    </div>
+
+    <!-- Video Splitter -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(5)::before{background:var(--services)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#ecfdf5;color:var(--services)">✂️</div>
+        <div><div class="comp-name">Video Splitter</div><div class="comp-role">影片切割器</div></div>
+      </div>
+      <p class="comp-desc">將大型影片切割為較小的 chunk，平行處理加速轉碼流程。</p>
+      <ul class="comp-bullets">
+        <li>依 GOP（Group of Pictures）邊界切割</li>
+        <li>每個 chunk 獨立推入 Processing Queue</li>
+        <li>減少單一轉碼任務的處理時間</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">FFmpeg</span><span class="comp-tag">GOP Splitting</span></div>
+    </div>
+
+    <!-- Search Service -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(6)::before{background:var(--search)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#ecfeff;color:var(--search)">🔍</div>
+        <div><div class="comp-name">Search Service</div><div class="comp-role">搜尋服務</div></div>
+      </div>
+      <p class="comp-desc">處理觀看者的搜尋查詢，呼叫 Elasticsearch 進行全文搜尋與相關性排序。</p>
+      <ul class="comp-bullets">
+        <li>支援模糊搜尋、自動補全、篩選</li>
+        <li>結果依相關性與受歡迎度排序</li>
+        <li>Elasticsearch 透過 CDC 同步 Metadata DB 資料</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Elasticsearch</span><span class="comp-tag">CDC</span><span class="comp-tag">BM25</span></div>
+    </div>
+
+    <!-- View Video Service -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(7)::before{background:var(--services)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#ecfdf5;color:var(--services)">📺</div>
+        <div><div class="comp-name">View Video Service</div><div class="comp-role">影片觀看服務</div></div>
+      </div>
+      <p class="comp-desc">提供影片 metadata、播放 URL、以及推薦清單給觀看者。</p>
+      <ul class="comp-bullets">
+        <li>先查 Cache（Redis），cache miss 再查 Metadata DB</li>
+        <li>回傳 CDN 簽名 URL 供客戶端串流播放</li>
+        <li>記錄觀看歷史與播放進度</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Redis</span><span class="comp-tag">CDN Signed URL</span></div>
+    </div>
+
+    <!-- Processing Queue -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(8)::before{background:var(--queue)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#fef2f2;color:var(--queue)">📬</div>
+        <div><div class="comp-name">Processing Queue</div><div class="comp-role">處理佇列</div></div>
+      </div>
+      <p class="comp-desc">解耦上傳服務與轉碼服務，提供可靠的非同步任務分發。</p>
+      <ul class="comp-bullets">
+        <li>保證 at-least-once 投遞，確保影片不會遺失</li>
+        <li>支援優先級佇列（Premium 用戶優先轉碼）</li>
+        <li>在流量高峰時作為緩衝，防止 Encoder 過載</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Apache Kafka</span><span class="comp-tag">Amazon SQS</span></div>
+    </div>
+
+    <!-- Video Encoder -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(9)::before{background:var(--encoder)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#fff7ed;color:var(--encoder)">🎞️</div>
+        <div><div class="comp-name">Video Encoder</div><div class="comp-role">影片編碼器</div></div>
+      </div>
+      <p class="comp-desc">從 Queue 消費任務，將原始影片轉碼為多種解析度與格式。</p>
+      <ul class="comp-bullets">
+        <li>產生 240p / 360p / 480p / 720p / 1080p / 4K 版本</li>
+        <li>輸出 HLS / DASH segment 供 ABR 串流</li>
+        <li>編碼完成後寫入 Object Store 並更新 Metadata DB</li>
+        <li>GPU 加速轉碼，按需自動擴展 worker 數量</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">FFmpeg</span><span class="comp-tag">H.264/H.265</span><span class="comp-tag">GPU</span></div>
+    </div>
+
+    <!-- Elasticsearch -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(10)::before{background:var(--search)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#ecfeff;color:var(--search)">📇</div>
+        <div><div class="comp-name">Elasticsearch Video API</div><div class="comp-role">全文搜尋引擎</div></div>
+      </div>
+      <p class="comp-desc">儲存影片 metadata 的倒排索引，提供毫秒級全文搜尋能力。</p>
+      <ul class="comp-bullets">
+        <li>透過 CDC（Change Data Capture）從 Metadata DB 同步</li>
+        <li>支援自動補全、模糊搜尋、多語言分詞</li>
+        <li>可依播放次數、評分、上傳時間排序</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Elasticsearch</span><span class="comp-tag">Debezium CDC</span></div>
+    </div>
+
+    <!-- Cache -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(11)::before{background:var(--cache)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#fffbeb;color:var(--cache)">⚡</div>
+        <div><div class="comp-name">Cache</div><div class="comp-role">快取層</div></div>
+      </div>
+      <p class="comp-desc">快取熱門影片 metadata，降低 Metadata DB 讀取壓力。</p>
+      <ul class="comp-bullets">
+        <li>Cache-aside pattern：先查 Cache，miss 再查 DB</li>
+        <li>TTL 設定依影片熱度動態調整</li>
+        <li>熱門影片 cache hit rate 可達 90%+</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">Redis Cluster</span><span class="comp-tag">Cache-Aside</span></div>
+    </div>
+
+    <!-- Object Store -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(12)::before{background:var(--storage)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#eef2ff;color:var(--storage)">🗄️</div>
+        <div><div class="comp-name">Object Store (S3)</div><div class="comp-role">物件儲存</div></div>
+      </div>
+      <p class="comp-desc">儲存原始影片與所有轉碼後的影片 segment，作為 CDN 的 origin。</p>
+      <ul class="comp-bullets">
+        <li>11-9s 的持久性，確保影片不遺失</li>
+        <li>冷熱分層：熱門影片用 S3 Standard，舊影片用 S3 Glacier</li>
+        <li>CDN origin pull 取得影片內容分發到邊緣</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">AWS S3</span><span class="comp-tag">Lifecycle Policies</span></div>
+    </div>
+
+    <!-- Metadata DB -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(13)::before{background:var(--database)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#fdf2f8;color:var(--database)">🗃️</div>
+        <div><div class="comp-name">Metadata DB</div><div class="comp-role">中繼資料庫</div></div>
+      </div>
+      <p class="comp-desc">儲存影片標題、描述、標籤、上傳者、播放次數等結構化資料。</p>
+      <ul class="comp-bullets">
+        <li>讀寫分離：Master 寫入，Read Replica 讀取</li>
+        <li>CDC 同步至 Elasticsearch 以建立搜尋索引</li>
+        <li>可依影片 ID sharding 橫向擴展</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">PostgreSQL</span><span class="comp-tag">Read Replica</span><span class="comp-tag">Sharding</span></div>
+    </div>
+
+    <!-- CDN -->
+    <div class="comp-card">
+      <style>.comp-card:nth-child(14)::before{background:var(--cdn)}</style>
+      <div class="comp-header">
+        <div class="comp-icon" style="background:#f0fdfa;color:var(--cdn)">🌐</div>
+        <div><div class="comp-name">CDN</div><div class="comp-role">內容分發網路</div></div>
+      </div>
+      <p class="comp-desc">將影片快取至全球邊緣節點，讓觀看者從最近的位置取得串流。</p>
+      <ul class="comp-bullets">
+        <li>Cache hit → 直接從邊緣回傳，延遲 &lt; 50ms</li>
+        <li>Cache miss → Origin pull 從 S3 取得並快取</li>
+        <li>目標 cache hit rate &gt; 95%（熱門影片）</li>
+      </ul>
+      <div class="comp-tags"><span class="comp-tag">CloudFront</span><span class="comp-tag">Edge Locations</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== 1.4 REQUEST FLOWS ===== -->
+<section class="section section-alt">
+  <h2 class="section-title">請求流程詳細說明 Request Flows</h2>
+  <p class="section-subtitle">主要讀取、寫入、搜尋路徑的步驟解析</p>
+
+  <div class="flow-tabs">
+    <button class="flow-tab active" onclick="switchFlow('upload', this)">📤 上傳流程 Upload</button>
+    <button class="flow-tab" onclick="switchFlow('view', this)">📺 觀看流程 View</button>
+    <button class="flow-tab" onclick="switchFlow('search', this)">🔍 搜尋流程 Search</button>
+  </div>
+
+  <!-- Upload Flow -->
+  <div id="flow-upload" class="flow-panel active">
+    <div class="flow-steps">
+      <div class="flow-step" data-step="1">
+        <div class="flow-step-title">Content Creator 發起上傳請求</div>
+        <div class="flow-step-desc">客戶端向 <span class="flow-step-tag">Load Balancer</span> 發送 POST /upload 請求，包含影片 metadata（標題、描述、標籤）。LB 將請求路由至 <span class="flow-step-tag">Upload Video Service</span>。</div>
+      </div>
+      <div class="flow-step" data-step="2">
+        <div class="flow-step-title">產生 Presigned URL</div>
+        <div class="flow-step-desc">Upload Video Service 驗證請求後，向 <span class="flow-step-tag">Object Store (S3)</span> 請求一個 presigned URL，並回傳給客戶端。客戶端使用此 URL 直接上傳影片至 S3，避免影片流量經過應用伺服器。</div>
+      </div>
+      <div class="flow-step" data-step="3">
+        <div class="flow-step-title">原始影片寫入 S3</div>
+        <div class="flow-step-desc">客戶端使用 presigned URL 將原始影片直接上傳至 <span class="flow-step-tag">S3</span>。支援 multipart upload 以處理大檔案，並支援斷點續傳。</div>
+      </div>
+      <div class="flow-step" data-step="4">
+        <div class="flow-step-title">觸發轉碼任務</div>
+        <div class="flow-step-desc">上傳完成後，Upload Video Service 將任務推入 <span class="flow-step-tag">Processing Queue</span>。同時 <span class="flow-step-tag">Video Splitter</span> 可將影片依 GOP 邊界切割為多個 chunk，每個 chunk 獨立入隊。</div>
+      </div>
+      <div class="flow-step" data-step="5">
+        <div class="flow-step-title">Video Encoder 消費任務並轉碼</div>
+        <div class="flow-step-desc"><span class="flow-step-tag">Video Encoder</span> 從 Queue 取出任務，將每個 chunk 轉碼為多種解析度（240p ~ 4K）與 HLS / DASH segment。GPU 加速處理。</div>
+      </div>
+      <div class="flow-step" data-step="6">
+        <div class="flow-step-title">儲存編碼後的影片並更新 Metadata</div>
+        <div class="flow-step-desc">編碼完成的 segment 寫入 <span class="flow-step-tag">Object Store (S3)</span>。同時更新 <span class="flow-step-tag">Metadata DB</span>，標記影片為「已完成」並記錄各解析度的 manifest URL。</div>
+      </div>
+      <div class="flow-step" data-step="7">
+        <div class="flow-step-title">CDC 同步至 Elasticsearch</div>
+        <div class="flow-step-desc">Metadata DB 的變更透過 CDC（Change Data Capture）自動同步至 <span class="flow-step-tag">Elasticsearch</span>，使新影片可被搜尋。最終一致性延遲約數秒。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Flow -->
+  <div id="flow-view" class="flow-panel">
+    <div class="flow-steps">
+      <div class="flow-step" data-step="1">
+        <div class="flow-step-title">Viewer 請求影片頁面</div>
+        <div class="flow-step-desc">觀看者點擊影片，客戶端向 <span class="flow-step-tag">Load Balancer</span> 發送 GET /watch/{videoId} 請求，路由至 <span class="flow-step-tag">View Video Service</span>。</div>
+      </div>
+      <div class="flow-step" data-step="2">
+        <div class="flow-step-title">查詢 Cache（Redis）</div>
+        <div class="flow-step-desc">View Video Service 先查 <span class="flow-step-tag">Cache</span>（Redis）。熱門影片的 cache hit rate 可達 90%+，直接回傳 metadata 與 CDN 簽名 URL。</div>
+      </div>
+      <div class="flow-step" data-step="3">
+        <div class="flow-step-title">Cache Miss → 查詢 Metadata DB</div>
+        <div class="flow-step-desc">若 cache miss，向 <span class="flow-step-tag">Metadata DB</span> Read Replica 查詢影片資訊，並將結果寫回 Cache 供後續請求使用。</div>
+      </div>
+      <div class="flow-step" data-step="4">
+        <div class="flow-step-title">回傳 CDN 簽名 URL</div>
+        <div class="flow-step-desc">將影片 metadata 與 CDN 簽名播放 URL 回傳給客戶端。簽名 URL 具有時效性，防止未授權存取。</div>
+      </div>
+      <div class="flow-step" data-step="5">
+        <div class="flow-step-title">客戶端從 CDN 串流播放</div>
+        <div class="flow-step-desc">客戶端使用 HLS / DASH 協議從 <span class="flow-step-tag">CDN</span> 邊緣節點取得影片 segment。ABR 算法根據網路狀況自動切換解析度。CDN cache hit → 延遲 &lt; 50ms。</div>
+      </div>
+      <div class="flow-step" data-step="6">
+        <div class="flow-step-title">CDN Cache Miss → Origin Pull</div>
+        <div class="flow-step-desc">若 CDN 無此 segment 快取，從 <span class="flow-step-tag">Object Store (S3)</span> 拉取（origin pull），快取後回傳給觀看者。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Flow -->
+  <div id="flow-search" class="flow-panel">
+    <div class="flow-steps">
+      <div class="flow-step" data-step="1">
+        <div class="flow-step-title">Viewer 輸入搜尋關鍵字</div>
+        <div class="flow-step-desc">觀看者在搜尋欄輸入關鍵字，客戶端向 <span class="flow-step-tag">Load Balancer</span> 發送 GET /search?q=keyword 請求。</div>
+      </div>
+      <div class="flow-step" data-step="2">
+        <div class="flow-step-title">路由至 Search Service</div>
+        <div class="flow-step-desc">LB 將請求路由至 <span class="flow-step-tag">Search Service</span>，Service 解析查詢參數、處理分詞與過濾條件。</div>
+      </div>
+      <div class="flow-step" data-step="3">
+        <div class="flow-step-title">查詢 Elasticsearch</div>
+        <div class="flow-step-desc">Search Service 向 <span class="flow-step-tag">Elasticsearch Video API</span> 發送搜尋請求，利用倒排索引進行全文匹配，結合 BM25 排序算法與自訂加權。</div>
+      </div>
+      <div class="flow-step" data-step="4">
+        <div class="flow-step-title">排序與回傳結果</div>
+        <div class="flow-step-desc">搜尋結果依相關性（BM25）、播放次數、新鮮度加權排序，回傳影片列表（含縮圖 URL、標題、描述摘要）給客戶端。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 1.5 ALGORITHM OVERVIEW ===== -->
+<section class="section">
+  <h2 class="section-title">演算法概覽 Algorithm Overview</h2>
+  <p class="section-subtitle">系統中使用的關鍵演算法與模式 — 詳情見 Deep Dive 頁</p>
+
+  <div class="algo-grid">
+
+    <div class="algo-card">
+      <span class="algo-badge">VIDEO ENCODING</span>
+      <h4>Adaptive Bitrate Streaming (ABR)</h4>
+      <div class="algo-sub">自適應碼率串流</div>
+      <p>根據用戶網路狀況動態切換影片解析度，在畫質與流暢度之間取得最佳平衡。</p>
+      <div class="algo-proscons">
+        <div class="algo-pros">
+          <div class="algo-pros-title">✓ PROS</div>
+          <ul><li>自動適應網路波動</li><li>減少 buffering</li><li>最佳化觀看體驗</li></ul>
+        </div>
+        <div class="algo-cons">
+          <div class="algo-cons-title">✗ CONS</div>
+          <ul><li>需產生多種解析度</li><li>儲存成本增加 3-5x</li><li>轉碼時間較長</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="algo-card">
+      <span class="algo-badge">CACHING</span>
+      <h4>Cache-Aside Pattern</h4>
+      <div class="algo-sub">旁路快取模式</div>
+      <p>應用程式先查 Cache，miss 時查 DB 並回填 Cache，適合讀多寫少的場景。</p>
+      <div class="algo-proscons">
+        <div class="algo-pros">
+          <div class="algo-pros-title">✓ PROS</div>
+          <ul><li>實作簡單直觀</li><li>DB 與 Cache 解耦</li><li>Cache 故障時可降級至 DB</li></ul>
+        </div>
+        <div class="algo-cons">
+          <div class="algo-cons-title">✗ CONS</div>
+          <ul><li>首次請求較慢</li><li>需處理 Cache 一致性</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="algo-card">
+      <span class="algo-badge">SEARCH</span>
+      <h4>BM25 + Boosting</h4>
+      <div class="algo-sub">全文搜尋排序算法</div>
+      <p>Elasticsearch 預設的文字相關性排序算法，結合自訂 boost 因子（播放次數、新鮮度）。</p>
+      <div class="algo-proscons">
+        <div class="algo-pros">
+          <div class="algo-pros-title">✓ PROS</div>
+          <ul><li>業界標準，成熟穩定</li><li>處理詞頻與文檔長度</li><li>可結合自訂排序因子</li></ul>
+        </div>
+        <div class="algo-cons">
+          <div class="algo-cons-title">✗ CONS</div>
+          <ul><li>語義理解有限</li><li>需配合分詞器調優</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="algo-card">
+      <span class="algo-badge">DATA SYNC</span>
+      <h4>Change Data Capture (CDC)</h4>
+      <div class="algo-sub">資料變更捕獲</div>
+      <p>監聽 Metadata DB 的 WAL log，將變更即時同步至 Elasticsearch，確保搜尋索引最終一致。</p>
+      <div class="algo-proscons">
+        <div class="algo-pros">
+          <div class="algo-pros-title">✓ PROS</div>
+          <ul><li>低延遲同步（秒級）</li><li>不影響 DB 寫入性能</li><li>保證順序一致性</li></ul>
+        </div>
+        <div class="algo-cons">
+          <div class="algo-cons-title">✗ CONS</div>
+          <ul><li>額外基礎設施成本</li><li>Schema 變更需維護</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="algo-card">
+      <span class="algo-badge">SPLITTING</span>
+      <h4>GOP-based Video Splitting</h4>
+      <div class="algo-sub">基於 GOP 的影片切割</div>
+      <p>依 GOP（Group of Pictures）邊界切割影片，確保每個 chunk 可獨立解碼，支援平行轉碼。</p>
+      <div class="algo-proscons">
+        <div class="algo-pros">
+          <div class="algo-pros-title">✓ PROS</div>
+          <ul><li>平行轉碼加速 3-10x</li><li>chunk 可獨立重試</li></ul>
+        </div>
+        <div class="algo-cons">
+          <div class="algo-cons-title">✗ CONS</div>
+          <ul><li>需精確定位 GOP 邊界</li><li>合併時需處理接縫</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="algo-card">
+      <span class="algo-badge">LOAD BALANCING</span>
+      <h4>Consistent Hashing</h4>
+      <div class="algo-sub">一致性雜湊</div>
+      <p>用於 Cache 層的分片策略，當節點增減時只需重新分配最少量的 key。</p>
+      <div class="algo-proscons">
+        <div class="algo-pros">
+          <div class="algo-pros-title">✓ PROS</div>
+          <ul><li>節點變動影響最小</li><li>負載均勻分散</li></ul>
+        </div>
+        <div class="algo-cons">
+          <div class="algo-cons-title">✗ CONS</div>
+          <ul><li>實作複雜度高</li><li>熱點問題需虛擬節點</li></ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== 1.6 DESIGN DECISIONS ===== -->
+<section class="section section-alt">
+  <h2 class="section-title">關鍵設計決策 Design Decisions</h2>
+  <p class="section-subtitle">為何這樣設計？背後的 trade-off 分析</p>
+
+  <div class="decision-grid">
+    <div class="decision-card">
+      <h4>🔀 Presigned URL 直傳</h4>
+      <p>影片直接從客戶端上傳到 S3，而非經過應用伺服器。原因：影片檔案巨大（數百 MB ~ 數 GB），經由伺服器中轉會消耗大量頻寬和 CPU，且成為瓶頸。Presigned URL 讓上傳流量直通 S3，伺服器只處理輕量的 metadata。</p>
+    </div>
+    <div class="decision-card">
+      <h4>📬 Message Queue 解耦</h4>
+      <p>Upload Service 與 Video Encoder 之間透過 Queue 解耦。好處：上傳完成後立即回傳成功，轉碼在背景非同步進行；Queue 作為緩衝，在高峰時段保護 Encoder 不被壓垮；失敗任務可自動重試。</p>
+    </div>
+    <div class="decision-card">
+      <h4>✂️ Video Splitting 平行轉碼</h4>
+      <p>大型影片切割後平行處理，而非整段轉碼。一部 2 小時影片順序轉碼可能需 20 分鐘；切割為 120 個 1 分鐘 chunk 後，可分配到多個 Encoder 同時處理，總時間可壓縮至 2-3 分鐘。</p>
+    </div>
+    <div class="decision-card">
+      <h4>🌐 CDN 邊緣快取</h4>
+      <p>影片串流走 CDN 而非直接從 S3。原因：觀看者遍布全球，直接從 S3 取得延遲 100-500ms；CDN 邊緣快取將延遲降至 &lt; 50ms。熱門影片的 CDN hit rate &gt; 95%，大幅降低 S3 出口流量費用。</p>
+    </div>
+    <div class="decision-card">
+      <h4>⚡ Cache-Aside + Read Replica</h4>
+      <p>讀多寫少（讀寫比約 100:1），使用 Redis Cache 吸收 90%+ 讀取流量，剩餘走 DB Read Replica。Master 僅處理寫入。這樣 DB 壓力大幅降低，可用更少的硬體支撐更大的流量。</p>
+    </div>
+    <div class="decision-card">
+      <h4>🔍 CDC 同步至 Elasticsearch</h4>
+      <p>選擇 CDC 而非 dual-write（同時寫 DB + ES）。原因：dual-write 在任一方失敗時會造成資料不一致；CDC 監聽 DB WAL 保證順序與一致性，且不增加寫入路徑的延遲。代價是最終一致性（延遲數秒）。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 1.7 CAPACITY ESTIMATION ===== -->
+<section class="section">
+  <h2 class="section-title">頻寬與容量估算 Capacity Estimation</h2>
+  <p class="section-subtitle">基於 100M MAU 的流量與儲存需求推算</p>
+
+  <div class="cap-grid">
+    <div class="cap-card">
+      <div class="cap-value">100M</div>
+      <div class="cap-unit">MAU</div>
+      <div class="cap-label">月活躍用戶</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">~5M</div>
+      <div class="cap-unit">DAU</div>
+      <div class="cap-label">日活躍用戶（5% MAU）</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">100:1</div>
+      <div class="cap-unit">Read:Write</div>
+      <div class="cap-label">讀寫比</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">~58K</div>
+      <div class="cap-unit">QPS</div>
+      <div class="cap-label">讀取 QPS（高峰 2x）</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">~580</div>
+      <div class="cap-unit">QPS</div>
+      <div class="cap-label">上傳 QPS</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">~150 TB</div>
+      <div class="cap-unit">/day</div>
+      <div class="cap-label">每日新增原始影片</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">~750 TB</div>
+      <div class="cap-unit">/day</div>
+      <div class="cap-label">含轉碼後全部版本</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-value">~270 PB</div>
+      <div class="cap-unit">/year</div>
+      <div class="cap-label">年儲存量</div>
+    </div>
+  </div>
+
+  <table class="cap-table" style="max-width:800px;">
+    <thead>
+      <tr><th>估算項目</th><th>計算</th><th>結果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>DAU</td><td>100M × 5%</td><td class="mono">5,000,000</td></tr>
+      <tr><td>每日觀看次數</td><td>5M DAU × 1 video/day avg</td><td class="mono">5,000,000 views/day</td></tr>
+      <tr><td>讀取 QPS</td><td>5M / 86400</td><td class="mono">~58 QPS (peak ~116)</td></tr>
+      <tr><td>每日上傳數</td><td>5M × 1% creators × 10%</td><td class="mono">~50,000 uploads/day</td></tr>
+      <tr><td>上傳 QPS</td><td>50K / 86400</td><td class="mono">~0.58 QPS (peak ~1.2)</td></tr>
+      <tr><td>平均影片大小（原始）</td><td>10 min × 50 MB/min</td><td class="mono">~500 MB</td></tr>
+      <tr><td>每日原始儲存</td><td>50K × 500 MB</td><td class="mono">~25 TB/day</td></tr>
+      <tr><td>轉碼後儲存（5x）</td><td>25 TB × 5 resolutions</td><td class="mono">~125 TB/day</td></tr>
+      <tr><td>每日出口頻寬（CDN 前）</td><td>5M views × 500 MB avg</td><td class="mono">~2.5 PB/day</td></tr>
+      <tr><td>CDN hit rate 95%</td><td>S3 出口 = 2.5 PB × 5%</td><td class="mono">~125 TB/day from S3</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div><!-- end page-inner -->
+</div><!-- end page-overview -->
+
+<!-- ==================== PAGE 2: DEEP DIVE ==================== -->
+<div id="page-deepdive" class="page">
+<div class="page-inner narrow">
+
+<!-- ===== 2.1 TABLE OF CONTENTS ===== -->
+<section class="dd-section" id="dd-toc">
+  <h2 class="dd-h2">📚 Deep Dive 目錄</h2>
+  <p class="dd-sub">點擊跳轉至各章節 — Click to navigate</p>
+  <div class="dd-toc-grid">
+    <a href="#dd-why" class="dd-toc-item"><span class="dd-toc-num">01</span>為何需要此架構模式</a>
+    <a href="#dd-abr" class="dd-toc-item"><span class="dd-toc-num">02</span>ABR 自適應碼率串流</a>
+    <a href="#dd-encoding" class="dd-toc-item"><span class="dd-toc-num">03</span>影片編碼 Pipeline</a>
+    <a href="#dd-caching" class="dd-toc-item"><span class="dd-toc-num">04</span>快取策略深度解析</a>
+    <a href="#dd-search" class="dd-toc-item"><span class="dd-toc-num">05</span>搜尋引擎實作</a>
+    <a href="#dd-distributed" class="dd-toc-item"><span class="dd-toc-num">06</span>分散式考量</a>
+    <a href="#dd-storage" class="dd-toc-item"><span class="dd-toc-num">07</span>儲存與資料庫實作</a>
+    <a href="#dd-api" class="dd-toc-item"><span class="dd-toc-num">08</span>API 設計與協議</a>
+    <a href="#dd-ops" class="dd-toc-item"><span class="dd-toc-num">09</span>運營策略</a>
+    <a href="#dd-interview" class="dd-toc-item"><span class="dd-toc-num">10</span>面試題庫 Q&amp;A</a>
+  </div>
+</section>
+
+<!-- ===== 2.2 WHY THIS PATTERN ===== -->
+<section class="dd-section" id="dd-why">
+  <h2 class="dd-h2">01 — 為何需要此架構模式</h2>
+  <p class="dd-sub">Core Concept: Why a Video Streaming Architecture?</p>
+
+  <div class="dd-info concept">
+    <strong>💡 Concept</strong>
+    影片串流平台的核心挑戰在於：影片是極大的非結構化資料（一部 1080p 影片每分鐘約 150 MB），必須快速上傳、轉碼為多種格式、並以低延遲串流到全球用戶。這需要一套專門的寫入 pipeline（上傳 → 切割 → 轉碼 → 儲存）與讀取 pipeline（CDN → Cache → Metadata DB），兩者完全解耦。
+  </div>
+
+  <p class="dd-text">一般的 CRUD 應用無法承受影片串流的流量特性。讀取量遠大於寫入（100:1），但寫入的資料量極為龐大（單次上傳可達數 GB）。此外影片需要被轉碼為多種解析度以支援不同裝置與網路環境。這些特性驅動了以下設計模式的採用：</p>
+
+  <div class="dd-kp-grid">
+    <div class="dd-kp-card">
+      <h4>🔀 讀寫分離</h4>
+      <p>上傳路徑（寫入重、計算重）與觀看路徑（讀取重、頻寬重）使用完全不同的服務和基礎設施，互不影響。</p>
+    </div>
+    <div class="dd-kp-card">
+      <h4>📬 非同步處理</h4>
+      <p>影片轉碼是 CPU/GPU 密集型任務，透過 Message Queue 將其從同步請求路徑中移除，上傳者無需等待轉碼完成。</p>
+    </div>
+    <div class="dd-kp-card">
+      <h4>🌐 邊緣分發</h4>
+      <p>影片資料量大，全球用戶需要低延遲存取。CDN 邊緣快取是唯一可行的方案，將 95%+ 讀取請求在邊緣回應。</p>
+    </div>
+    <div class="dd-kp-card">
+      <h4>📐 水平擴展</h4>
+      <p>每個服務獨立擴展：Upload Service 依上傳量、Encoder 依轉碼隊列深度、View Service 依讀取 QPS，各自動態伸縮。</p>
+    </div>
+  </div>
+
+  <div class="dd-info important">
+    <strong>⚠️ Important</strong>
+    在面試中，務必先釐清 functional vs non-functional requirements，再開始畫架構圖。本系統的三大功能需求（上傳、搜尋、觀看）各自有獨立的資料流路徑，這是架構設計的出發點。
+  </div>
+</section>
+
+<!-- ===== 2.3 ABR DEEP DIVE ===== -->
+<section class="dd-section-alt" id="dd-abr">
+  <h2 class="dd-h2">02 — Adaptive Bitrate Streaming (ABR)</h2>
+  <p class="dd-sub">自適應碼率串流 — 如何在畫質與流暢度之間取得平衡</p>
+
+  <h3 class="dd-h3">工作原理</h3>
+  <p class="dd-text">ABR 的核心思想是：將一部影片預先編碼為多種碼率（bitrate）版本，每個版本再切割為固定時長的小段（segment, 通常 2-10 秒）。客戶端播放器根據當前網路頻寬動態選擇下一個 segment 的碼率版本。</p>
+
+  <!-- ABR SVG Diagram -->
+  <div class="dd-svg-wrap">
+    <svg viewBox="0 0 750 320" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <defs><filter id="s2" x="-4%" y="-4%" width="108%" height="112%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.06"/></filter></defs>
+      <!-- Source video -->
+      <g filter="url(#s2)"><rect x="20" y="120" width="120" height="60" rx="8" fill="#fff" stroke="#6366f1" stroke-width="1.5"/><rect x="20" y="120" width="4" height="60" rx="2" fill="#6366f1"/><text x="80" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Source</text><text x="80" y="162" text-anchor="middle" font-size="8" fill="#94a3b8">1080p master</text></g>
+      <!-- Arrow -->
+      <line x1="140" y1="150" x2="190" y2="150" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+      <text x="165" y="143" text-anchor="middle" font-size="8" fill="#94a3b8">encode</text>
+      <!-- Multiple bitrates -->
+      <g filter="url(#s2)"><rect x="200" y="30" width="130" height="36" rx="6" fill="#fff" stroke="#f97316" stroke-width="1.2"/><text x="265" y="52" text-anchor="middle" font-size="10" font-weight="500" fill="#1e293b">4K — 16 Mbps</text></g>
+      <g filter="url(#s2)"><rect x="200" y="76" width="130" height="36" rx="6" fill="#fff" stroke="#f97316" stroke-width="1.2"/><text x="265" y="98" text-anchor="middle" font-size="10" font-weight="500" fill="#1e293b">1080p — 5 Mbps</text></g>
+      <g filter="url(#s2)"><rect x="200" y="122" width="130" height="36" rx="6" fill="#fff" stroke="#f97316" stroke-width="1.2"/><text x="265" y="144" text-anchor="middle" font-size="10" font-weight="500" fill="#1e293b">720p — 2.5 Mbps</text></g>
+      <g filter="url(#s2)"><rect x="200" y="168" width="130" height="36" rx="6" fill="#fff" stroke="#f97316" stroke-width="1.2"/><text x="265" y="190" text-anchor="middle" font-size="10" font-weight="500" fill="#1e293b">480p — 1 Mbps</text></g>
+      <g filter="url(#s2)"><rect x="200" y="214" width="130" height="36" rx="6" fill="#fff" stroke="#f97316" stroke-width="1.2"/><text x="265" y="236" text-anchor="middle" font-size="10" font-weight="500" fill="#1e293b">240p — 400 Kbps</text></g>
+      <!-- Arrow to segments -->
+      <line x1="330" y1="140" x2="380" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+      <text x="355" y="133" text-anchor="middle" font-size="8" fill="#94a3b8">segment</text>
+      <!-- Segments -->
+      <g filter="url(#s2)"><rect x="390" y="90" width="140" height="100" rx="8" fill="#fff" stroke="#10b981" stroke-width="1.5"/><rect x="390" y="90" width="4" height="100" rx="2" fill="#10b981"/><text x="460" y="115" text-anchor="middle" font-size="10" font-weight="600" fill="#1e293b">HLS / DASH</text><text x="460" y="132" text-anchor="middle" font-size="9" fill="#94a3b8">Segments</text><text x="460" y="150" text-anchor="middle" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono', monospace">seg_001.ts (2-10s)</text><text x="460" y="164" text-anchor="middle" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono', monospace">seg_002.ts (2-10s)</text><text x="460" y="178" text-anchor="middle" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono', monospace">seg_003.ts ...</text></g>
+      <!-- Arrow to CDN -->
+      <line x1="530" y1="140" x2="580" y2="140" stroke="#14b8a6" stroke-width="1.5" marker-end="url(#arr-teal)"/>
+      <!-- CDN -->
+      <g filter="url(#s2)"><rect x="590" y="90" width="120" height="100" rx="8" fill="#fff" stroke="#14b8a6" stroke-width="1.5"/><rect x="590" y="90" width="4" height="100" rx="2" fill="#14b8a6"/><text x="650" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">CDN Edge</text><text x="650" y="140" text-anchor="middle" font-size="9" fill="#94a3b8">Viewer requests</text><text x="650" y="158" text-anchor="middle" font-size="9" fill="#94a3b8">next segment</text><text x="650" y="176" text-anchor="middle" font-size="9" fill="#00a8e1" font-weight="500">ABR selects</text></g>
+      <!-- Manifest note -->
+      <g filter="url(#s2)"><rect x="390" y="230" width="140" height="50" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1"/><text x="460" y="252" text-anchor="middle" font-size="9" font-weight="600" fill="#d97706">📄 Manifest File</text><text x="460" y="268" text-anchor="middle" font-size="8" fill="#94a3b8">.m3u8 / .mpd</text></g>
+      <line x1="460" y1="190" x2="460" y2="230" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3"/>
+    </svg>
+  </div>
+
+  <h3 class="dd-h3">HLS vs DASH 協議比較</h3>
+  <table class="dd-compare-table">
+    <thead><tr><th>特性</th><th>HLS (HTTP Live Streaming)</th><th>DASH (Dynamic Adaptive Streaming)</th></tr></thead>
+    <tbody>
+      <tr><td>開發者</td><td>Apple</td><td>MPEG (開放標準)</td></tr>
+      <tr><td>Manifest 格式</td><td class="mono">.m3u8</td><td class="mono">.mpd (XML)</td></tr>
+      <tr><td>Segment 格式</td><td class="mono">.ts / .fmp4</td><td class="mono">.m4s / .mp4</td></tr>
+      <tr><td>Segment 時長</td><td>6s (預設)</td><td>2-10s (可配置)</td></tr>
+      <tr><td>瀏覽器支援</td><td class="good">iOS/Safari 原生；其他需 hls.js</td><td class="good">大多數瀏覽器透過 MSE</td></tr>
+      <tr><td>DRM 支援</td><td>FairPlay</td><td>Widevine / PlayReady</td></tr>
+      <tr><td>延遲</td><td class="mid">較高（LL-HLS 改善中）</td><td class="good">較低</td></tr>
+      <tr><td>業界採用</td><td>Apple 生態系為主</td><td>YouTube, Netflix 使用</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="dd-h3">ABR 算法實作</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>abr_algorithm.py</span><span class="dd-code-lang">Python</span></div>
+    <div class="dd-code-body"><pre><span class="kw">class</span> <span class="type">ABRController</span>:
+    <span class="cm">"""Buffer-based ABR algorithm (similar to Netflix's approach)"""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>, bitrate_levels):
+        <span class="kw">self</span>.bitrate_levels = <span class="fn">sorted</span>(bitrate_levels)  <span class="cm"># [400, 1000, 2500, 5000, 16000] kbps</span>
+        <span class="kw">self</span>.buffer_low = <span class="num">5</span>     <span class="cm"># seconds — switch down below this</span>
+        <span class="kw">self</span>.buffer_high = <span class="num">30</span>   <span class="cm"># seconds — safe to switch up</span>
+        <span class="kw">self</span>.current_idx = <span class="num">0</span>
+
+    <span class="kw">def</span> <span class="fn">select_bitrate</span>(<span class="kw">self</span>, buffer_level, measured_bandwidth):
+        <span class="cm"># Step 1: Emergency — buffer critically low</span>
+        <span class="kw">if</span> buffer_level &lt; <span class="kw">self</span>.buffer_low:
+            <span class="kw">self</span>.current_idx = <span class="num">0</span>  <span class="cm"># Drop to lowest quality</span>
+            <span class="kw">return</span> <span class="kw">self</span>.bitrate_levels[<span class="num">0</span>]
+
+        <span class="cm"># Step 2: Find highest bitrate within bandwidth budget</span>
+        safe_bitrate = measured_bandwidth * <span class="num">0.8</span>  <span class="cm"># 80% safety margin</span>
+        max_viable = <span class="num">0</span>
+        <span class="kw">for</span> i, br <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="kw">self</span>.bitrate_levels):
+            <span class="kw">if</span> br &lt;= safe_bitrate:
+                max_viable = i
+
+        <span class="cm"># Step 3: Gradual step-up / aggressive step-down</span>
+        <span class="kw">if</span> max_viable &gt; <span class="kw">self</span>.current_idx <span class="kw">and</span> buffer_level &gt; <span class="kw">self</span>.buffer_high:
+            <span class="kw">self</span>.current_idx = <span class="fn">min</span>(<span class="kw">self</span>.current_idx + <span class="num">1</span>, max_viable)
+        <span class="kw">elif</span> max_viable &lt; <span class="kw">self</span>.current_idx:
+            <span class="kw">self</span>.current_idx = max_viable  <span class="cm"># Drop immediately</span>
+
+        <span class="kw">return</span> <span class="kw">self</span>.bitrate_levels[<span class="kw">self</span>.current_idx]</pre></div>
+  </div>
+
+  <div class="dd-info tip">
+    <strong>💡 Tip</strong>
+    Netflix 的 ABR 主要基於 buffer 水位（buffer-based），而 YouTube 偏向 throughput-based。Buffer-based 對突發性頻寬波動更穩定，throughput-based 對穩定網路反應更快。實務上常結合兩者。
+  </div>
+</section>
+
+<!-- ===== 2.4 ENCODING PIPELINE ===== -->
+<section class="dd-section" id="dd-encoding">
+  <h2 class="dd-h2">03 — 影片編碼 Pipeline</h2>
+  <p class="dd-sub">從原始影片到可串流 segment 的完整流程</p>
+
+  <h3 class="dd-h3">GOP-based Splitting 原理</h3>
+  <p class="dd-text">GOP (Group of Pictures) 是影片壓縮的基本單位。一個 GOP 以 I-frame（關鍵幀, 完整畫面）開頭，後續跟著 P-frame（預測幀）和 B-frame（雙向預測幀）。切割影片時必須在 GOP 邊界切割，否則 chunk 無法獨立解碼。</p>
+
+  <div class="dd-svg-wrap">
+    <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <!-- GOP 1 -->
+      <rect x="20" y="40" width="200" height="70" rx="6" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="120" y="32" text-anchor="middle" font-size="9" font-weight="600" fill="#6366f1">GOP 1</text>
+      <rect x="30" y="55" width="36" height="40" rx="4" fill="#ef4444" opacity="0.15" stroke="#ef4444" stroke-width="1"/><text x="48" y="79" text-anchor="middle" font-size="10" font-weight="700" fill="#ef4444">I</text>
+      <rect x="72" y="55" width="28" height="40" rx="4" fill="#3b82f6" opacity="0.1" stroke="#3b82f6" stroke-width="1"/><text x="86" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">P</text>
+      <rect x="106" y="55" width="28" height="40" rx="4" fill="#10b981" opacity="0.1" stroke="#10b981" stroke-width="1"/><text x="120" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">B</text>
+      <rect x="140" y="55" width="28" height="40" rx="4" fill="#10b981" opacity="0.1" stroke="#10b981" stroke-width="1"/><text x="154" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">B</text>
+      <rect x="174" y="55" width="28" height="40" rx="4" fill="#3b82f6" opacity="0.1" stroke="#3b82f6" stroke-width="1"/><text x="188" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">P</text>
+      <!-- cut marker -->
+      <line x1="228" y1="35" x2="228" y2="120" stroke="#f97316" stroke-width="2" stroke-dasharray="3,3"/><text x="228" y="138" text-anchor="middle" font-size="8" font-weight="600" fill="#f97316">✂ CUT</text>
+      <!-- GOP 2 -->
+      <rect x="240" y="40" width="200" height="70" rx="6" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="340" y="32" text-anchor="middle" font-size="9" font-weight="600" fill="#6366f1">GOP 2</text>
+      <rect x="250" y="55" width="36" height="40" rx="4" fill="#ef4444" opacity="0.15" stroke="#ef4444" stroke-width="1"/><text x="268" y="79" text-anchor="middle" font-size="10" font-weight="700" fill="#ef4444">I</text>
+      <rect x="292" y="55" width="28" height="40" rx="4" fill="#3b82f6" opacity="0.1" stroke="#3b82f6" stroke-width="1"/><text x="306" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">P</text>
+      <rect x="326" y="55" width="28" height="40" rx="4" fill="#10b981" opacity="0.1" stroke="#10b981" stroke-width="1"/><text x="340" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">B</text>
+      <rect x="360" y="55" width="28" height="40" rx="4" fill="#10b981" opacity="0.1" stroke="#10b981" stroke-width="1"/><text x="374" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">B</text>
+      <rect x="394" y="55" width="28" height="40" rx="4" fill="#3b82f6" opacity="0.1" stroke="#3b82f6" stroke-width="1"/><text x="408" y="79" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">P</text>
+      <!-- Legend -->
+      <rect x="490" y="45" width="16" height="16" rx="3" fill="#ef4444" opacity="0.2" stroke="#ef4444" stroke-width="1"/><text x="514" y="57" font-size="9" fill="#64748b">I-frame (keyframe)</text>
+      <rect x="490" y="70" width="16" height="16" rx="3" fill="#3b82f6" opacity="0.15" stroke="#3b82f6" stroke-width="1"/><text x="514" y="82" font-size="9" fill="#64748b">P-frame (predicted)</text>
+      <rect x="490" y="95" width="16" height="16" rx="3" fill="#10b981" opacity="0.15" stroke="#10b981" stroke-width="1"/><text x="514" y="107" font-size="9" fill="#64748b">B-frame (bidirectional)</text>
+    </svg>
+  </div>
+
+  <h3 class="dd-h3">FFmpeg 轉碼指令</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>encode_pipeline.sh</span><span class="dd-code-lang">Bash</span></div>
+    <div class="dd-code-body"><pre><span class="cm">#!/bin/bash</span>
+<span class="cm"># Multi-resolution encoding pipeline for HLS</span>
+
+<span class="kw">INPUT</span>=<span class="str">"raw_video.mp4"</span>
+<span class="kw">OUTPUT_DIR</span>=<span class="str">"./output"</span>
+
+<span class="cm"># Step 1: Split video at GOP boundaries</span>
+ffmpeg -i <span class="str">"$INPUT"</span> -c copy -f segment \
+  -segment_time <span class="num">10</span> \
+  -reset_timestamps <span class="num">1</span> \
+  <span class="str">"$OUTPUT_DIR/chunk_%03d.mp4"</span>
+
+<span class="cm"># Step 2: Encode each chunk at multiple resolutions</span>
+<span class="kw">for</span> chunk <span class="kw">in</span> <span class="str">"$OUTPUT_DIR"</span>/chunk_*.mp4; <span class="kw">do</span>
+  base=$(<span class="fn">basename</span> <span class="str">"$chunk"</span> .mp4)
+
+  <span class="cm"># 1080p @ 5 Mbps</span>
+  ffmpeg -i <span class="str">"$chunk"</span> -vf <span class="str">"scale=1920:1080"</span> \
+    -c:v libx264 -b:v <span class="num">5</span>M -preset fast \
+    -c:a aac -b:a <span class="num">128</span>k \
+    -hls_time <span class="num">6</span> -hls_list_size <span class="num">0</span> \
+    <span class="str">"$OUTPUT_DIR/${base}_1080p.m3u8"</span>
+
+  <span class="cm"># 720p @ 2.5 Mbps</span>
+  ffmpeg -i <span class="str">"$chunk"</span> -vf <span class="str">"scale=1280:720"</span> \
+    -c:v libx264 -b:v <span class="num">2.5</span>M -preset fast \
+    -c:a aac -b:a <span class="num">96</span>k \
+    -hls_time <span class="num">6</span> -hls_list_size <span class="num">0</span> \
+    <span class="str">"$OUTPUT_DIR/${base}_720p.m3u8"</span>
+
+  <span class="cm"># 480p @ 1 Mbps</span>
+  ffmpeg -i <span class="str">"$chunk"</span> -vf <span class="str">"scale=854:480"</span> \
+    -c:v libx264 -b:v <span class="num">1</span>M -preset fast \
+    -c:a aac -b:a <span class="num">64</span>k \
+    -hls_time <span class="num">6</span> -hls_list_size <span class="num">0</span> \
+    <span class="str">"$OUTPUT_DIR/${base}_480p.m3u8"</span>
+<span class="kw">done</span>
+
+<span class="cm"># Step 3: Generate master playlist</span>
+<span class="kw">cat</span> &gt; <span class="str">"$OUTPUT_DIR/master.m3u8"</span> &lt;&lt; <span class="str">EOF
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080
+stream_1080p.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720
+stream_720p.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=854x480
+stream_480p.m3u8
+EOF</span></pre></div>
+  </div>
+
+  <h3 class="dd-h3">編碼解析度與碼率對照表</h3>
+  <table class="dd-compare-table">
+    <thead><tr><th>解析度</th><th>碼率 (Video)</th><th>Audio</th><th>Segment 大小</th><th>適用場景</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">3840×2160 (4K)</td><td class="mono">16 Mbps</td><td class="mono">192 kbps</td><td class="mono">~12 MB/seg</td><td>Smart TV, 高頻寬</td></tr>
+      <tr><td class="mono">1920×1080</td><td class="mono">5 Mbps</td><td class="mono">128 kbps</td><td class="mono">~3.8 MB/seg</td><td>Desktop, WiFi</td></tr>
+      <tr><td class="mono">1280×720</td><td class="mono">2.5 Mbps</td><td class="mono">96 kbps</td><td class="mono">~1.9 MB/seg</td><td>Tablet, 4G</td></tr>
+      <tr><td class="mono">854×480</td><td class="mono">1 Mbps</td><td class="mono">64 kbps</td><td class="mono">~0.8 MB/seg</td><td>Mobile, 3G</td></tr>
+      <tr><td class="mono">426×240</td><td class="mono">400 Kbps</td><td class="mono">48 kbps</td><td class="mono">~0.3 MB/seg</td><td>極低頻寬</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== 2.5 CACHING DEEP DIVE ===== -->
+<section class="dd-section" id="dd-caching">
+  <h2 class="dd-h2">04 — 快取策略深度解析</h2>
+  <p class="dd-sub">Cache-Aside, Write-Through 與 CDN 多層快取架構</p>
+
+  <div class="dd-info concept">
+    <strong>💡 Concept</strong>
+    本系統有兩層快取：(1) Redis 快取影片 metadata（標題、描述、播放 URL），(2) CDN 快取實際的影片 segment 檔案。兩者的失效策略與一致性需求完全不同。
+  </div>
+
+  <h3 class="dd-h3">Cache-Aside Pattern 實作</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>cache_aside.py</span><span class="dd-code-lang">Python</span></div>
+    <div class="dd-code-body"><pre><span class="kw">import</span> redis
+<span class="kw">import</span> json
+
+<span class="kw">class</span> <span class="type">VideoMetadataService</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>, redis_client, db):
+        <span class="kw">self</span>.cache = redis_client
+        <span class="kw">self</span>.db = db
+        <span class="kw">self</span>.DEFAULT_TTL = <span class="num">3600</span>       <span class="cm"># 1 hour</span>
+        <span class="kw">self</span>.HOT_VIDEO_TTL = <span class="num">86400</span>   <span class="cm"># 24 hours for popular videos</span>
+
+    <span class="kw">def</span> <span class="fn">get_video</span>(<span class="kw">self</span>, video_id: <span class="type">str</span>) -> <span class="type">dict</span>:
+        <span class="cm"># Step 1: Try cache first</span>
+        cache_key = <span class="str">f"video:<span class="op">{</span>video_id<span class="op">}</span>"</span>
+        cached = <span class="kw">self</span>.cache.<span class="fn">get</span>(cache_key)
+
+        <span class="kw">if</span> cached:
+            <span class="kw">return</span> json.<span class="fn">loads</span>(cached)  <span class="cm"># Cache HIT ⚡</span>
+
+        <span class="cm"># Step 2: Cache MISS → query read replica</span>
+        video = <span class="kw">self</span>.db.<span class="fn">query</span>(
+            <span class="str">"SELECT * FROM videos WHERE id = %s"</span>,
+            [video_id],
+            use_replica=<span class="kw">True</span>
+        )
+
+        <span class="kw">if</span> <span class="kw">not</span> video:
+            <span class="kw">return</span> <span class="kw">None</span>
+
+        <span class="cm"># Step 3: Populate cache with dynamic TTL</span>
+        ttl = <span class="kw">self</span>.<span class="fn">_compute_ttl</span>(video)
+        <span class="kw">self</span>.cache.<span class="fn">setex</span>(cache_key, ttl, json.<span class="fn">dumps</span>(video))
+
+        <span class="kw">return</span> video
+
+    <span class="kw">def</span> <span class="fn">_compute_ttl</span>(<span class="kw">self</span>, video) -> <span class="type">int</span>:
+        <span class="cm"># Hot videos get longer TTL</span>
+        <span class="kw">if</span> video[<span class="str">"view_count"</span>] > <span class="num">100_000</span>:
+            <span class="kw">return</span> <span class="kw">self</span>.HOT_VIDEO_TTL
+        <span class="kw">return</span> <span class="kw">self</span>.DEFAULT_TTL</pre></div>
+  </div>
+
+  <h3 class="dd-h3">快取策略比較</h3>
+  <table class="dd-compare-table">
+    <thead><tr><th>策略</th><th>讀取延遲</th><th>寫入延遲</th><th>一致性</th><th>適用場景</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Cache-Aside</strong></td><td class="good">低（cache hit）</td><td class="good">無額外延遲</td><td class="mid">最終一致</td><td>Metadata 讀取 ✅</td></tr>
+      <tr><td><strong>Write-Through</strong></td><td class="good">低</td><td class="mid">較高（同步寫 cache）</td><td class="good">強一致</td><td>需要即時更新的場景</td></tr>
+      <tr><td><strong>Write-Behind</strong></td><td class="good">低</td><td class="good">低（異步寫 DB）</td><td class="bad">弱一致</td><td>高頻寫入（view count）</td></tr>
+      <tr><td><strong>Read-Through</strong></td><td class="good">低</td><td class="good">無額外延遲</td><td class="mid">最終一致</td><td>Cache 框架整合</td></tr>
+    </tbody>
+  </table>
+
+  <div class="dd-info warning">
+    <strong>⚠️ Warning — Cache Stampede</strong>
+    當熱門影片的 cache 同時過期時，大量請求會同時打到 DB（thundering herd）。解法：使用 singleflight / mutex lock 確保只有一個請求查 DB 並回填 cache，其他請求等待；或使用 jittered TTL 讓過期時間分散。
+  </div>
+</section>
+
+<!-- ===== 2.6 SEARCH ENGINE ===== -->
+<section class="dd-section-alt" id="dd-search">
+  <h2 class="dd-h2">05 — 搜尋引擎實作</h2>
+  <p class="dd-sub">Elasticsearch + CDC 的全文搜尋架構</p>
+
+  <h3 class="dd-h3">CDC (Change Data Capture) 同步流程</h3>
+  <p class="dd-text">使用 Debezium 監聽 PostgreSQL 的 WAL (Write-Ahead Log)，將 videos 表的 INSERT / UPDATE / DELETE 變更事件推入 Kafka topic，再由 Elasticsearch Connector 消費並更新搜尋索引。這樣搜尋索引的更新與資料庫寫入完全解耦。</p>
+
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>elasticsearch_mapping.json</span><span class="dd-code-lang">JSON</span></div>
+    <div class="dd-code-body"><pre>{
+  <span class="str">"mappings"</span>: {
+    <span class="str">"properties"</span>: {
+      <span class="str">"title"</span>:       { <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"analyzer"</span>: <span class="str">"icu_analyzer"</span> },
+      <span class="str">"description"</span>: { <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"analyzer"</span>: <span class="str">"icu_analyzer"</span> },
+      <span class="str">"tags"</span>:        { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+      <span class="str">"creator"</span>:     { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+      <span class="str">"view_count"</span>:  { <span class="str">"type"</span>: <span class="str">"long"</span> },
+      <span class="str">"created_at"</span>:  { <span class="str">"type"</span>: <span class="str">"date"</span> },
+      <span class="str">"duration"</span>:    { <span class="str">"type"</span>: <span class="str">"integer"</span> },
+      <span class="str">"suggest"</span>:     { <span class="str">"type"</span>: <span class="str">"completion"</span> }
+    }
+  }
+}</pre></div>
+  </div>
+
+  <h3 class="dd-h3">自訂排序查詢（BM25 + Boosting）</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>search_query.json</span><span class="dd-code-lang">Elasticsearch DSL</span></div>
+    <div class="dd-code-body"><pre>{
+  <span class="str">"query"</span>: {
+    <span class="str">"function_score"</span>: {
+      <span class="str">"query"</span>: {
+        <span class="str">"multi_match"</span>: {
+          <span class="str">"query"</span>: <span class="str">"funny cat videos"</span>,
+          <span class="str">"fields"</span>: [<span class="str">"title^3"</span>, <span class="str">"description"</span>, <span class="str">"tags^2"</span>]
+        }
+      },
+      <span class="str">"functions"</span>: [
+        {
+          <span class="str">"field_value_factor"</span>: {
+            <span class="str">"field"</span>: <span class="str">"view_count"</span>,
+            <span class="str">"modifier"</span>: <span class="str">"log1p"</span>,  <span class="cm">// dampened popularity boost</span>
+            <span class="str">"factor"</span>: <span class="num">0.5</span>
+          }
+        },
+        {
+          <span class="str">"gauss"</span>: {
+            <span class="str">"created_at"</span>: {
+              <span class="str">"origin"</span>: <span class="str">"now"</span>,
+              <span class="str">"scale"</span>: <span class="str">"30d"</span>,    <span class="cm">// freshness decay</span>
+              <span class="str">"decay"</span>: <span class="num">0.5</span>
+            }
+          }
+        }
+      ],
+      <span class="str">"boost_mode"</span>: <span class="str">"multiply"</span>
+    }
+  }
+}</pre></div>
+  </div>
+
+  <div class="dd-info tip">
+    <strong>💡 Tip</strong>
+    使用 <code>multi_match</code> 在多個欄位搜尋，並用 <code>^</code> 設定權重（title 權重最高）。<code>function_score</code> 結合 BM25 文字相關性與 view_count 熱度和 created_at 新鮮度，可產出更符合用戶預期的搜尋結果。
+  </div>
+</section>
+
+<!-- ===== 2.7 DISTRIBUTED CONSIDERATIONS ===== -->
+<section class="dd-section" id="dd-distributed">
+  <h2 class="dd-h2">06 — 分散式考量</h2>
+  <p class="dd-sub">Sharding, Replication, Consistency 的設計抉擇</p>
+
+  <div class="dd-info concept">
+    <strong>💡 Concept — CAP Theorem 在本系統的應用</strong>
+    影片串流平台選擇 AP（可用性 + 分區容忍）而非 CP。原因：短暫的資料不一致（新影片晚幾秒才能被搜尋到）是可接受的，但服務中斷（用戶無法觀看影片）是不可接受的。因此全面採用最終一致性模型。
+  </div>
+
+  <h3 class="dd-h3">Metadata DB Sharding 策略</h3>
+  <p class="dd-text">隨著影片數量增長到上億，單一 PostgreSQL 實例無法支撐。需要按 video_id 進行水平分片（sharding）。選擇 video_id 作為 shard key 的原因：讀取和寫入幾乎都以 video_id 作為主鍵查詢，可以保證單一查詢只打到一個 shard。</p>
+
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>shard_routing.py</span><span class="dd-code-lang">Python</span></div>
+    <div class="dd-code-body"><pre><span class="kw">import</span> hashlib
+
+<span class="kw">class</span> <span class="type">ShardRouter</span>:
+    <span class="cm">"""Consistent hash-based shard routing for Metadata DB"""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>, num_shards: <span class="type">int</span> = <span class="num">16</span>):
+        <span class="kw">self</span>.num_shards = num_shards
+        <span class="kw">self</span>.connections = {
+            i: <span class="fn">create_db_connection</span>(<span class="str">f"shard-<span class="op">{</span>i<span class="op">}</span>.db.internal"</span>)
+            <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(num_shards)
+        }
+
+    <span class="kw">def</span> <span class="fn">get_shard</span>(<span class="kw">self</span>, video_id: <span class="type">str</span>) -> <span class="type">int</span>:
+        <span class="cm"># SHA-256 hash → modulo for uniform distribution</span>
+        hash_val = hashlib.<span class="fn">sha256</span>(
+            video_id.<span class="fn">encode</span>()
+        ).<span class="fn">hexdigest</span>()
+        <span class="kw">return</span> <span class="fn">int</span>(hash_val, <span class="num">16</span>) % <span class="kw">self</span>.num_shards
+
+    <span class="kw">def</span> <span class="fn">query</span>(<span class="kw">self</span>, video_id, sql, params):
+        shard_id = <span class="kw">self</span>.<span class="fn">get_shard</span>(video_id)
+        conn = <span class="kw">self</span>.connections[shard_id]
+        <span class="kw">return</span> conn.<span class="fn">execute</span>(sql, params)</pre></div>
+  </div>
+
+  <h3 class="dd-h3">Replication 拓撲</h3>
+  <table class="dd-compare-table">
+    <thead><tr><th>模式</th><th>延遲</th><th>一致性</th><th>可用性</th><th>本系統使用</th></tr></thead>
+    <tbody>
+      <tr><td><strong>同步複製</strong></td><td class="bad">高（等待 replica ACK）</td><td class="good">強一致</td><td class="mid">降低（replica 故障阻塞寫入）</td><td>❌</td></tr>
+      <tr><td><strong>非同步複製</strong></td><td class="good">低</td><td class="mid">最終一致</td><td class="good">高</td><td>✅ Metadata DB</td></tr>
+      <tr><td><strong>半同步</strong></td><td class="mid">中等</td><td class="mid">準一致</td><td class="mid">中等</td><td>❌ 非必要</td></tr>
+    </tbody>
+  </table>
+
+  <div class="dd-info important">
+    <strong>⚠️ Important — 跨區域複製</strong>
+    對於全球性影片平台，需要跨區域複製 Metadata DB。使用非同步複製搭配 conflict resolution（last-write-wins），延遲通常在 100-500ms。CDN 和 Object Store (S3) 本身就支援跨區域，透過 S3 Cross-Region Replication 自動同步。
+  </div>
+</section>
+
+<!-- ===== 2.8 STORAGE IMPLEMENTATION ===== -->
+<section class="dd-section-alt" id="dd-storage">
+  <h2 class="dd-h2">07 — 儲存與資料庫實作</h2>
+  <p class="dd-sub">Redis 快取、PostgreSQL Schema、S3 儲存結構</p>
+
+  <h3 class="dd-h3">Redis 資料結構選型</h3>
+  <table class="dd-compare-table">
+    <thead><tr><th>資料</th><th>Redis 結構</th><th>Key Pattern</th><th>TTL</th></tr></thead>
+    <tbody>
+      <tr><td>影片 metadata</td><td class="mono">String (JSON)</td><td class="mono">video:{id}</td><td class="mono">1h-24h (依熱度)</td></tr>
+      <tr><td>觀看次數</td><td class="mono">String (INCR)</td><td class="mono">views:{id}</td><td class="mono">無 (持久化)</td></tr>
+      <tr><td>用戶播放進度</td><td class="mono">Hash</td><td class="mono">progress:{user_id}</td><td class="mono">30d</td></tr>
+      <tr><td>熱門影片排行</td><td class="mono">Sorted Set</td><td class="mono">trending:daily</td><td class="mono">24h</td></tr>
+      <tr><td>搜尋自動補全</td><td class="mono">Sorted Set</td><td class="mono">autocomplete:{prefix}</td><td class="mono">1h</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="dd-h3">Redis Lua Script — 原子性觀看次數更新</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>view_counter.lua</span><span class="dd-code-lang">Lua (Redis)</span></div>
+    <div class="dd-code-body"><pre><span class="cm">-- Atomic view count increment + trending update</span>
+<span class="cm">-- KEYS[1] = "views:{video_id}"</span>
+<span class="cm">-- KEYS[2] = "trending:daily"</span>
+<span class="cm">-- ARGV[1] = video_id</span>
+
+<span class="kw">local</span> new_count = redis.<span class="fn">call</span>(<span class="str">"INCR"</span>, KEYS[<span class="num">1</span>])
+
+<span class="cm">-- Update trending sorted set with new view count</span>
+redis.<span class="fn">call</span>(<span class="str">"ZADD"</span>, KEYS[<span class="num">2</span>], new_count, ARGV[<span class="num">1</span>])
+
+<span class="cm">-- Set TTL for daily trending (reset daily)</span>
+redis.<span class="fn">call</span>(<span class="str">"EXPIRE"</span>, KEYS[<span class="num">2</span>], <span class="num">86400</span>)
+
+<span class="kw">return</span> new_count</pre></div>
+  </div>
+
+  <h3 class="dd-h3">PostgreSQL Schema</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>schema.sql</span><span class="dd-code-lang">SQL</span></div>
+    <div class="dd-code-body"><pre><span class="kw">CREATE TABLE</span> <span class="type">videos</span> (
+    id            <span class="type">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+    title         <span class="type">VARCHAR</span>(<span class="num">500</span>) <span class="kw">NOT NULL</span>,
+    description   <span class="type">TEXT</span>,
+    creator_id    <span class="type">UUID</span> <span class="kw">NOT NULL REFERENCES</span> users(id),
+    duration_sec  <span class="type">INTEGER</span>,
+    status        <span class="type">VARCHAR</span>(<span class="num">20</span>) <span class="kw">DEFAULT</span> <span class="str">'processing'</span>,
+    <span class="cm">-- 'processing' | 'ready' | 'failed'</span>
+    s3_raw_key    <span class="type">VARCHAR</span>(<span class="num">1024</span>),
+    manifest_url  <span class="type">VARCHAR</span>(<span class="num">1024</span>),   <span class="cm">-- HLS master.m3u8 URL</span>
+    thumbnail_url <span class="type">VARCHAR</span>(<span class="num">1024</span>),
+    view_count    <span class="type">BIGINT</span> <span class="kw">DEFAULT</span> <span class="num">0</span>,
+    tags          <span class="type">TEXT</span>[],
+    created_at    <span class="type">TIMESTAMPTZ</span> <span class="kw">DEFAULT</span> <span class="fn">NOW</span>(),
+    updated_at    <span class="type">TIMESTAMPTZ</span> <span class="kw">DEFAULT</span> <span class="fn">NOW</span>()
+);
+
+<span class="kw">CREATE INDEX</span> idx_videos_creator <span class="kw">ON</span> videos(creator_id);
+<span class="kw">CREATE INDEX</span> idx_videos_status  <span class="kw">ON</span> videos(status);
+<span class="kw">CREATE INDEX</span> idx_videos_created <span class="kw">ON</span> videos(created_at <span class="kw">DESC</span>);
+
+<span class="cm">-- Encoding jobs tracking table</span>
+<span class="kw">CREATE TABLE</span> <span class="type">encoding_jobs</span> (
+    id          <span class="type">UUID</span> <span class="kw">PRIMARY KEY</span>,
+    video_id    <span class="type">UUID</span> <span class="kw">REFERENCES</span> videos(id),
+    resolution  <span class="type">VARCHAR</span>(<span class="num">10</span>),  <span class="cm">-- '1080p', '720p', etc.</span>
+    status      <span class="type">VARCHAR</span>(<span class="num">20</span>),  <span class="cm">-- 'pending' | 'running' | 'done' | 'failed'</span>
+    s3_output   <span class="type">VARCHAR</span>(<span class="num">1024</span>),
+    started_at  <span class="type">TIMESTAMPTZ</span>,
+    finished_at <span class="type">TIMESTAMPTZ</span>
+);</pre></div>
+  </div>
+
+  <h3 class="dd-h3">S3 儲存結構</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>s3_structure.txt</span><span class="dd-code-lang">S3 Key Layout</span></div>
+    <div class="dd-code-body"><pre>s3://prime-video-bucket/
+├── raw/                          <span class="cm"># 原始上傳影片</span>
+│   └── {video_id}/
+│       └── original.mp4
+├── encoded/                      <span class="cm"># 轉碼後的 HLS segments</span>
+│   └── {video_id}/
+│       ├── master.m3u8           <span class="cm"># Master playlist</span>
+│       ├── 1080p/
+│       │   ├── stream.m3u8
+│       │   ├── seg_000.ts
+│       │   ├── seg_001.ts
+│       │   └── ...
+│       ├── 720p/
+│       │   ├── stream.m3u8
+│       │   └── ...
+│       ├── 480p/
+│       └── 240p/
+└── thumbnails/                   <span class="cm"># 縮圖</span>
+    └── {video_id}/
+        ├── default.jpg
+        └── sprite.jpg            <span class="cm"># Timeline hover 預覽</span></pre></div>
+  </div>
+</section>
+
+<!-- ===== 2.9 API DESIGN ===== -->
+<section class="dd-section" id="dd-api">
+  <h2 class="dd-h2">08 — API 設計與協議</h2>
+  <p class="dd-sub">RESTful API 端點、Presigned URL 流程、CDN 簽名</p>
+
+  <h3 class="dd-h3">核心 API 端點</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>api_endpoints.yaml</span><span class="dd-code-lang">REST API</span></div>
+    <div class="dd-code-body"><pre><span class="cm"># ===== Upload Flow =====</span>
+<span class="kw">POST</span>   /api/v1/videos/upload-url
+  <span class="cm"># Request: { title, description, tags, file_size, content_type }</span>
+  <span class="cm"># Response: { video_id, presigned_url, expires_in: 3600 }</span>
+
+<span class="kw">POST</span>   /api/v1/videos/{id}/complete
+  <span class="cm"># Called after client finishes uploading to S3</span>
+  <span class="cm"># Triggers encoding pipeline</span>
+
+<span class="cm"># ===== View Flow =====</span>
+<span class="kw">GET</span>    /api/v1/videos/{id}
+  <span class="cm"># Response: { id, title, manifest_url, thumbnail, creator, ... }</span>
+  <span class="cm"># manifest_url is a CDN signed URL</span>
+
+<span class="kw">GET</span>    /api/v1/videos/{id}/stream
+  <span class="cm"># Redirect 302 → CDN signed manifest URL</span>
+
+<span class="cm"># ===== Search Flow =====</span>
+<span class="kw">GET</span>    /api/v1/search?q={query}&page={n}&size={n}
+  <span class="cm"># Response: { results: [...], total, page, has_next }</span>
+
+<span class="kw">GET</span>    /api/v1/search/suggest?q={prefix}
+  <span class="cm"># Response: { suggestions: ["funny cats", "funny dogs", ...] }</span></pre></div>
+  </div>
+
+  <h3 class="dd-h3">Presigned URL 上傳流程</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>presigned_url.py</span><span class="dd-code-lang">Python (boto3)</span></div>
+    <div class="dd-code-body"><pre><span class="kw">import</span> boto3
+<span class="kw">from</span> datetime <span class="kw">import</span> timedelta
+
+<span class="kw">def</span> <span class="fn">generate_upload_url</span>(video_id: <span class="type">str</span>, content_type: <span class="type">str</span>) -> <span class="type">str</span>:
+    s3 = boto3.<span class="fn">client</span>(<span class="str">"s3"</span>)
+
+    presigned_url = s3.<span class="fn">generate_presigned_url</span>(
+        <span class="str">"put_object"</span>,
+        Params={
+            <span class="str">"Bucket"</span>: <span class="str">"prime-video-bucket"</span>,
+            <span class="str">"Key"</span>: <span class="str">f"raw/<span class="op">{</span>video_id<span class="op">}</span>/original.mp4"</span>,
+            <span class="str">"ContentType"</span>: content_type,
+            <span class="str">"Metadata"</span>: {
+                <span class="str">"video-id"</span>: video_id
+            }
+        },
+        ExpiresIn=<span class="num">3600</span>  <span class="cm"># URL valid for 1 hour</span>
+    )
+
+    <span class="kw">return</span> presigned_url
+
+
+<span class="kw">def</span> <span class="fn">generate_playback_url</span>(video_id: <span class="type">str</span>) -> <span class="type">str</span>:
+    <span class="cm">"""Generate CDN signed URL for playback"""</span>
+    cloudfront = boto3.<span class="fn">client</span>(<span class="str">"cloudfront"</span>)
+
+    <span class="kw">return</span> cloudfront.<span class="fn">generate_presigned_url</span>(
+        <span class="str">f"https://cdn.primevideo.com/encoded/<span class="op">{</span>video_id<span class="op">}</span>/master.m3u8"</span>,
+        date_less_than=datetime.<span class="fn">utcnow</span>() + timedelta(hours=<span class="num">4</span>),
+        key_pair_id=<span class="str">"CLOUDFRONT_KEY_PAIR_ID"</span>,
+        private_key_string=PRIVATE_KEY
+    )</pre></div>
+  </div>
+
+  <h3 class="dd-h3">HTTP Response Codes</h3>
+  <table class="dd-compare-table">
+    <thead><tr><th>Code</th><th>場景</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">200 OK</td><td>GET /videos/{id}</td><td>成功取得影片 metadata</td></tr>
+      <tr><td class="mono">201 Created</td><td>POST /videos/upload-url</td><td>成功產生 presigned URL</td></tr>
+      <tr><td class="mono">202 Accepted</td><td>POST /videos/{id}/complete</td><td>轉碼任務已排入佇列</td></tr>
+      <tr><td class="mono">302 Found</td><td>GET /videos/{id}/stream</td><td>重導向至 CDN 簽名 URL</td></tr>
+      <tr><td class="mono">404 Not Found</td><td>影片 ID 不存在</td><td>影片不存在或仍在轉碼中</td></tr>
+      <tr><td class="mono">429 Too Many Requests</td><td>Rate limiting</td><td>含 Retry-After header</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== 2.10 OPERATIONAL STRATEGIES ===== -->
+<section class="dd-section-alt" id="dd-ops">
+  <h2 class="dd-h2">09 — 運營策略</h2>
+  <p class="dd-sub">監控、降級、故障處理與成本優化</p>
+
+  <h3 class="dd-h3">分級服務配置</h3>
+  <div class="dd-code-block">
+    <div class="dd-code-header"><span>service_tiers.yaml</span><span class="dd-code-lang">YAML</span></div>
+    <div class="dd-code-body"><pre><span class="cm"># Video encoding priority tiers</span>
+encoding_tiers:
+  premium:              <span class="cm"># Prime subscribers</span>
+    max_resolution: <span class="str">"4K"</span>
+    priority: <span class="num">1</span>         <span class="cm"># Highest priority in queue</span>
+    max_wait_time: <span class="str">"5m"</span>
+    concurrent_jobs: <span class="num">4</span>
+
+  standard:             <span class="cm"># Free tier users</span>
+    max_resolution: <span class="str">"1080p"</span>
+    priority: <span class="num">3</span>
+    max_wait_time: <span class="str">"30m"</span>
+    concurrent_jobs: <span class="num">1</span>
+
+<span class="cm"># CDN cache rules</span>
+cdn_cache_policy:
+  video_segments:
+    ttl: <span class="str">"7d"</span>           <span class="cm"># Segments are immutable</span>
+    stale_while_revalidate: <span class="str">"1h"</span>
+
+  manifests:
+    ttl: <span class="str">"10s"</span>          <span class="cm"># Short TTL for live content</span>
+
+  thumbnails:
+    ttl: <span class="str">"30d"</span>
+
+<span class="cm"># Auto-scaling rules</span>
+autoscaling:
+  encoder_workers:
+    min: <span class="num">10</span>
+    max: <span class="num">500</span>
+    scale_up_threshold: <span class="str">"queue_depth > 1000"</span>
+    scale_down_threshold: <span class="str">"queue_depth < 100"</span>
+    cooldown: <span class="str">"5m"</span></pre></div>
+  </div>
+
+  <h3 class="dd-h3">降級策略（Graceful Degradation）</h3>
+  <div class="dd-kp-grid">
+    <div class="dd-kp-card">
+      <h4>🔴 Cache 故障</h4>
+      <p><strong>Fail-open</strong>：Redis 不可用時直接查 DB Read Replica。延遲增加但服務不中斷。需設定 circuit breaker 避免 DB 過載。</p>
+    </div>
+    <div class="dd-kp-card">
+      <h4>🟡 Encoder 過載</h4>
+      <p>Queue 深度超過閾值時：降低免費用戶的最大解析度、延後非熱門地區的轉碼任務、只先產生 720p 版本。</p>
+    </div>
+    <div class="dd-kp-card">
+      <h4>🟠 Search 不可用</h4>
+      <p>Elasticsearch 故障時 fallback 到 DB LIKE 查詢（性能較差但可用）。或回傳快取的熱門搜尋結果。</p>
+    </div>
+    <div class="dd-kp-card">
+      <h4>🟢 CDN 局部故障</h4>
+      <p>某區域 CDN edge 故障時自動 failover 到下一個最近的 edge。極端情況直接從 S3 origin 回應（延遲增加）。</p>
+    </div>
+  </div>
+
+  <div class="dd-info tip">
+    <strong>💡 Tip — 成本優化</strong>
+    S3 Intelligent-Tiering 自動將 30 天未存取的影片移至低成本層。CDN 的 hit rate 直接影響 S3 出口費用——hit rate 從 90% 提升到 95% 可節省 50% 的 origin 流量。轉碼完成後刪除原始影片的「原始解析度」版本也能節省約 20% 儲存。
+  </div>
+</section>
+
+<!-- ===== 2.11 INTERVIEW Q&A ===== -->
+<section class="dd-section" id="dd-interview">
+  <h2 class="dd-h2">10 — 面試題庫 Interview Q&A</h2>
+  <p class="dd-sub">常見影片串流系統設計面試問題與詳細解答</p>
+
+  <!-- Q1 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q1：為什麼選擇 Presigned URL 而不是讓影片經過應用伺服器？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>核心考量是<strong>頻寬與 CPU 效率</strong>：</p>
+      <ul>
+        <li>影片檔案通常數百 MB 到數 GB，經由應用伺服器中轉會消耗大量頻寬和記憶體</li>
+        <li>Presigned URL 讓客戶端直接上傳到 S3，伺服器只處理輕量的 metadata（幾 KB）</li>
+        <li>S3 原生支援 multipart upload 和斷點續傳，比自建上傳服務更可靠</li>
+        <li>減少伺服器成本：不需要為影片流量購買大量頻寬</li>
+      </ul>
+      <div class="dd-info important">
+        <strong>⚠️ Trade-off</strong>
+        Presigned URL 的缺點是客戶端可以在 URL 有效期內多次上傳或上傳非預期內容。需要搭配 S3 事件通知 + Lambda 進行上傳後驗證。
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q2：如何處理影片上傳失敗和重試？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>需要多層可靠性保障：</p>
+      <ul>
+        <li><strong>客戶端</strong>：使用 S3 multipart upload，每個 part 5-100 MB；失敗只需重傳失敗的 part，不需從頭開始</li>
+        <li><strong>上傳協議</strong>：可使用 tus.io 斷點續傳協議，客戶端記錄上傳偏移量，斷線後從上次位置繼續</li>
+        <li><strong>轉碼失敗</strong>：Processing Queue 提供 at-least-once 投遞保證，失敗任務自動重試 3 次後進入 DLQ</li>
+        <li><strong>冪等性</strong>：每個轉碼任務有唯一 job_id，Encoder 收到重複任務時檢查 S3 是否已有輸出</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q3：如何確保影片在轉碼完成前不被用戶看到？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>使用<strong>狀態機模型</strong>管理影片生命週期：</p>
+      <ul>
+        <li>影片建立時 status = <code>processing</code>，前端不顯示此狀態的影片</li>
+        <li>所有解析度轉碼完成後，Encoder 更新 status = <code>ready</code>，同時設定 manifest_url</li>
+        <li>Search Service 的 Elasticsearch 查詢過濾 <code>status: ready</code>，確保搜尋結果只含可播放影片</li>
+        <li>View Video Service 在回傳前檢查 status，若非 ready 則回傳 404 或 "processing" 狀態頁</li>
+      </ul>
+      <div class="dd-info tip">
+        <strong>💡 進階</strong>
+        可以做「漸進式發布」：720p 先好就先讓部分用戶觀看，後續解析度陸續加入。manifest 動態更新可用解析度列表。
+      </div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q4：CDN cache hit rate 低怎麼辦？如何優化？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>CDN hit rate 低意味著大量請求回源 S3，延遲增加且費用暴增。優化策略：</p>
+      <ul>
+        <li><strong>長尾分析</strong>：80% 流量集中在 20% 熱門影片，確保這些影片常駐 CDN cache</li>
+        <li><strong>預熱（Pre-warming）</strong>：新發布的大型影片提前推送到各地 CDN edge</li>
+        <li><strong>Multi-tier CDN</strong>：在 edge 之外設置 mid-tier cache（Regional Cache），減少回源</li>
+        <li><strong>一致的 URL 結構</strong>：避免 URL 中包含時間戳或隨機 token，否則每次 URL 不同會造成 cache miss</li>
+        <li><strong>Segment 粒度</strong>：較長的 segment（10s vs 2s）意味著更少的 cache key，hit rate 提升</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q5：如何處理觀看次數的高頻更新？每次觀看都寫 DB 嗎？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>觀看次數是<strong>寫入最頻繁</strong>的欄位，直接寫 DB 會成為瓶頸。分層方案：</p>
+      <ul>
+        <li><strong>Redis INCR</strong>：每次觀看先在 Redis 做原子性 increment（O(1), 微秒級）</li>
+        <li><strong>批次寫回 DB</strong>：背景任務每 5 分鐘將 Redis 中的累計值 batch update 回 PostgreSQL</li>
+        <li><strong>近似計數</strong>：對前端顯示的計數可使用近似值（如 "1.2M views"），無需精確到個位</li>
+        <li><strong>分析管道</strong>：詳細的觀看事件（含用戶 ID、裝置、時長）寫入 Kafka → 資料倉儲（Redshift / BigQuery），不經過主 DB</li>
+      </ul>
+      <div class="dd-info warning">
+        <strong>⚠️ Warning</strong>
+        Redis 若故障，會遺失未寫回 DB 的計數。解法：Redis 開啟 AOF 持久化，或在 Redis 與 DB 之間加 Kafka 作為 WAL。對於觀看次數這種非精確數據，少量遺失通常可接受。
+      </div>
+    </div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q6：如果要支援即時直播串流（Live Streaming），架構需要什麼改動？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>直播與 VOD 的核心差異是<strong>延遲要求</strong>（秒級 vs 分鐘級）和<strong>資料流方向</strong>（邊產生邊播放）：</p>
+      <ul>
+        <li><strong>即時轉碼</strong>：取代非同步 Queue，使用串流式轉碼器（如 AWS MediaLive）即時將 RTMP 輸入轉為 HLS/DASH</li>
+        <li><strong>Ultra-low latency</strong>：使用 LL-HLS 或 WebRTC 將延遲降到 2-5 秒（vs 標準 HLS 的 15-30 秒）</li>
+        <li><strong>CDN 配置</strong>：manifest TTL 降低到 1-2 秒，segment 產生後立即推到 CDN edge</li>
+        <li><strong>無 Video Splitter</strong>：直播內容直接從即時轉碼器產出 segment，不需先儲存再切割</li>
+        <li><strong>DVR 功能</strong>：將直播 segment 即時寫入 S3，觀眾可回看過去的片段</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q7 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q7：如何防止未授權的影片下載與盜版？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>多層防護策略：</p>
+      <ul>
+        <li><strong>CDN Signed URL</strong>：每個播放 URL 帶有時效性簽名（4 小時過期），過期後無法存取</li>
+        <li><strong>DRM（Digital Rights Management）</strong>：使用 Widevine（Android/Chrome）+ FairPlay（Apple）+ PlayReady（Windows）三重 DRM 加密影片 segment</li>
+        <li><strong>Token 綁定</strong>：Signed URL 綁定用戶 IP 或 session，防止 URL 分享</li>
+        <li><strong>浮水印</strong>：每個用戶觀看的版本嵌入不可見的數位浮水印，洩漏時可追溯來源</li>
+        <li><strong>速率限制</strong>：監控異常下載行為（如短時間大量 segment 請求），自動封鎖</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q8 -->
+  <div class="dd-accordion" onclick="this.classList.toggle('open')">
+    <button class="dd-accordion-header">
+      <span>Q8：系統中的單點故障（SPOF）有哪些？如何消除？</span>
+      <span class="dd-accordion-chevron">▼</span>
+    </button>
+    <div class="dd-accordion-body">
+      <p>逐一檢視每個元件的 HA 策略：</p>
+      <ul>
+        <li><strong>Load Balancer</strong>：使用 AWS ALB/NLB（多 AZ 部署），或 DNS-based failover 配合多個 LB 實例</li>
+        <li><strong>Services</strong>：所有服務至少 2+ 實例，跨 AZ 部署，由 K8s / ECS 自動重啟失敗容器</li>
+        <li><strong>Processing Queue</strong>：Kafka 多 broker + 3x replication factor；SQS 本身為全託管高可用</li>
+        <li><strong>Redis Cache</strong>：Redis Cluster（6 節點 = 3 master + 3 replica），自動故障轉移</li>
+        <li><strong>Metadata DB</strong>：PostgreSQL Master + Sync Standby（同一 AZ 內同步複製）+ Async Replica（跨 AZ）</li>
+        <li><strong>S3 / CDN</strong>：AWS 原生高可用，11-9 持久性，無需額外配置</li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+</div><!-- end page-inner -->
+</div><!-- end page-deepdive -->
+
+<!-- ========== SCRIPTS ========== -->
+<script>
+function switchPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchFlow(flow, btn) {
+  document.querySelectorAll('.flow-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.flow-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('flow-' + flow).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

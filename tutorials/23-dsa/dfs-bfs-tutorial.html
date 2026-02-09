@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFS / BFS 統一框架圖解</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #121828;
+    --surface2: #1a2235;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent-blue: #60a5fa;
+    --accent-cyan: #22d3ee;
+    --accent-green: #34d399;
+    --accent-orange: #fb923c;
+    --accent-pink: #f472b6;
+    --accent-purple: #a78bfa;
+    --accent-red: #f87171;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+  .container { max-width:960px; margin:0 auto; padding:40px 24px 80px; }
+
+  /* HERO */
+  .hero { text-align:center; padding:60px 0 40px; position:relative; }
+  .hero::before {
+    content:''; position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+    width:600px; height:600px;
+    background:radial-gradient(circle, rgba(96,165,250,0.08) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero .tag {
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:13px;
+    color:var(--accent-cyan); border:1px solid rgba(34,211,238,0.3);
+    padding:4px 14px; border-radius:20px; margin-bottom:20px; letter-spacing:1px;
+  }
+  .hero h1 {
+    font-size:clamp(36px,6vw,56px); font-weight:900; line-height:1.2;
+    background:linear-gradient(135deg,var(--accent-blue),var(--accent-cyan),var(--accent-green));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .hero .subtitle { font-size:18px; color:var(--text-dim); margin-top:16px; font-weight:300; }
+  .hero .subtitle strong { color:var(--accent-orange); font-weight:500; }
+
+  /* SECTION */
+  .section { margin-top:56px; }
+  .section-label {
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent-purple);
+    text-transform:uppercase; letter-spacing:2px; margin-bottom:8px;
+  }
+  .section h2 { font-size:28px; font-weight:700; margin-bottom:20px; color:#fff; }
+  .section h2 .emoji { margin-right:8px; }
+
+  code {
+    font-family:'JetBrains Mono',monospace; background:rgba(96,165,250,0.1);
+    color:var(--accent-blue); padding:2px 6px; border-radius:4px; font-size:13px;
+  }
+
+  /* STEPS GRID */
+  .steps-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:600px){ .steps-grid{grid-template-columns:1fr;} }
+  .step-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:24px; position:relative; overflow:hidden; transition:transform 0.2s,border-color 0.3s;
+  }
+  .step-card:hover { transform:translateY(-2px); border-color:rgba(96,165,250,0.5); }
+  .step-num {
+    position:absolute; top:-8px; right:-4px; font-family:'JetBrains Mono',monospace;
+    font-size:72px; font-weight:700; color:rgba(96,165,250,0.06); line-height:1;
+  }
+  .step-icon { font-size:28px; margin-bottom:10px; }
+  .step-card h4 { font-size:16px; font-weight:700; color:var(--accent-cyan); margin-bottom:6px; }
+  .step-card p { font-size:14px; color:var(--text-dim); line-height:1.6; }
+
+  /* VS */
+  .vs-container { display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:stretch; }
+  @media(max-width:600px){ .vs-container{grid-template-columns:1fr;gap:12px;} .vs-divider{display:none;} }
+  .vs-box {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:28px; text-align:center; transition:border-color 0.3s;
+  }
+  .vs-box.dfs:hover { border-color:var(--accent-orange); }
+  .vs-box.bfs:hover { border-color:var(--accent-cyan); }
+  .vs-box .label { font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; margin-bottom:6px; }
+  .vs-box.dfs .label { color:var(--accent-orange); }
+  .vs-box.bfs .label { color:var(--accent-cyan); }
+  .vs-box .metaphor { font-size:40px; margin:12px 0; }
+  .vs-box .desc { font-size:15px; color:var(--text-dim); margin-bottom:12px; }
+  .vs-box .desc strong { color:var(--text); font-weight:500; }
+  .vs-box .container-tag {
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:14px;
+    padding:6px 16px; border-radius:8px; font-weight:600;
+  }
+  .vs-box.dfs .container-tag { background:rgba(251,146,60,0.12); color:var(--accent-orange); border:1px solid rgba(251,146,60,0.3); }
+  .vs-box.bfs .container-tag { background:rgba(34,211,238,0.1); color:var(--accent-cyan); border:1px solid rgba(34,211,238,0.3); }
+  .vs-divider { display:flex; align-items:center; justify-content:center; padding:0 16px; }
+  .vs-text { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; color:var(--text-dim); }
+
+  /* TEMPLATE */
+  .template-flow { display:flex; gap:0; align-items:center; justify-content:center; flex-wrap:wrap; margin:24px 0; }
+  .template-block { text-align:center; padding:18px 24px; border-radius:14px; min-width:140px; }
+  .template-block .t-icon { font-size:32px; margin-bottom:6px; }
+  .template-block .t-name { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700; margin-bottom:4px; }
+  .template-block .t-desc { font-size:13px; color:var(--text-dim); }
+  .tb-scan { background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); }
+  .tb-scan .t-name { color:var(--accent-blue); }
+  .tb-traverse { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2); }
+  .tb-traverse .t-name { color:var(--accent-green); }
+  .tb-mark { background:rgba(244,114,182,0.08); border:1px solid rgba(244,114,182,0.2); }
+  .tb-mark .t-name { color:var(--accent-pink); }
+  .template-arrow { font-size:24px; color:var(--text-dim); padding:0 8px; }
+  .mark-soul {
+    margin-top:12px; text-align:center; padding:12px 20px;
+    background:rgba(244,114,182,0.06); border:1px dashed rgba(244,114,182,0.3);
+    border-radius:10px; font-size:14px; color:var(--accent-pink); font-weight:500;
+  }
+
+  /* ===== INTERACTIVE GRID ===== */
+  .demo-wrapper {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:32px; margin-top:20px;
+  }
+  .demo-top-label {
+    text-align:center; font-size:13px; color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace; margin-bottom:16px;
+  }
+  .demo-grid-row { display:flex; gap:8px; justify-content:center; margin-bottom:8px; }
+  .demo-cell {
+    width:72px; height:72px; border-radius:12px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace;
+    transition:all 0.4s cubic-bezier(0.4,0,0.2,1); position:relative;
+  }
+  .demo-cell.land { background:var(--surface2); border:2px solid var(--border); color:var(--text-dim); }
+  .demo-cell.wall { background:rgba(10,14,23,0.8); border:2px solid rgba(42,53,80,0.3); color:rgba(136,146,168,0.2); }
+  .demo-cell .coord { font-size:11px; opacity:0.5; }
+  .demo-cell .val { font-size:18px; font-weight:700; }
+  .demo-cell .order-badge {
+    position:absolute; top:-10px; right:-10px; width:24px; height:24px;
+    border-radius:50%; font-size:12px; font-weight:700; display:flex;
+    align-items:center; justify-content:center;
+    opacity:0; transform:scale(0); transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .demo-cell .order-badge.show { opacity:1; transform:scale(1); }
+
+  /* DFS states */
+  .demo-cell.visited-dfs {
+    background:rgba(251,146,60,0.15); border-color:var(--accent-orange);
+    color:var(--accent-orange); box-shadow:0 0 20px rgba(251,146,60,0.15);
+  }
+  .demo-cell.current-dfs {
+    background:rgba(251,146,60,0.35); border-color:var(--accent-orange);
+    color:#fff; box-shadow:0 0 30px rgba(251,146,60,0.35); transform:scale(1.1);
+  }
+
+  /* BFS states - layer colors */
+  .demo-cell.visited-bfs { border-color:var(--accent-cyan); box-shadow:0 0 20px rgba(34,211,238,0.12); }
+  .demo-cell.bfs-layer-0 { background:rgba(34,211,238,0.25); color:#fff; }
+  .demo-cell.bfs-layer-1 { background:rgba(96,165,250,0.22); color:var(--accent-blue); }
+  .demo-cell.bfs-layer-2 { background:rgba(167,139,250,0.2); color:var(--accent-purple); border-color:var(--accent-purple); box-shadow:0 0 20px rgba(167,139,250,0.12); }
+  .demo-cell.bfs-layer-3 { background:rgba(244,114,182,0.18); color:var(--accent-pink); border-color:var(--accent-pink); box-shadow:0 0 20px rgba(244,114,182,0.12); }
+  .demo-cell.current-bfs { transform:scale(1.1); }
+
+  /* Controls */
+  .demo-controls { display:flex; justify-content:center; align-items:center; gap:12px; margin-top:24px; flex-wrap:wrap; }
+  .demo-btn {
+    font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:600;
+    padding:10px 24px; border-radius:10px; border:none; cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .demo-btn:hover { transform:translateY(-1px); }
+  .demo-btn:active { transform:translateY(0); }
+  .demo-btn.dfs-btn { background:rgba(251,146,60,0.15); color:var(--accent-orange); border:1px solid rgba(251,146,60,0.4); }
+  .demo-btn.dfs-btn:hover { background:rgba(251,146,60,0.25); }
+  .demo-btn.bfs-btn { background:rgba(34,211,238,0.1); color:var(--accent-cyan); border:1px solid rgba(34,211,238,0.4); }
+  .demo-btn.bfs-btn:hover { background:rgba(34,211,238,0.2); }
+  .demo-btn.reset-btn { background:rgba(136,146,168,0.1); color:var(--text-dim); border:1px solid rgba(136,146,168,0.3); }
+  .demo-btn.reset-btn:hover { background:rgba(136,146,168,0.2); }
+
+  .step-info { text-align:center; margin-top:20px; min-height:90px; }
+  .step-counter { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text-dim); margin-bottom:8px; }
+  .step-description { font-size:15px; color:var(--text); line-height:1.6; }
+  .step-description strong.dfs-hl { color:var(--accent-orange); }
+  .step-description strong.bfs-hl { color:var(--accent-cyan); }
+  .step-path {
+    font-family:'JetBrains Mono',monospace; font-size:14px; margin-top:8px;
+    padding:8px 16px; border-radius:8px; display:inline-block;
+  }
+  .step-path.dfs-path { background:rgba(251,146,60,0.08); color:var(--accent-orange); border:1px solid rgba(251,146,60,0.2); }
+  .step-path.bfs-path { background:rgba(34,211,238,0.06); color:var(--accent-cyan); border:1px solid rgba(34,211,238,0.2); }
+
+  .bfs-legend { display:flex; justify-content:center; gap:16px; margin-top:12px; flex-wrap:wrap; }
+  .bfs-legend-item { display:flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--text-dim); }
+  .bfs-legend-dot { width:12px; height:12px; border-radius:4px; }
+  .bfs-legend-dot.l0 { background:rgba(34,211,238,0.5); }
+  .bfs-legend-dot.l1 { background:rgba(96,165,250,0.45); }
+  .bfs-legend-dot.l2 { background:rgba(167,139,250,0.45); }
+  .bfs-legend-dot.l3 { background:rgba(244,114,182,0.4); }
+
+  .demo-summary {
+    text-align:center; margin-top:16px; font-size:14px; color:var(--text-dim);
+    padding:14px 18px; border-radius:10px; line-height:1.8;
+  }
+  .demo-summary.dfs-summary { background:rgba(251,146,60,0.04); border:1px dashed rgba(251,146,60,0.2); }
+  .demo-summary.bfs-summary { background:rgba(34,211,238,0.04); border:1px dashed rgba(34,211,238,0.2); }
+
+  /* USE CARDS */
+  .use-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:600px){ .use-grid{grid-template-columns:1fr;} }
+  .use-card { background:var(--surface); border-radius:14px; padding:24px; border:1px solid var(--border); }
+  .use-card h4 { font-family:'JetBrains Mono',monospace; font-size:16px; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .use-card.for-dfs h4 { color:var(--accent-orange); }
+  .use-card.for-bfs h4 { color:var(--accent-cyan); }
+  .use-item { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; font-size:14px; color:var(--text-dim); line-height:1.5; }
+  .use-item .dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:7px; }
+  .for-dfs .dot { background:var(--accent-orange); }
+  .for-bfs .dot { background:var(--accent-cyan); }
+  .shortcut-box {
+    margin-top:16px; text-align:center; padding:16px 24px;
+    background:linear-gradient(135deg,rgba(96,165,250,0.06),rgba(34,211,238,0.06));
+    border:1px solid rgba(96,165,250,0.2); border-radius:12px; font-size:15px; color:var(--text);
+  }
+  .shortcut-box strong { color:var(--accent-cyan); }
+
+  /* INSIGHT */
+  .insight-box {
+    margin-top:56px; padding:32px;
+    background:linear-gradient(135deg,rgba(251,146,60,0.04),rgba(96,165,250,0.04));
+    border:1px solid rgba(251,146,60,0.2); border-radius:16px; position:relative; overflow:hidden;
+  }
+  .insight-box::before { content:'💡'; position:absolute; top:-20px; right:20px; font-size:80px; opacity:0.06; }
+  .insight-box h3 { font-size:18px; color:var(--accent-orange); margin-bottom:12px; }
+  .insight-wrong,.insight-right { padding:14px 18px; border-radius:10px; margin-bottom:10px; font-size:15px; }
+  .insight-wrong { background:rgba(248,113,113,0.06); border-left:3px solid var(--accent-red); color:var(--text-dim); }
+  .insight-wrong .x { color:var(--accent-red); margin-right:6px; font-weight:700; }
+  .insight-right { background:rgba(52,211,153,0.06); border-left:3px solid var(--accent-green); color:var(--text); }
+  .insight-right .check { color:var(--accent-green); margin-right:6px; font-weight:700; }
+  .engine-text { margin-top:14px; font-size:14px; color:var(--text-dim); line-height:1.7; }
+  .engine-text strong { color:var(--accent-cyan); }
+
+  /* MENTAL */
+  .mental-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:600px){ .mental-grid{grid-template-columns:1fr;} }
+  .mental-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:20px; display:flex; align-items:flex-start; gap:14px; transition:border-color 0.3s;
+  }
+  .mental-card:hover { border-color:rgba(167,139,250,0.4); }
+  .mental-num { font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--accent-purple); flex-shrink:0; width:36px; text-align:center; }
+  .mental-card .q { font-size:15px; color:#fff; font-weight:500; margin-bottom:4px; }
+  .mental-card .hint { font-size:13px; color:var(--text-dim); }
+  .mental-card .hint code { background:rgba(167,139,250,0.1); color:var(--accent-purple); }
+
+  /* QUIZ */
+  .quiz-section { margin-top:56px; }
+  .quiz-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:24px; margin-bottom:14px; display:flex; align-items:flex-start; gap:16px;
+  }
+  .quiz-num {
+    font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:var(--bg);
+    background:var(--accent-green); width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .quiz-card p { font-size:15px; color:var(--text); line-height:1.6; }
+
+  /* CODE SECTION */
+  .code-section { margin-top:56px; }
+  .code-tabs {
+    display:flex; gap:0; margin-bottom:0; position:relative; z-index:1;
+  }
+  .code-tab {
+    font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:600;
+    padding:12px 28px; border:1px solid var(--border); border-bottom:none;
+    border-radius:12px 12px 0 0; cursor:pointer; transition:all 0.2s;
+    background:var(--surface2); color:var(--text-dim);
+  }
+  .code-tab:hover { color:var(--text); }
+  .code-tab.active-dfs { background:var(--surface); color:var(--accent-orange); border-color:rgba(251,146,60,0.3); }
+  .code-tab.active-bfs { background:var(--surface); color:var(--accent-cyan); border-color:rgba(34,211,238,0.3); }
+  .code-panel {
+    display:none; background:var(--surface); border:1px solid var(--border);
+    border-radius:0 12px 12px 12px; padding:0; overflow:hidden;
+  }
+  .code-panel.active { display:block; }
+  .code-panel.dfs-active { border-color:rgba(251,146,60,0.2); }
+  .code-panel.bfs-active { border-color:rgba(34,211,238,0.2); }
+  .code-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 20px; border-bottom:1px solid var(--border);
+  }
+  .code-header .file-name {
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text-dim);
+    display:flex; align-items:center; gap:6px;
+  }
+  .code-header .file-dot { width:8px; height:8px; border-radius:50%; }
+  .code-header .file-dot.dfs-dot { background:var(--accent-orange); }
+  .code-header .file-dot.bfs-dot { background:var(--accent-cyan); }
+  .code-header .lang-badge {
+    font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
+    padding:3px 10px; border-radius:6px; letter-spacing:0.5px;
+  }
+  .lang-badge.java { background:rgba(251,146,60,0.1); color:var(--accent-orange); }
+  .code-body {
+    padding:20px; overflow-x:auto; counter-reset:line;
+  }
+  .code-body pre {
+    font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.8;
+    color:var(--text); margin:0; white-space:pre;
+  }
+  /* Syntax colors */
+  .kw { color:#c792ea; }        /* keyword: class, void, if, for, new, return, boolean, int, char */
+  .tp { color:#ffcb6b; }        /* type: Queue, LinkedList, char[][] */
+  .fn { color:#82aaff; }        /* function name */
+  .cm { color:#546e7a; font-style:italic; }  /* comment */
+  .st { color:#c3e88d; }        /* string */
+  .nu { color:#f78c6c; }        /* number */
+  .op { color:#89ddff; }        /* operator: =, ==, <, >, &&, ||, +, -, ! */
+  .an { color:#f07178; }        /* annotation or important */
+  .code-comment-line {
+    display:block; padding:8px 0 4px;
+    color:var(--accent-green); font-weight:600; font-size:13px;
+  }
+  .code-note {
+    padding:14px 20px; border-top:1px solid var(--border);
+    font-size:13px; color:var(--text-dim); line-height:1.6;
+    background:rgba(0,0,0,0.15);
+  }
+  .code-note strong { font-weight:600; }
+  .code-note strong.dfs-n { color:var(--accent-orange); }
+  .code-note strong.bfs-n { color:var(--accent-cyan); }
+  .code-callout {
+    display:inline-block; background:rgba(96,165,250,0.1); color:var(--accent-blue);
+    font-family:'JetBrains Mono',monospace; font-size:12px; padding:2px 8px;
+    border-radius:4px; margin-left:4px;
+  }
+
+  .footer {
+    text-align:center; margin-top:64px; padding-top:24px;
+    border-top:1px solid var(--border); color:var(--text-dim); font-size:13px;
+  }
+
+  @media(max-width:480px){
+    .demo-cell { width:60px; height:60px; }
+    .demo-cell .val { font-size:16px; }
+  }
+  .back-btn { position: fixed; top: 20px; left: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 10px 20px; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; border-radius: 8px; }
+  .back-btn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+</style>
+</head>
+<body>
+    <a href="../../index.html" class="back-btn">← 返回首頁</a>
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="tag">ALGORITHM CHEAT SHEET</div>
+    <h1>DFS / BFS<br>統一框架圖解</h1>
+    <p class="subtitle">把 DFS 和 BFS 當成<strong>同一個引擎，只是換容器</strong></p>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-label">Core Concept</div>
+    <h2><span class="emoji">🧭</span>先把它們當成「走迷宮」</h2>
+    <p style="color:var(--text-dim);margin-bottom:20px;font-size:15px;">
+      DFS 和 BFS 本質是同一件事：<strong style="color:var(--text)">把「可到達的點」走一遍</strong>，差別只是走的順序。不管用哪一種，你永遠都在做同樣四件事：
+    </p>
+    <div class="steps-grid">
+      <div class="step-card"><div class="step-num">01</div><div class="step-icon">🚩</div><h4>起點從哪來？</h4><p>掃到 <code>'1'</code>、queue 初始、或題目給你 start node</p></div>
+      <div class="step-card"><div class="step-num">02</div><div class="step-icon">🔗</div><h4>鄰居怎麼找？</h4><p>上下左右、圖的 adjacency list、或轉換規則</p></div>
+      <div class="step-card"><div class="step-num">03</div><div class="step-icon">✅</div><h4>什麼算訪問過？</h4><p><code>visited</code> 陣列、改成 <code>'0'</code>、或用 Set 記錄</p></div>
+      <div class="step-card"><div class="step-num">04</div><div class="step-icon">🛑</div><h4>何時停止？</h4><p>越界、遇到牆、不是目標、已 visited</p></div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-label">DFS vs BFS</div>
+    <h2><span class="emoji">⚔️</span>差別只在「容器」</h2>
+    <div class="vs-container">
+      <div class="vs-box dfs">
+        <div class="label">DFS</div><div class="metaphor">🏃‍♂️💨</div>
+        <div class="desc"><strong>一路鑽到底</strong><br>像在迷宮一直往前衝<br>撞牆才回頭</div>
+        <div class="container-tag">Stack（或遞迴）</div>
+      </div>
+      <div class="vs-divider"><div class="vs-text">VS</div></div>
+      <div class="vs-box bfs">
+        <div class="label">BFS</div><div class="metaphor">🌊</div>
+        <div class="desc"><strong>一圈一圈擴散</strong><br>像水波紋往外推<br>離起點近的先處理</div>
+        <div class="container-tag">Queue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-label">Universal Template</div>
+    <h2><span class="emoji">🧩</span>背起來的通用模板</h2>
+    <div style="text-align:center;margin-bottom:8px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-dim);">Graph/Grid Traversal =</span>
+    </div>
+    <div class="template-flow">
+      <div class="template-block tb-scan"><div class="t-icon">🔍</div><div class="t-name">Scan</div><div class="t-desc">找新的起點<br>看到 '1' → count++</div></div>
+      <div class="template-arrow">→</div>
+      <div class="template-block tb-traverse"><div class="t-icon">🚶</div><div class="t-name">Traverse</div><div class="t-desc">DFS 或 BFS<br>把連通塊走完</div></div>
+      <div class="template-arrow">→</div>
+      <div class="template-block tb-mark"><div class="t-icon">🎨</div><div class="t-name">Mark</div><div class="t-desc">防止重複走<br>visited = true</div></div>
+    </div>
+    <div class="mark-soul">⚠️ Mark 是靈魂 — 沒有 Mark 就一定重複或死循環</div>
+  </div>
+
+  <!-- SECTION 4: INTERACTIVE DEMO -->
+  <div class="section">
+    <div class="section-label">Interactive Demo</div>
+    <h2><span class="emoji">🗺️</span>同一張圖，兩種走法</h2>
+    <p style="color:var(--text-dim);margin-bottom:8px;font-size:14px;">
+      3×3 環形格子（中間是牆），從左上角 (0,0) 出發。<strong style="color:var(--text)">先播 DFS 再播 BFS</strong>，比較走訪順序的差異：
+    </p>
+
+    <div class="demo-wrapper">
+      <div class="demo-top-label">Grid 3×3 · 中間(1,1) = 0（牆）· 起點 (0,0)</div>
+
+      <div id="grid-container">
+        <div class="demo-grid-row">
+          <div class="demo-cell land" data-r="0" data-c="0"><span class="coord">0,0</span><span class="val">1</span><span class="order-badge"></span></div>
+          <div class="demo-cell land" data-r="0" data-c="1"><span class="coord">0,1</span><span class="val">1</span><span class="order-badge"></span></div>
+          <div class="demo-cell land" data-r="0" data-c="2"><span class="coord">0,2</span><span class="val">1</span><span class="order-badge"></span></div>
+        </div>
+        <div class="demo-grid-row">
+          <div class="demo-cell land" data-r="1" data-c="0"><span class="coord">1,0</span><span class="val">1</span><span class="order-badge"></span></div>
+          <div class="demo-cell wall" data-r="1" data-c="1"><span class="coord">1,1</span><span class="val">0</span><span class="order-badge"></span></div>
+          <div class="demo-cell land" data-r="1" data-c="2"><span class="coord">1,2</span><span class="val">1</span><span class="order-badge"></span></div>
+        </div>
+        <div class="demo-grid-row">
+          <div class="demo-cell land" data-r="2" data-c="0"><span class="coord">2,0</span><span class="val">1</span><span class="order-badge"></span></div>
+          <div class="demo-cell land" data-r="2" data-c="1"><span class="coord">2,1</span><span class="val">1</span><span class="order-badge"></span></div>
+          <div class="demo-cell land" data-r="2" data-c="2"><span class="coord">2,2</span><span class="val">1</span><span class="order-badge"></span></div>
+        </div>
+      </div>
+
+      <div class="demo-controls">
+        <button class="demo-btn dfs-btn" onclick="runDFS()">🏃 播放 DFS</button>
+        <button class="demo-btn bfs-btn" onclick="runBFS()">🌊 播放 BFS</button>
+        <button class="demo-btn reset-btn" onclick="resetGrid()">↺ 重置</button>
+      </div>
+
+      <div class="step-info" id="step-info">
+        <div class="step-counter" id="step-counter"></div>
+        <div class="step-description" id="step-desc">點擊上方按鈕開始動畫 👆</div>
+        <div id="step-path-container"></div>
+        <div class="bfs-legend" id="bfs-legend" style="display:none;">
+          <div class="bfs-legend-item"><div class="bfs-legend-dot l0"></div>第 0 層（起點）</div>
+          <div class="bfs-legend-item"><div class="bfs-legend-dot l1"></div>第 1 層</div>
+          <div class="bfs-legend-item"><div class="bfs-legend-dot l2"></div>第 2 層</div>
+          <div class="bfs-legend-item"><div class="bfs-legend-dot l3"></div>第 3 層</div>
+        </div>
+      </div>
+      <div id="demo-summary-container"></div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section">
+    <div class="section-label">When to Use</div>
+    <h2><span class="emoji">🎯</span>什麼時候選 DFS？什麼時候選 BFS？</h2>
+    <div class="use-grid">
+      <div class="use-card for-dfs">
+        <h4>🟠 DFS 適合</h4>
+        <div class="use-item"><div class="dot"></div><div>只想<strong style="color:var(--text)">把一整塊走完</strong>（島嶼、區塊、是否存在路徑）</div></div>
+        <div class="use-item"><div class="dot"></div><div>需要<strong style="color:var(--text)">回溯 Backtracking</strong>（排列組合、迷宮找所有路）</div></div>
+      </div>
+      <div class="use-card for-bfs">
+        <h4>🔵 BFS 適合</h4>
+        <div class="use-item"><div class="dot"></div><div><strong style="color:var(--text)">最短步數 / 最少層數</strong>（迷宮最短路、Word Ladder）</div></div>
+        <div class="use-item"><div class="dot"></div><div>想要<strong style="color:var(--text)">按距離一圈圈擴散</strong>（Rotting Oranges）</div></div>
+      </div>
+    </div>
+    <div class="shortcut-box">🚀 看到題目出現「<strong>最短</strong>」兩個字 → 直覺先想 BFS</div>
+  </div>
+
+  <!-- SECTION: JAVA CODE -->
+  <div class="section code-section">
+    <div class="section-label">Java Implementation</div>
+    <h2><span class="emoji">☕</span>Number of Islands — Java 實作</h2>
+    <p style="color:var(--text-dim);margin-bottom:16px;font-size:14px;">
+      同一題 <code>Number of Islands</code>，分別用 DFS 和 BFS 寫。<strong style="color:var(--text)">結構完全對應上面的 Scan → Traverse → Mark 模板</strong>，點 Tab 切換比較：
+    </p>
+
+    <!-- Tabs -->
+    <div class="code-tabs">
+      <div class="code-tab active-dfs" id="tab-dfs" onclick="switchTab('dfs')">🟠 DFS（遞迴）</div>
+      <div class="code-tab" id="tab-bfs" onclick="switchTab('bfs')">🔵 BFS（Queue）</div>
+    </div>
+
+    <!-- DFS Panel -->
+    <div class="code-panel active dfs-active" id="panel-dfs">
+      <div class="code-header">
+        <div class="file-name"><div class="file-dot dfs-dot"></div>Solution_DFS.java</div>
+        <div class="lang-badge java">JAVA</div>
+      </div>
+      <div class="code-body"><pre>
+<span class="kw">class</span> <span class="tp">Solution</span> {
+
+    <span class="kw">public int</span> <span class="fn">numIslands</span>(<span class="kw">char</span>[][] grid) {
+        <span class="kw">int</span> islands <span class="op">=</span> <span class="nu">0</span>;
+
+        <span class="cm">// ========== ① SCAN：掃描每一格找新起點 ==========</span>
+        <span class="kw">for</span> (<span class="kw">int</span> r <span class="op">=</span> <span class="nu">0</span>; r <span class="op">&lt;</span> grid.length; r<span class="op">++</span>) {
+            <span class="kw">for</span> (<span class="kw">int</span> c <span class="op">=</span> <span class="nu">0</span>; c <span class="op">&lt;</span> grid[<span class="nu">0</span>].length; c<span class="op">++</span>) {
+                <span class="kw">if</span> (grid[r][c] <span class="op">==</span> <span class="st">'1'</span>) {   <span class="cm">// 發現新島嶼！</span>
+                    islands<span class="op">++</span>;
+                    <span class="fn">dfs</span>(grid, r, c);       <span class="cm">// ② TRAVERSE：把整座島走完</span>
+                }
+            }
+        }
+        <span class="kw">return</span> islands;
+    }
+
+    <span class="cm">// ========== ② TRAVERSE + ③ MARK ==========</span>
+    <span class="kw">private void</span> <span class="fn">dfs</span>(<span class="kw">char</span>[][] grid, <span class="kw">int</span> r, <span class="kw">int</span> c) {
+        <span class="cm">// 停止條件：越界 or 不是陸地</span>
+        <span class="kw">if</span> (r <span class="op">&lt;</span> <span class="nu">0</span> <span class="op">||</span> r <span class="op">&gt;=</span> grid.length <span class="op">||</span>
+            c <span class="op">&lt;</span> <span class="nu">0</span> <span class="op">||</span> c <span class="op">&gt;=</span> grid[<span class="nu">0</span>].length <span class="op">||</span>
+            grid[r][c] <span class="op">!=</span> <span class="st">'1'</span>) {
+            <span class="kw">return</span>;
+        }
+
+        grid[r][c] <span class="op">=</span> <span class="st">'0'</span>;  <span class="cm">// ③ MARK：沉島！防止重複走</span>
+
+        <span class="cm">// 往四個方向鑽（遞迴 = 隱形 Stack）</span>
+        <span class="fn">dfs</span>(grid, r <span class="op">-</span> <span class="nu">1</span>, c);  <span class="cm">// ↑ 上</span>
+        <span class="fn">dfs</span>(grid, r <span class="op">+</span> <span class="nu">1</span>, c);  <span class="cm">// ↓ 下</span>
+        <span class="fn">dfs</span>(grid, r, c <span class="op">-</span> <span class="nu">1</span>);  <span class="cm">// ← 左</span>
+        <span class="fn">dfs</span>(grid, r, c <span class="op">+</span> <span class="nu">1</span>);  <span class="cm">// → 右</span>
+    }
+}</pre>
+      </div>
+      <div class="code-note">
+        <strong class="dfs-n">🟠 DFS 重點：</strong>遞迴本身就是 Stack。每次呼叫 <code>dfs()</code> 就是 push，return 就是 pop。<br>
+        Mark 放在「進入時」— 進來第一件事就 <code>grid[r][c] = '0'</code>，確保不會重走。
+      </div>
+    </div>
+
+    <!-- BFS Panel -->
+    <div class="code-panel" id="panel-bfs">
+      <div class="code-header">
+        <div class="file-name"><div class="file-dot bfs-dot"></div>Solution_BFS.java</div>
+        <div class="lang-badge java">JAVA</div>
+      </div>
+      <div class="code-body"><pre>
+<span class="kw">class</span> <span class="tp">Solution</span> {
+
+    <span class="kw">private static final int</span>[][] <span class="tp">DIRS</span> <span class="op">=</span> {{<span class="op">-</span><span class="nu">1</span>,<span class="nu">0</span>},{<span class="nu">1</span>,<span class="nu">0</span>},{<span class="nu">0</span>,<span class="op">-</span><span class="nu">1</span>},{<span class="nu">0</span>,<span class="nu">1</span>}};
+
+    <span class="kw">public int</span> <span class="fn">numIslands</span>(<span class="kw">char</span>[][] grid) {
+        <span class="kw">int</span> islands <span class="op">=</span> <span class="nu">0</span>;
+
+        <span class="cm">// ========== ① SCAN：掃描每一格找新起點 ==========</span>
+        <span class="kw">for</span> (<span class="kw">int</span> r <span class="op">=</span> <span class="nu">0</span>; r <span class="op">&lt;</span> grid.length; r<span class="op">++</span>) {
+            <span class="kw">for</span> (<span class="kw">int</span> c <span class="op">=</span> <span class="nu">0</span>; c <span class="op">&lt;</span> grid[<span class="nu">0</span>].length; c<span class="op">++</span>) {
+                <span class="kw">if</span> (grid[r][c] <span class="op">==</span> <span class="st">'1'</span>) {   <span class="cm">// 發現新島嶼！</span>
+                    islands<span class="op">++</span>;
+                    <span class="fn">bfs</span>(grid, r, c);       <span class="cm">// ② TRAVERSE：把整座島走完</span>
+                }
+            }
+        }
+        <span class="kw">return</span> islands;
+    }
+
+    <span class="cm">// ========== ② TRAVERSE + ③ MARK ==========</span>
+    <span class="kw">private void</span> <span class="fn">bfs</span>(<span class="kw">char</span>[][] grid, <span class="kw">int</span> r, <span class="kw">int</span> c) {
+        <span class="tp">Queue</span><span class="op">&lt;</span><span class="kw">int</span>[]<span class="op">&gt;</span> queue <span class="op">=</span> <span class="kw">new</span> <span class="tp">LinkedList</span><span class="op">&lt;&gt;</span>();
+        queue.<span class="fn">offer</span>(<span class="kw">new int</span>[]{r, c});
+        grid[r][c] <span class="op">=</span> <span class="st">'0'</span>;  <span class="cm">// ③ MARK：入隊時就標記！（不是出隊時）</span>
+
+        <span class="kw">while</span> (<span class="op">!</span>queue.<span class="fn">isEmpty</span>()) {
+            <span class="kw">int</span>[] cur <span class="op">=</span> queue.<span class="fn">poll</span>();
+
+            <span class="kw">for</span> (<span class="kw">int</span>[] d : <span class="tp">DIRS</span>) {
+                <span class="kw">int</span> nr <span class="op">=</span> cur[<span class="nu">0</span>] <span class="op">+</span> d[<span class="nu">0</span>];
+                <span class="kw">int</span> nc <span class="op">=</span> cur[<span class="nu">1</span>] <span class="op">+</span> d[<span class="nu">1</span>];
+
+                <span class="cm">// 停止條件：越界 or 不是陸地</span>
+                <span class="kw">if</span> (nr <span class="op">&lt;</span> <span class="nu">0</span> <span class="op">||</span> nr <span class="op">&gt;=</span> grid.length <span class="op">||</span>
+                    nc <span class="op">&lt;</span> <span class="nu">0</span> <span class="op">||</span> nc <span class="op">&gt;=</span> grid[<span class="nu">0</span>].length <span class="op">||</span>
+                    grid[nr][nc] <span class="op">!=</span> <span class="st">'1'</span>) {
+                    <span class="kw">continue</span>;
+                }
+
+                grid[nr][nc] <span class="op">=</span> <span class="st">'0'</span>;  <span class="cm">// ③ MARK：入隊時標記！</span>
+                queue.<span class="fn">offer</span>(<span class="kw">new int</span>[]{nr, nc});
+            }
+        }
+    }
+}</pre>
+      </div>
+      <div class="code-note">
+        <strong class="bfs-n">🔵 BFS 重點：</strong>把 Stack 換成 <code>Queue</code>，其他完全一樣！<br>
+        <span class="an" style="color:var(--accent-red);font-weight:600;">⚠️ visited 必須在「入隊時」標記</span>，不是出隊時！否則同一個格子會被多次加入 queue → 浪費時間甚至 TLE。
+      </div>
+    </div>
+
+    <!-- Side by side comparison -->
+    <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div style="background:var(--surface);border:1px solid rgba(251,146,60,0.2);border-radius:12px;padding:18px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent-orange);font-weight:700;margin-bottom:10px;">🟠 DFS 結構</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+          <div>① <strong style="color:var(--text)">Scan</strong>：雙層 for 掃格子</div>
+          <div>② <strong style="color:var(--text)">Traverse</strong>：遞迴（隱形 Stack）</div>
+          <div>③ <strong style="color:var(--text)">Mark</strong>：進入函式時 <code>= '0'</code></div>
+          <div style="margin-top:6px;color:var(--accent-orange);">容器：<strong>遞迴 Call Stack</strong></div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid rgba(34,211,238,0.2);border-radius:12px;padding:18px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent-cyan);font-weight:700;margin-bottom:10px;">🔵 BFS 結構</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+          <div>① <strong style="color:var(--text)">Scan</strong>：雙層 for 掃格子</div>
+          <div>② <strong style="color:var(--text)">Traverse</strong>：Queue + while loop</div>
+          <div>③ <strong style="color:var(--text)">Mark</strong>：入隊時 <code>= '0'</code></div>
+          <div style="margin-top:6px;color:var(--accent-cyan);">容器：<strong>Queue（LinkedList）</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;text-align:center;padding:14px 20px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:10px;font-size:14px;color:var(--accent-green);font-weight:500;">
+      ✅ 看到了嗎？① Scan 完全一樣、③ Mark 完全一樣，只有 ② Traverse 的容器不同！
+    </div>
+  </div>
+
+  <!-- INSIGHT -->
+  <div class="insight-box">
+    <h3>💡 你沒融會貫通的核心原因</h3>
+    <div class="insight-wrong"><span class="x">✗</span> 把 DFS / BFS 當成「兩種不同題型的解法」</div>
+    <div class="insight-right"><span class="check">✓</span> 應該把它當成「同一個 traversal 引擎，換容器而已」</div>
+    <div class="engine-text">你只要把「引擎」固定，題目只是換：<strong>起點來源</strong>、<strong>鄰居定義</strong>、<strong>允許走的條件</strong>、<strong>需要的答案</strong>（計數 / 最短距離 / 面積 / 邊界）</div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="section">
+    <div class="section-label">Mental Model</div>
+    <h2><span class="emoji">🧠</span>超通用心智模板 — 拿到題目先回答 4 句</h2>
+    <div class="mental-grid">
+      <div class="mental-card"><div class="mental-num">1</div><div><div class="q">Node 是什麼？</div><div class="hint">格子？城市？字串？</div></div></div>
+      <div class="mental-card"><div class="mental-num">2</div><div><div class="q">Edge / Neighbor 是什麼？</div><div class="hint">上下左右？<code>adj list</code>？轉換規則？</div></div></div>
+      <div class="mental-card"><div class="mental-num">3</div><div><div class="q">Visited / Mark 怎麼做？</div><div class="hint"><code>boolean[][]</code>？改值？<code>Set</code>？</div></div></div>
+      <div class="mental-card"><div class="mental-num">4</div><div><div class="q">我要的答案是什麼？</div><div class="hint">存在？數量？最大？最短？</div></div></div>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--text-dim);">回答完這四句，你就知道要用 DFS、BFS、或兩個都行 🎯</p>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-section section">
+    <div class="section-label">Quiz Time</div>
+    <h2><span class="emoji">📝</span>驗收 — 回答以下三題</h2>
+    <div class="quiz-card"><div class="quiz-num">1</div><p><code>Number of Islands</code>：用 DFS 或 BFS 都行，答案要的是什麼類型？<br><span style="color:var(--text-dim);font-size:13px;">（存在 / 數量 / 最大 / 最短）</span></p></div>
+    <div class="quiz-card"><div class="quiz-num">2</div><p>「迷宮從 S 走到 E，求<strong style="color:var(--accent-cyan)">最少步數</strong>」：你會選 DFS 還 BFS？為什麼？</p></div>
+    <div class="quiz-card"><div class="quiz-num">3</div><p>在 BFS 裡，<code>visited</code> 應該在什麼時候標記？<br><span style="color:var(--text-dim);font-size:13px;">（入隊時 vs 出隊時）你選一個並說原因</span></p></div>
+  </div>
+
+  <div class="footer">DFS / BFS 統一框架圖解 · Built for Spyua</div>
+</div>
+
+<script>
+const GRID = [[1,1,1],[1,0,1],[1,1,1]];
+const ROWS = 3, COLS = 3;
+// Directions: right, down, left, up
+const DIRS = [[0,1],[1,0],[0,-1],[-1,0]];
+const DIR_ARROWS = ['→','↓','←','↑'];
+
+let animating = false;
+let animTimer = null;
+
+function getCell(r, c) {
+  return document.querySelector(`.demo-cell[data-r="${r}"][data-c="${c}"]`);
+}
+
+function resetGrid() {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  animating = false;
+  document.querySelectorAll('.demo-cell').forEach(cell => {
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    cell.className = 'demo-cell ' + (GRID[r][c] ? 'land' : 'wall');
+    const badge = cell.querySelector('.order-badge');
+    badge.className = 'order-badge';
+    badge.textContent = '';
+    badge.style.background = '';
+    badge.style.color = '';
+  });
+  document.getElementById('step-counter').textContent = '';
+  document.getElementById('step-desc').innerHTML = '點擊上方按鈕開始動畫 👆';
+  document.getElementById('step-path-container').innerHTML = '';
+  document.getElementById('bfs-legend').style.display = 'none';
+  document.getElementById('demo-summary-container').innerHTML = '';
+}
+
+// ========== DFS ==========
+function computeDFS() {
+  const visited = Array.from({length:ROWS}, () => Array(COLS).fill(false));
+  const steps = [];
+  function dfs(r, c, order, arrow) {
+    if (r<0||r>=ROWS||c<0||c>=COLS) return order;
+    if (GRID[r][c]===0||visited[r][c]) return order;
+    visited[r][c] = true;
+    steps.push({r, c, order, arrow});
+    order++;
+    for (let i=0;i<4;i++) {
+      order = dfs(r+DIRS[i][0], c+DIRS[i][1], order, DIR_ARROWS[i]);
+    }
+    return order;
+  }
+  dfs(0,0,1,'🚩');
+  return steps;
+}
+
+function runDFS() {
+  if (animating) return;
+  resetGrid();
+  animating = true;
+  const steps = computeDFS();
+  let idx = 0;
+  const pathParts = [];
+  document.getElementById('bfs-legend').style.display = 'none';
+
+  function tick() {
+    if (idx >= steps.length) {
+      document.querySelectorAll('.current-dfs').forEach(c => { c.classList.remove('current-dfs'); c.classList.add('visited-dfs'); });
+      document.getElementById('step-counter').textContent = `✅ DFS 完成 — 共 ${steps.length} 步`;
+      document.getElementById('step-desc').innerHTML = `<strong class="dfs-hl">🐍 DFS 像一條蛇，沿邊緣一路鑽到底再回頭</strong><br><span style="color:var(--text-dim);font-size:13px;">注意順序：繞了一整圈外環！</span>`;
+      document.getElementById('demo-summary-container').innerHTML =
+        `<div class="demo-summary dfs-summary">🟠 DFS 路徑：${pathParts.join(' → ')}<br><strong style="color:var(--accent-orange)">特徵：一條路走到黑，撞牆才回頭</strong></div>`;
+      animating = false;
+      return;
+    }
+    document.querySelectorAll('.current-dfs').forEach(c => { c.classList.remove('current-dfs'); c.classList.add('visited-dfs'); });
+    const s = steps[idx];
+    const cell = getCell(s.r, s.c);
+    cell.className = 'demo-cell current-dfs';
+    const badge = cell.querySelector('.order-badge');
+    badge.textContent = s.order;
+    badge.className = 'order-badge show';
+    badge.style.background = 'var(--accent-orange)';
+    badge.style.color = 'var(--bg)';
+    pathParts.push(`(${s.r},${s.c})`);
+    document.getElementById('step-counter').textContent = `Step ${s.order} / ${steps.length}`;
+    document.getElementById('step-desc').innerHTML =
+      `${s.arrow} 走到 <strong class="dfs-hl">(${s.r},${s.c})</strong>` +
+      (s.arrow==='🚩'?' — 起點出發！':' — 繼續往深處鑽');
+    document.getElementById('step-path-container').innerHTML =
+      `<div class="step-path dfs-path">${pathParts.join(' → ')}</div>`;
+    idx++;
+    animTimer = setTimeout(tick, 550);
+  }
+  tick();
+}
+
+// ========== BFS ==========
+function computeBFS() {
+  const visited = Array.from({length:ROWS}, () => Array(COLS).fill(false));
+  const steps = [];
+  const queue = [[0,0,0]]; // r, c, layer
+  visited[0][0] = true;
+  let order = 1;
+  while (queue.length > 0) {
+    const [r, c, layer] = queue.shift();
+    steps.push({r, c, order, layer});
+    order++;
+    for (let i=0;i<4;i++) {
+      const nr=r+DIRS[i][0], nc=c+DIRS[i][1];
+      if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&GRID[nr][nc]===1&&!visited[nr][nc]) {
+        visited[nr][nc] = true;
+        queue.push([nr, nc, layer+1]);
+      }
+    }
+  }
+  return steps;
+}
+
+function runBFS() {
+  if (animating) return;
+  resetGrid();
+  animating = true;
+  const steps = computeBFS();
+  let idx = 0;
+  const pathParts = [];
+  const layerColors = ['var(--accent-cyan)','var(--accent-blue)','var(--accent-purple)','var(--accent-pink)'];
+  const layerNames = ['第 0 層（起點）','第 1 層','第 2 層','第 3 層'];
+  document.getElementById('bfs-legend').style.display = 'flex';
+
+  function tick() {
+    if (idx >= steps.length) {
+      document.querySelectorAll('.current-bfs').forEach(c => c.classList.remove('current-bfs'));
+      document.getElementById('step-counter').textContent = `✅ BFS 完成 — 共 ${steps.length} 步`;
+      document.getElementById('step-desc').innerHTML = `<strong class="bfs-hl">🌊 BFS 像水波紋，一層一層往外擴散</strong><br><span style="color:var(--text-dim);font-size:13px;">注意：同一層的鄰居全部處理完，才往下一層！這就是為什麼 BFS 能找最短路徑。</span>`;
+      document.getElementById('demo-summary-container').innerHTML =
+        `<div class="demo-summary bfs-summary">🔵 BFS 路徑：${pathParts.join(' → ')}<br><strong style="color:var(--accent-cyan)">特徵：同層先走完 → 所以保證最短距離</strong></div>`;
+      animating = false;
+      return;
+    }
+    document.querySelectorAll('.current-bfs').forEach(c => c.classList.remove('current-bfs'));
+    const s = steps[idx];
+    const cell = getCell(s.r, s.c);
+    cell.className = `demo-cell visited-bfs bfs-layer-${s.layer} current-bfs`;
+    const badge = cell.querySelector('.order-badge');
+    badge.textContent = s.order;
+    badge.className = 'order-badge show';
+    badge.style.background = layerColors[s.layer] || layerColors[3];
+    badge.style.color = 'var(--bg)';
+    pathParts.push(`(${s.r},${s.c})`);
+    document.getElementById('step-counter').textContent = `Step ${s.order} / ${steps.length}　·　${layerNames[s.layer]}`;
+    document.getElementById('step-desc').innerHTML =
+      `🌊 走到 <strong class="bfs-hl">(${s.r},${s.c})</strong> — ${layerNames[s.layer]}` +
+      (s.layer===0?' 起點出發！':' （先把同層走完）');
+    document.getElementById('step-path-container').innerHTML =
+      `<div class="step-path bfs-path">${pathParts.join(' → ')}</div>`;
+    idx++;
+    animTimer = setTimeout(tick, 550);
+  }
+  tick();
+}
+// ========== Code Tab Switch ==========
+function switchTab(which) {
+  const tabDfs = document.getElementById('tab-dfs');
+  const tabBfs = document.getElementById('tab-bfs');
+  const panelDfs = document.getElementById('panel-dfs');
+  const panelBfs = document.getElementById('panel-bfs');
+
+  if (which === 'dfs') {
+    tabDfs.className = 'code-tab active-dfs';
+    tabBfs.className = 'code-tab';
+    panelDfs.className = 'code-panel active dfs-active';
+    panelBfs.className = 'code-panel';
+  } else {
+    tabDfs.className = 'code-tab';
+    tabBfs.className = 'code-tab active-bfs';
+    panelDfs.className = 'code-panel';
+    panelBfs.className = 'code-panel active bfs-active';
+  }
+}
+</script>
+</body>
+</html>

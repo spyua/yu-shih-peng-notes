@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "gridColumns": 7,
-    "gridRows": 50,
+    "gridRows": 52,
     "title": "Backend Developer Roadmap"
   },
   "sections": [
@@ -157,6 +157,22 @@
       "col": 4,
       "colSpan": 1,
       "isMain": true
+    },
+    {
+      "id": "sec-design-cases",
+      "title": "System Design Cases",
+      "row": 50,
+      "col": 4,
+      "colSpan": 1,
+      "isMain": false
+    },
+    {
+      "id": "sec-dsa",
+      "title": "Data Structures & Algorithms",
+      "row": 50,
+      "col": 6,
+      "colSpan": 1,
+      "isMain": false
     }
   ],
   "nodes": [
@@ -881,6 +897,36 @@
       "col": 5,
       "type": "flexible",
       "level": "進階"
+    },
+    {
+      "id": "prime-video",
+      "name": "Amazon Prime Video",
+      "skillRef": "22-System-Design-Cases/Amazon Prime Video 系統設計",
+      "row": 51,
+      "col": 4,
+      "type": "recommended",
+      "level": "進階",
+      "link": "tutorials/22-system-design-cases/prime-video-system-design-tutorial.html"
+    },
+    {
+      "id": "api-rate-limiter",
+      "name": "API Rate Limiter 系統設計",
+      "skillRef": "17-Scaling-Strategies/API Rate Limiter 系統設計",
+      "row": 48,
+      "col": 3,
+      "type": "recommended",
+      "level": "進階",
+      "link": "tutorials/17-scaling-strategies/api-rate-limiter-system-design-tutorial.html"
+    },
+    {
+      "id": "dfs-bfs",
+      "name": "DFS / BFS 統一框架",
+      "skillRef": "23-DSA/DFS / BFS 統一框架",
+      "row": 51,
+      "col": 6,
+      "type": "recommended",
+      "level": "中級",
+      "link": "tutorials/23-dsa/dfs-bfs-tutorial.html"
     }
   ],
   "edges": [
@@ -1014,6 +1060,14 @@
     { "from": "rate-limiter", "to": "circuit-breaker", "style": "solid" },
     { "from": "circuit-breaker", "to": "load-balancing", "style": "solid" },
     { "from": "load-balancing", "to": "observability", "style": "solid" },
-    { "from": "observability", "to": "telemetry", "style": "dashed" }
+    { "from": "observability", "to": "telemetry", "style": "dashed" },
+
+    { "from": "rate-limiter", "to": "api-rate-limiter", "style": "solid" },
+
+    { "from": "observability", "to": "sec-design-cases", "style": "solid" },
+    { "from": "sec-design-cases", "to": "prime-video", "style": "solid" },
+
+    { "from": "observability", "to": "sec-dsa", "style": "solid" },
+    { "from": "sec-dsa", "to": "dfs-bfs", "style": "solid" }
   ]
 }
