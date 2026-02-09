@@ -283,6 +283,31 @@ body {
     max-width: 600px;
 }
 
+/* Component: About List */
+.about-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.about-list li {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.about-list a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.about-list a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
+
 /* ==================== Stats ==================== */
 .stats-grid {
     display: grid;
