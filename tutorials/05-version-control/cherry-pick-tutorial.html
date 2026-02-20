@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git Cherry-Pick 動畫解說</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --border: #1e293b;
+    --main-branch: #38bdf8;
+    --feature-branch: #a78bfa;
+    --cherry: #fb7185;
+    --cherry-glow: rgba(251, 113, 133, 0.4);
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --success: #34d399;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    z-index: 9999;
+  }
+
+  header {
+    text-align: center;
+    padding: 48px 24px 24px;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cherry), transparent);
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--cherry), #f472b6, var(--feature-branch));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* === CANVAS AREA === */
+  .canvas-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    min-height: 340px;
+  }
+
+  .canvas-area::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(251,113,133,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Branch labels */
+  .branch-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 4px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    position: absolute;
+    left: 24px;
+  }
+
+  .branch-label.main {
+    top: 55px;
+    color: var(--main-branch);
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+  }
+
+  .branch-label.feature {
+    top: 195px;
+    color: var(--feature-branch);
+    background: rgba(167, 139, 250, 0.1);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+  }
+
+  /* SVG Diagram */
+  .diagram {
+    width: 100%;
+    height: 260px;
+  }
+
+  /* Commit circles */
+  .commit {
+    cursor: default;
+    transition: filter 0.3s;
+  }
+
+  .commit-circle {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .commit-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    fill: white;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    font-weight: 600;
+  }
+
+  .commit-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    fill: var(--text-dim);
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  /* Branch lines */
+  .branch-line {
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  .branch-line.main { stroke: var(--main-branch); }
+  .branch-line.feature { stroke: var(--feature-branch); }
+
+  /* Cherry pick animation elements */
+  .cherry-ghost {
+    opacity: 0;
+    transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .cherry-ghost.active {
+    opacity: 1;
+  }
+
+  .cherry-trail {
+    stroke: var(--cherry);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .cherry-trail.active { opacity: 0.6; }
+
+  /* Pulse animation for cherry-picked commit */
+  @keyframes pulse-cherry {
+    0%, 100% { filter: drop-shadow(0 0 4px var(--cherry-glow)); }
+    50% { filter: drop-shadow(0 0 16px var(--cherry-glow)); }
+  }
+
+  .cherry-pulse {
+    animation: pulse-cherry 1.5s ease-in-out infinite;
+  }
+
+  /* === CONTROLS === */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 10px 24px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn:hover {
+    border-color: var(--cherry);
+    background: rgba(251, 113, 133, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .btn:active { transform: translateY(0); }
+
+  .btn.primary {
+    background: linear-gradient(135deg, var(--cherry), #e11d48);
+    border-color: transparent;
+    color: white;
+  }
+
+  .btn.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 20px var(--cherry-glow);
+  }
+
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .step-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    padding: 0 12px;
+  }
+
+  /* === NARRATION === */
+  .narration {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    min-height: 80px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: border-color 0.3s;
+  }
+
+  .narration.highlight {
+    border-color: var(--cherry);
+  }
+
+  .narration-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+    background: rgba(251, 113, 133, 0.1);
+  }
+
+  .narration-content h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--cherry);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .narration-content p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .narration-content code {
+    background: rgba(251, 113, 133, 0.12);
+    color: var(--cherry);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  /* === TERMINAL === */
+  .terminal {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.4s;
+  }
+
+  .terminal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .terminal-bar {
+    background: #161b22;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .terminal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .terminal-dot:nth-child(1) { background: #ff5f57; }
+  .terminal-dot:nth-child(2) { background: #febc2e; }
+  .terminal-dot:nth-child(3) { background: #28c840; }
+
+  .terminal-body {
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    color: #8b949e;
+  }
+
+  .terminal-body .prompt { color: var(--success); }
+  .terminal-body .cmd { color: #e6edf3; }
+  .terminal-body .output { color: #8b949e; }
+  .terminal-body .highlight { color: var(--cherry); }
+
+  /* Entry animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in {
+    animation: fadeInUp 0.6s ease-out both;
+  }
+
+  /* New commit appear animation */
+  @keyframes commitAppear {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .commit-appear {
+    animation: commitAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes flyArc {
+    0% { offset-distance: 0%; opacity: 0.8; }
+    100% { offset-distance: 100%; opacity: 1; }
+  }
+
+  .back-btn { position: fixed; top: 20px; left: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 10px 20px; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; border-radius: 8px; }
+  .back-btn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .canvas-area { padding: 24px 16px; }
+    .controls { gap: 8px; }
+    .btn { padding: 8px 16px; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<a href="../../index.html" class="back-btn">← 返回首頁</a>
+<div class="grain"></div>
+
+<header class="animate-in">
+  <h1>🍒 Git Cherry-Pick</h1>
+  <div class="subtitle">互動式動畫解說</div>
+</header>
+
+<div class="container">
+  <!-- Diagram Area -->
+  <div class="canvas-area animate-in" style="animation-delay: 0.1s" id="canvasArea">
+    <div class="branch-label main">main</div>
+    <div class="branch-label feature">feature</div>
+    <svg class="diagram" id="diagram" viewBox="0 0 780 260"></svg>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls animate-in" style="animation-delay: 0.2s">
+    <button class="btn" id="prevBtn" disabled>← 上一步</button>
+    <span class="step-indicator" id="stepIndicator">0 / 5</span>
+    <button class="btn primary" id="nextBtn">開始演示 →</button>
+    <button class="btn" id="resetBtn">↻ 重來</button>
+  </div>
+
+  <!-- Narration -->
+  <div class="narration animate-in" style="animation-delay: 0.3s" id="narration">
+    <div class="narration-icon">🍒</div>
+    <div class="narration-content">
+      <h3>準備好了嗎？</h3>
+      <p>點擊「開始演示」，一步步了解 cherry-pick 如何從另一個分支挑選特定的 commit。</p>
+    </div>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal" id="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot"></div>
+      <div class="terminal-dot"></div>
+      <div class="terminal-dot"></div>
+    </div>
+    <div class="terminal-body" id="terminalBody"></div>
+  </div>
+</div>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+const diagram = document.getElementById('diagram');
+const narration = document.getElementById('narration');
+const terminal = document.getElementById('terminal');
+const terminalBody = document.getElementById('terminalBody');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+const resetBtn = document.getElementById('resetBtn');
+const stepIndicator = document.getElementById('stepIndicator');
+
+let currentStep = 0;
+const totalSteps = 5;
+
+// Commit positions
+const mainY = 80;
+const featureY = 200;
+const startX = 160;
+const gap = 120;
+
+const commits = {
+  // Main branch
+  m1: { x: startX, y: mainY, label: 'A', color: '#38bdf8', msg: 'init' },
+  m2: { x: startX + gap, y: mainY, label: 'B', color: '#38bdf8', msg: 'add header' },
+  m3: { x: startX + gap*2, y: mainY, label: 'C', color: '#38bdf8', msg: 'add footer' },
+  // Feature branch
+  f1: { x: startX + gap, y: featureY, label: 'D', color: '#a78bfa', msg: 'new feature' },
+  f2: { x: startX + gap*2, y: featureY, label: 'E', color: '#a78bfa', msg: '★ fix bug' },
+  f3: { x: startX + gap*3, y: featureY, label: 'F', color: '#a78bfa', msg: 'wip' },
+  // Cherry-picked commit (will appear on main)
+  cp: { x: startX + gap*3, y: mainY, label: "E'", color: '#fb7185', msg: '★ fix bug' },
+};
+
+function createLine(x1, y1, x2, y2, cls, id) {
+  const line = document.createElementNS(SVG_NS, 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('class', `branch-line ${cls}`);
+  if (id) line.setAttribute('id', id);
+  return line;
+}
+
+function createPath(d, cls, id) {
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('class', cls);
+  if (id) path.setAttribute('id', id);
+  return path;
+}
+
+function createCommitNode(id, c, hidden = false) {
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('class', 'commit');
+  g.setAttribute('id', `commit-${id}`);
+  if (hidden) g.style.display = 'none';
+
+  const circle = document.createElementNS(SVG_NS, 'circle');
+  circle.setAttribute('cx', c.x);
+  circle.setAttribute('cy', c.y);
+  circle.setAttribute('r', 20);
+  circle.setAttribute('fill', c.color);
+  circle.setAttribute('class', 'commit-circle');
+
+  const text = document.createElementNS(SVG_NS, 'text');
+  text.setAttribute('x', c.x);
+  text.setAttribute('y', c.y);
+  text.setAttribute('class', 'commit-text');
+  text.textContent = c.label;
+
+  const label = document.createElementNS(SVG_NS, 'text');
+  label.setAttribute('x', c.x);
+  label.setAttribute('y', c.y + 34);
+  label.setAttribute('class', 'commit-label');
+  label.textContent = c.msg;
+
+  g.appendChild(circle);
+  g.appendChild(text);
+  g.appendChild(label);
+  return g;
+}
+
+function initDiagram() {
+  diagram.innerHTML = '';
+
+  // Main branch lines
+  diagram.appendChild(createLine(commits.m1.x, mainY, commits.m2.x, mainY, 'main', 'line-m1m2'));
+  diagram.appendChild(createLine(commits.m2.x, mainY, commits.m3.x, mainY, 'main', 'line-m2m3'));
+
+  // Line from m3 to cp (hidden initially)
+  const cpLine = createLine(commits.m3.x, mainY, commits.cp.x, mainY, 'main', 'line-m3cp');
+  cpLine.style.display = 'none';
+  diagram.appendChild(cpLine);
+
+  // Fork line from m1 to f1
+  const forkPath = createPath(
+    `M ${commits.m1.x} ${mainY} Q ${commits.m1.x + 40} ${(mainY + featureY) / 2} ${commits.f1.x} ${featureY}`,
+    'branch-line feature', 'line-fork'
+  );
+  diagram.appendChild(forkPath);
+
+  // Feature branch lines
+  diagram.appendChild(createLine(commits.f1.x, featureY, commits.f2.x, featureY, 'feature', 'line-f1f2'));
+  diagram.appendChild(createLine(commits.f2.x, featureY, commits.f3.x, featureY, 'feature', 'line-f2f3'));
+
+  // Cherry trail (dashed arc from f2 to cp)
+  const trail = createPath(
+    `M ${commits.f2.x} ${featureY - 20} C ${commits.f2.x + 40} ${featureY - 100}, ${commits.cp.x - 40} ${mainY + 80}, ${commits.cp.x} ${mainY + 22}`,
+    'cherry-trail', 'cherry-trail'
+  );
+  diagram.appendChild(trail);
+
+  // Commit nodes
+  diagram.appendChild(createCommitNode('m1', commits.m1));
+  diagram.appendChild(createCommitNode('m2', commits.m2));
+  diagram.appendChild(createCommitNode('m3', commits.m3));
+  diagram.appendChild(createCommitNode('f1', commits.f1));
+  diagram.appendChild(createCommitNode('f2', commits.f2));
+  diagram.appendChild(createCommitNode('f3', commits.f3));
+  diagram.appendChild(createCommitNode('cp', commits.cp, true));
+}
+
+const steps = [
+  {
+    title: '步驟 1：初始狀態',
+    icon: '📋',
+    text: '目前有兩條分支：<code>main</code> 和 <code>feature</code>。Feature 分支從 main 分出去後，各自都有了新的 commit。',
+    terminal: null,
+    action: () => {
+      // Highlight all commits normally
+      resetHighlights();
+    }
+  },
+  {
+    title: '步驟 2：發現目標',
+    icon: '🎯',
+    text: 'Feature 分支上的 commit <code>E</code>（fix bug）正是我們需要的修復！但我們不想合併整個 feature 分支，只想要這一個 commit。',
+    terminal: '<span class="prompt">$</span> <span class="cmd">git log feature --oneline</span>\n<span class="output">f3a9c1e</span> <span class="output">F - wip</span>\n<span class="highlight">e7b2d4f</span> <span class="highlight">E - ★ fix bug   ← 就是這個！</span>\n<span class="output">d1c5a8b</span> <span class="output">D - new feature</span>',
+    action: () => {
+      resetHighlights();
+      // Highlight E commit
+      const e = document.querySelector('#commit-f2 .commit-circle');
+      e.setAttribute('fill', '#fb7185');
+      e.style.filter = 'drop-shadow(0 0 12px rgba(251,113,133,0.6))';
+      document.getElementById('commit-f2').classList.add('cherry-pulse');
+    }
+  },
+  {
+    title: '步驟 3：切換到 main 分支',
+    icon: '🔀',
+    text: '在執行 cherry-pick 之前，我們先切換到要接收 commit 的分支，也就是 <code>main</code>。',
+    terminal: '<span class="prompt">$</span> <span class="cmd">git checkout main</span>\n<span class="output">Switched to branch \'main\'</span>',
+    action: () => {
+      resetHighlights();
+      // Highlight main branch
+      ['m1', 'm2', 'm3'].forEach(id => {
+        const c = document.querySelector(`#commit-${id} .commit-circle`);
+        c.style.filter = 'drop-shadow(0 0 8px rgba(56,189,248,0.4))';
+      });
+      // Keep E highlighted
+      const e = document.querySelector('#commit-f2 .commit-circle');
+      e.setAttribute('fill', '#fb7185');
+      document.getElementById('commit-f2').classList.add('cherry-pulse');
+    }
+  },
+  {
+    title: '步驟 4：執行 Cherry-Pick！',
+    icon: '🍒',
+    text: '執行 <code>git cherry-pick e7b2d4f</code>，Git 會把 commit E 的變更複製一份，產生新的 commit <code>E\'</code> 放到 main 分支上。注意：E\' 是一個全新的 commit（不同的 hash），但內容相同。',
+    terminal: '<span class="prompt">$</span> <span class="cmd">git cherry-pick e7b2d4f</span>\n<span class="highlight">[main a1f8c3d] ★ fix bug</span>\n<span class="output"> Date: Thu Feb 20 14:30:00 2026 +0800</span>\n<span class="output"> 1 file changed, 3 insertions(+), 1 deletion(-)</span>',
+    action: () => {
+      resetHighlights();
+
+      // Show cherry trail
+      document.getElementById('cherry-trail').classList.add('active');
+
+      // Show the new commit line and node after a delay
+      setTimeout(() => {
+        document.getElementById('line-m3cp').style.display = '';
+        const cpNode = document.getElementById('commit-cp');
+        cpNode.style.display = '';
+        cpNode.classList.add('commit-appear');
+
+        // Make cherry commit glow
+        setTimeout(() => {
+          const cpCircle = cpNode.querySelector('.commit-circle');
+          cpCircle.style.filter = 'drop-shadow(0 0 14px rgba(251,113,133,0.7))';
+          cpNode.classList.add('cherry-pulse');
+        }, 500);
+      }, 600);
+
+      // Keep original E pink
+      const e = document.querySelector('#commit-f2 .commit-circle');
+      e.setAttribute('fill', '#fb7185');
+    }
+  },
+  {
+    title: '步驟 5：完成！',
+    icon: '✅',
+    text: 'Cherry-pick 完成！Main 分支多了 <code>E\'</code>，而 feature 分支的 <code>E</code> 依然存在不受影響。這就是 cherry-pick 的精髓——只摘你要的那顆「🍒」。',
+    terminal: '<span class="prompt">$</span> <span class="cmd">git log main --oneline</span>\n<span class="highlight">a1f8c3d</span> <span class="highlight">E\' - ★ fix bug  ← 新的 commit！</span>\n<span class="output">c9d3f7a</span> <span class="output">C - add footer</span>\n<span class="output">b5e1a2c</span> <span class="output">B - add header</span>\n<span class="output">a0f4d6e</span> <span class="output">A - init</span>',
+    action: () => {
+      resetHighlights();
+
+      // Show everything
+      document.getElementById('cherry-trail').classList.add('active');
+      document.getElementById('line-m3cp').style.display = '';
+      document.getElementById('commit-cp').style.display = '';
+
+      // Success glow on cherry-picked
+      const cpNode = document.getElementById('commit-cp');
+      const cpCircle = cpNode.querySelector('.commit-circle');
+      cpCircle.setAttribute('fill', '#34d399');
+      cpCircle.style.filter = 'drop-shadow(0 0 14px rgba(52,211,153,0.6))';
+
+      // Original E stays pink
+      const e = document.querySelector('#commit-f2 .commit-circle');
+      e.setAttribute('fill', '#fb7185');
+    }
+  }
+];
+
+function resetHighlights() {
+  // Reset all commit styles
+  Object.entries(commits).forEach(([id, c]) => {
+    const node = document.getElementById(`commit-${id}`);
+    if (!node) return;
+    const circle = node.querySelector('.commit-circle');
+    circle.setAttribute('fill', c.color);
+    circle.style.filter = '';
+    node.classList.remove('cherry-pulse', 'commit-appear');
+  });
+
+  // Hide cherry elements
+  document.getElementById('cherry-trail')?.classList.remove('active');
+  document.getElementById('line-m3cp').style.display = 'none';
+  document.getElementById('commit-cp').style.display = 'none';
+}
+
+function updateUI() {
+  stepIndicator.textContent = `${currentStep} / ${totalSteps}`;
+  prevBtn.disabled = currentStep === 0;
+  nextBtn.textContent = currentStep === 0 ? '開始演示 →' : currentStep >= totalSteps ? '✓ 完成' : '下一步 →';
+  nextBtn.disabled = currentStep >= totalSteps;
+
+  if (currentStep === 0) {
+    narration.querySelector('.narration-icon').textContent = '🍒';
+    narration.querySelector('h3').textContent = '準備好了嗎？';
+    narration.querySelector('p').innerHTML = '點擊「開始演示」，一步步了解 cherry-pick 如何從另一個分支挑選特定的 commit。';
+    terminal.classList.remove('visible');
+    resetHighlights();
+    return;
+  }
+
+  const step = steps[currentStep - 1];
+  narration.querySelector('.narration-icon').textContent = step.icon;
+  narration.querySelector('h3').textContent = step.title;
+  narration.querySelector('p').innerHTML = step.text;
+  narration.classList.add('highlight');
+  setTimeout(() => narration.classList.remove('highlight'), 600);
+
+  if (step.terminal) {
+    terminalBody.innerHTML = step.terminal.replace(/\n/g, '<br>');
+    terminal.classList.add('visible');
+  } else {
+    terminal.classList.remove('visible');
+  }
+
+  step.action();
+}
+
+nextBtn.addEventListener('click', () => {
+  if (currentStep < totalSteps) {
+    currentStep++;
+    updateUI();
+  }
+});
+
+prevBtn.addEventListener('click', () => {
+  if (currentStep > 0) {
+    currentStep--;
+    updateUI();
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  currentStep = 0;
+  initDiagram();
+  updateUI();
+});
+
+// Initialize
+initDiagram();
+updateUI();
+</script>
+</body>
+</html>

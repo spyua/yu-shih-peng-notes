@@ -24,6 +24,7 @@
 # 📦 版本控制 {#05-Version-Control}
 
 - Git Basics | 初級
+- Git Cherry-Pick | 中級 | tutorials/05-version-control/cherry-pick-tutorial.html
 - GitHub/GitLab Usage | 初級
 
 # 🗄️ 關聯式資料庫 {#06-Relational-Databases}
