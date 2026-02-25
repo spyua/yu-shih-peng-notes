@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.4 程式實作 — GCP KMS 非對稱加密教學</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F6F3EE;
+  --bg-warm: #EFEADF;
+  --bg-card: #FFFFFF;
+  --bg-dark: #16161D;
+  --bg-code: #111118;
+  --text: #2A2A35;
+  --text-secondary: #5E5E6E;
+  --text-muted: #9494A3;
+  --accent: #D35233;
+  --accent-hover: #B8432A;
+  --accent-soft: #FADAD2;
+  --teal: #1A9E8F;
+  --teal-soft: #D0F0EA;
+  --blue: #2563EB;
+  --blue-soft: #DBEAFE;
+  --gold: #C88B2E;
+  --gold-soft: #FDF3DC;
+  --border: #E0DCD4;
+  --border-light: #EDEAE4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --content-width: 760px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family:'Noto Sans TC',sans-serif; background:var(--bg); color:var(--text); line-height:1.85; font-size:16px; -webkit-font-smoothing:antialiased; }
+
+/* NAV */
+.topnav { position:sticky; top:0; z-index:100; background:rgba(246,243,238,0.85); backdrop-filter:blur(16px) saturate(1.4); border-bottom:1px solid var(--border); padding:0 24px; }
+.topnav-inner { max-width:var(--content-width); margin:0 auto; display:flex; align-items:center; height:56px; gap:24px; }
+.topnav-brand { font-weight:900; font-size:14px; color:var(--accent); letter-spacing:-0.02em; text-decoration:none; white-space:nowrap; }
+.topnav-chapters { display:flex; gap:2px; flex:1; justify-content:center; }
+.topnav-ch { padding:6px 14px; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border-radius:100px; transition:all 0.15s; white-space:nowrap; }
+.topnav-ch:hover { color:var(--text); background:var(--bg-warm); }
+.topnav-ch.active { color:var(--accent); background:var(--accent-soft); }
+.topnav-progress { display:flex; gap:6px; align-items:center; }
+.topnav-dot { width:8px; height:8px; border-radius:50%; background:var(--border); }
+.topnav-dot.filled { background:var(--accent); }
+.topnav-dot.current { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+@media (max-width:700px) { .topnav-chapters { display:none; } }
+
+/* HERO */
+.ch-hero { padding:72px 24px 56px; position:relative; overflow:hidden; }
+.ch-hero::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:var(--border); }
+.ch-hero-inner { max-width:var(--content-width); margin:0 auto; }
+.ch-number { font-family:'Crimson Pro',serif; font-size:80px; font-weight:900; color:var(--accent); line-height:1; opacity:0.12; position:absolute; top:30px; right:max(24px,calc((100% - var(--content-width))/2)); user-select:none; }
+.ch-overline { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--accent); margin-bottom:12px; }
+.ch-title { font-family:'Crimson Pro',serif; font-size:clamp(2rem,4.5vw,2.8rem); font-weight:900; line-height:1.25; margin-bottom:14px; color:var(--bg-dark); }
+.ch-desc { font-size:17px; color:var(--text-secondary); max-width:560px; }
+
+/* MAIN */
+.main { max-width:var(--content-width); margin:0 auto; padding:48px 24px 80px; }
+.section { margin-bottom:72px; scroll-margin-top:72px; }
+h2 { font-family:'Crimson Pro',serif; font-size:26px; font-weight:900; color:var(--bg-dark); margin-bottom:8px; line-height:1.3; }
+.section-rule { width:40px; height:3px; background:var(--accent); border-radius:2px; margin-bottom:20px; }
+h3 { font-size:19px; font-weight:700; margin:40px 0 12px; color:var(--bg-dark); }
+h3:first-of-type { margin-top:24px; }
+p { margin-bottom:16px; }
+code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); padding:2px 7px; border-radius:5px; font-size:0.87em; color:var(--accent); font-weight:500; }
+
+/* Callouts */
+.callout { border-radius:var(--radius); padding:24px 24px 24px 64px; margin:28px 0; position:relative; font-size:15px; }
+.callout::before { position:absolute; left:22px; top:22px; font-size:24px; }
+.callout .callout-title { font-weight:700; font-size:14px; margin-bottom:6px; }
+.callout p { margin-bottom:8px; }
+.callout p:last-child { margin-bottom:0; }
+.callout-analogy { background:var(--gold-soft); border:1px solid #ECD9A8; }
+.callout-analogy::before { content:'💡'; }
+.callout-analogy .callout-title { color:#8B6914; }
+.callout-analogy p { color:#6B5420; }
+.callout-warning { background:#FEF2F2; border:1px solid #FECACA; }
+.callout-warning::before { content:'⚠️'; }
+.callout-warning p { color:#991B1B; }
+.callout-tip { background:var(--teal-soft); border:1px solid #A7E8D8; }
+.callout-tip::before { content:'✅'; }
+.callout-tip .callout-title { color:#065F46; }
+.callout-tip p { color:#065F46; }
+
+/* Tables */
+.table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow-sm); }
+.table-wrap table { width:100%; border-collapse:collapse; font-size:14.5px; }
+.table-wrap th { background:var(--bg-dark); color:#fff; padding:13px 18px; text-align:left; font-weight:600; font-size:13px; }
+.table-wrap td { padding:13px 18px; border-bottom:1px solid var(--border-light); vertical-align:top; }
+.table-wrap tr:last-child td { border-bottom:none; }
+.table-wrap tr:hover td { background:#FDFCFA; }
+.tag { display:inline-block; padding:2px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.tag-green { background:#D1FAE5; color:#065F46; }
+.tag-blue { background:#DBEAFE; color:#1E40AF; }
+.tag-orange { background:#FED7AA; color:#9A3412; }
+.tag-red { background:#FEE2E2; color:#991B1B; }
+
+/* Code blocks */
+.code-block { background:var(--bg-code); border-radius:12px; margin:24px 0; overflow:hidden; }
+.code-header { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.06); }
+.code-header .code-lang { font-size:12px; font-weight:600; color:var(--teal); font-family:'JetBrains Mono',monospace; }
+.code-header .code-file { font-size:11px; color:rgba(255,255,255,0.35); font-family:'JetBrains Mono',monospace; }
+.code-header .copy-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-family:'Noto Sans TC',sans-serif; transition:all 0.15s; }
+.copy-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+.code-body { padding:20px; overflow-x:auto; }
+.code-body pre { font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.7; color:#E2E8F0; white-space:pre; margin:0; }
+.cm { color:#6B7280; }
+.kw { color:#C084FC; }
+.str { color:#34D399; }
+.ann { color:#F59E0B; }
+.typ { color:#60A5FA; }
+.num { color:#FB923C; }
+
+/* File tree */
+.file-tree {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px 24px; margin:28px 0;
+  font-family:'JetBrains Mono',monospace; font-size:13px; line-height:2;
+}
+.file-tree .dir { color:var(--blue); font-weight:600; }
+.file-tree .file { color:var(--text-secondary); }
+.file-tree .hl { color:var(--accent); font-weight:600; }
+
+/* SOP steps */
+.sop-timeline { position:relative; padding-left:36px; margin:28px 0; }
+.sop-timeline::before { content:''; position:absolute; left:14px; top:8px; bottom:8px; width:2px; background:var(--border); }
+.sop-step { position:relative; margin-bottom:24px; }
+.sop-step:last-child { margin-bottom:0; }
+.sop-dot { position:absolute; left:-36px; top:4px; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; }
+.sop-dot.red { background:var(--accent); }
+.sop-dot.blue { background:var(--blue); }
+.sop-dot.teal { background:var(--teal); }
+.sop-dot.gold { background:var(--gold); }
+.sop-step h4 { font-size:15px; font-weight:700; margin-bottom:4px; }
+.sop-step p { font-size:14px; color:var(--text-secondary); margin-bottom:0; }
+
+/* Cache diagram */
+.cache-flow {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:32px; margin:28px 0;
+  text-align:center; box-shadow:var(--shadow-sm);
+}
+.cache-flow .cf-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:20px; }
+.cf-row { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:12px 0; }
+.cf-box { padding:12px 18px; border-radius:10px; font-size:13px; font-weight:600; min-width:100px; }
+.cf-box.req { background:var(--blue-soft); color:#1E40AF; border:1px solid #93C5FD; }
+.cf-box.cache-hit { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
+.cf-box.cache-miss { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
+.cf-box.kms { background:var(--bg-dark); color:#fff; border:1px solid #374151; }
+.cf-box.result { background:var(--teal-soft); color:#065F46; border:1px solid #A7E8D8; }
+.cf-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
+
+/* Completion */
+.complete-banner {
+  background:linear-gradient(135deg,var(--teal-soft),#D1FAE5);
+  border:2px solid #6EE7B7; border-radius:var(--radius);
+  padding:36px; text-align:center; margin:48px 0 0;
+}
+.complete-banner .cb-icon { font-size:40px; margin-bottom:12px; }
+.complete-banner h3 { font-family:'Crimson Pro',serif; font-size:24px; font-weight:900; color:#065F46; margin:0 0 8px; }
+.complete-banner p { color:#047857; margin-bottom:0; font-size:15px; }
+
+/* Chapter nav */
+.ch-nav { display:flex; justify-content:space-between; align-items:stretch; gap:16px; padding-top:48px; border-top:1px solid var(--border); margin-top:72px; }
+.ch-nav-link { display:flex; flex-direction:column; gap:4px; text-decoration:none; padding:20px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); transition:all 0.2s; flex:1; max-width:48%; }
+.ch-nav-link:hover { border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-2px); }
+.ch-nav-link.next { text-align:right; margin-left:auto; }
+.ch-nav-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); }
+.ch-nav-title { font-weight:700; font-size:15px; color:var(--text); }
+
+.footer { text-align:center; padding:32px 24px; font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--border); max-width:var(--content-width); margin:0 auto; }
+
+.fade-in { opacity:0; transform:translateY(24px); transition:opacity 0.5s ease, transform 0.5s ease; }
+.fade-in.visible { opacity:1; transform:translateY(0); }
+.fade-in.visible:nth-child(2) { transition-delay:0.06s; }
+.fade-in.visible:nth-child(3) { transition-delay:0.12s; }
+.fade-in.visible:nth-child(4) { transition-delay:0.18s; }
+.fade-in.visible:nth-child(5) { transition-delay:0.24s; }
+
+@media (max-width:640px) {
+  .cf-row { flex-direction:column; }
+  .cf-arrow { transform:rotate(90deg); }
+  .ch-nav { flex-direction:column; }
+  .ch-nav-link { max-width:100%; }
+  .ch-number { display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 基礎觀念</a>
+      <a class="topnav-ch" href="chapter2.html">Ch.2 架構與流程</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 動手實作</a>
+      <a class="topnav-ch active" href="chapter4.html">Ch.4 程式實作</a>
+    </div>
+    <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+    </div>
+  </div>
+</nav>
+
+<header class="ch-hero">
+  <div class="ch-number">04</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 4 of 4</div>
+    <h1 class="ch-title">程式實作</h1>
+    <p class="ch-desc">Spring Boot 完整程式碼、給廠商的加密範例、Cache 策略、以及金鑰輪替 SOP。看完這章就能上線了。</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- =========================================
+       Section 1: Project Structure
+       ========================================= -->
+  <section class="section fade-in" id="structure">
+    <h2 class="section-anchor">專案結構總覽</h2>
+    <div class="section-rule"></div>
+    <p>先看全貌，知道每個檔案負責什麼，再逐一拆解：</p>
+
+    <div class="file-tree">
+      <span class="dir">src/main/java/com/example/kms/</span><br>
+      &nbsp;&nbsp;├── <span class="dir">config/</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="hl">KmsProperties.java</span>&nbsp;&nbsp;&nbsp;<span class="cm">← KMS 連線設定</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="hl">CacheConfig.java</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">← Caffeine Cache 設定</span><br>
+      &nbsp;&nbsp;├── <span class="dir">service/</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="hl">KmsService.java</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">← 核心！取公鑰 + 解密 + Cache</span><br>
+      &nbsp;&nbsp;└── <span class="dir">controller/</span><br>
+      &nbsp;&nbsp;└── <span class="hl">KmsController.java</span>&nbsp;&nbsp;<span class="cm">← REST API 端點</span><br>
+      <br>
+      <span class="dir">vendor-sample/</span><br>
+      &nbsp;&nbsp;└── <span class="hl">VendorEncryptionExample.java</span>&nbsp;<span class="cm">← 給廠商的加密範例</span>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 2: Dependencies
+       ========================================= -->
+  <section class="section fade-in" id="deps">
+    <h2 class="section-anchor">Maven 依賴</h2>
+    <div class="section-rule"></div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">xml</span>
+        <span class="code-file">pom.xml</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="cm">&lt;!-- Spring Boot Starter --&gt;</span>
+&lt;<span class="kw">dependency</span>&gt;
+    &lt;groupId&gt;<span class="str">org.springframework.boot</span>&lt;/groupId&gt;
+    &lt;artifactId&gt;<span class="str">spring-boot-starter-web</span>&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+<span class="cm">&lt;!-- GCP KMS Client --&gt;</span>
+&lt;<span class="kw">dependency</span>&gt;
+    &lt;groupId&gt;<span class="str">com.google.cloud</span>&lt;/groupId&gt;
+    &lt;artifactId&gt;<span class="str">google-cloud-kms</span>&lt;/artifactId&gt;
+    &lt;version&gt;<span class="num">2.54.0</span>&lt;/version&gt;
+&lt;/dependency&gt;
+
+<span class="cm">&lt;!-- Spring Boot Cache + Caffeine --&gt;</span>
+&lt;<span class="kw">dependency</span>&gt;
+    &lt;groupId&gt;<span class="str">org.springframework.boot</span>&lt;/groupId&gt;
+    &lt;artifactId&gt;<span class="str">spring-boot-starter-cache</span>&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;<span class="kw">dependency</span>&gt;
+    &lt;groupId&gt;<span class="str">com.github.ben-manes.caffeine</span>&lt;/groupId&gt;
+    &lt;artifactId&gt;<span class="str">caffeine</span>&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+<span class="cm">&lt;!-- Lombok --&gt;</span>
+&lt;<span class="kw">dependency</span>&gt;
+    &lt;groupId&gt;<span class="str">org.projectlombok</span>&lt;/groupId&gt;
+    &lt;artifactId&gt;<span class="str">lombok</span>&lt;/artifactId&gt;
+    &lt;optional&gt;<span class="kw">true</span>&lt;/optional&gt;
+&lt;/dependency&gt;</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 3: Config classes
+       ========================================= -->
+  <section class="section fade-in" id="config">
+    <h2 class="section-anchor">設定檔</h2>
+    <div class="section-rule"></div>
+
+    <h3>application.yml</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">yaml</span>
+        <span class="code-file">application.yml</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="cm"># ===== GCP KMS 設定 =====</span>
+<span class="kw">gcp</span>:
+  <span class="kw">kms</span>:
+    <span class="typ">project-id</span>: <span class="str">your-gcp-project-id</span>
+    <span class="typ">location</span>: <span class="str">asia-east1</span>
+    <span class="typ">key-ring</span>: <span class="str">my-keyring</span>
+    <span class="typ">key-id</span>: <span class="str">id-encrypt-key</span>
+    <span class="typ">key-version</span>: <span class="str">1</span>
+
+<span class="cm"># ===== Cache 設定 =====</span>
+<span class="cm"># 公鑰快取 24 小時，解密結果快取 1 小時</span>
+<span class="kw">cache</span>:
+  <span class="kw">public-key</span>:
+    <span class="typ">expire-hours</span>: <span class="num">24</span>
+  <span class="kw">decrypt-result</span>:
+    <span class="typ">expire-minutes</span>: <span class="num">60</span>
+    <span class="typ">max-size</span>: <span class="num">10000</span>
+
+<span class="cm"># ===== Spring Cache =====</span>
+<span class="kw">spring</span>:
+  <span class="kw">cache</span>:
+    <span class="typ">type</span>: <span class="str">caffeine</span></pre>
+      </div>
+    </div>
+
+    <h3>KmsProperties.java</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">java</span>
+        <span class="code-file">config/KmsProperties.java</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="ann">@Data</span>
+<span class="ann">@Component</span>
+<span class="ann">@ConfigurationProperties</span>(prefix = <span class="str">"gcp.kms"</span>)
+<span class="kw">public class</span> <span class="typ">KmsProperties</span> {
+
+    <span class="kw">private</span> String projectId;
+    <span class="kw">private</span> String location;
+    <span class="kw">private</span> String keyRing;
+    <span class="kw">private</span> String keyId;
+    <span class="kw">private</span> String keyVersion;
+
+    <span class="cm">/**
+     * 組出完整的 KMS key version resource name
+     */</span>
+    <span class="kw">public</span> String <span class="typ">getKeyVersionName</span>() {
+        <span class="kw">return</span> String.format(
+            <span class="str">"projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%s"</span>,
+            projectId, location, keyRing, keyId, keyVersion
+        );
+    }
+}</pre>
+      </div>
+    </div>
+
+    <h3>CacheConfig.java</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">java</span>
+        <span class="code-file">config/CacheConfig.java</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="ann">@Configuration</span>
+<span class="ann">@EnableCaching</span>
+<span class="kw">public class</span> <span class="typ">CacheConfig</span> {
+
+    <span class="kw">public static final</span> String <span class="typ">PUBLIC_KEY_CACHE</span>       = <span class="str">"publicKeyCache"</span>;
+    <span class="kw">public static final</span> String <span class="typ">DECRYPT_RESULT_CACHE</span>   = <span class="str">"decryptResultCache"</span>;
+
+    <span class="ann">@Value</span>(<span class="str">"${cache.public-key.expire-hours:24}"</span>)
+    <span class="kw">private int</span> publicKeyExpireHours;
+
+    <span class="ann">@Value</span>(<span class="str">"${cache.decrypt-result.expire-minutes:60}"</span>)
+    <span class="kw">private int</span> decryptResultExpireMinutes;
+
+    <span class="ann">@Value</span>(<span class="str">"${cache.decrypt-result.max-size:10000}"</span>)
+    <span class="kw">private int</span> decryptResultMaxSize;
+
+    <span class="ann">@Bean</span>
+    <span class="kw">public</span> CacheManager <span class="typ">cacheManager</span>() {
+        <span class="cm">// ⚠️ 注意：Caffeine 是 in-process memory cache，</span>
+        <span class="cm">//    多 Pod 架構下各 Pod 的快取彼此獨立、不共享。</span>
+        <span class="cm">//    若需跨 Pod 共享快取，應改用 Redis 等分散式快取。</span>
+        CaffeineCacheManager cm = <span class="kw">new</span> CaffeineCacheManager();
+
+        <span class="cm">// 公鑰快取：公鑰不常變，快取久一點（24hr）</span>
+        cm.registerCustomCache(PUBLIC_KEY_CACHE,
+            Caffeine.newBuilder()
+                .expireAfterWrite(publicKeyExpireHours, TimeUnit.HOURS)
+                .maximumSize(<span class="num">10</span>)
+                .recordStats()
+                .build());
+
+        <span class="cm">// 解密結果快取：PII 敏感資料，TTL 短</span>
+        cm.registerCustomCache(DECRYPT_RESULT_CACHE,
+            Caffeine.newBuilder()
+                .expireAfterWrite(decryptResultExpireMinutes, TimeUnit.MINUTES)
+                .maximumSize(decryptResultMaxSize)
+                .recordStats()
+                .build());
+
+        <span class="kw">return</span> cm;
+    }
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 4: KmsService
+       ========================================= -->
+  <section class="section fade-in" id="service">
+    <h2 class="section-anchor">核心 Service：KmsService.java</h2>
+    <div class="section-rule"></div>
+    <p>整個專案最重要的一支。負責三件事：<strong>取公鑰</strong>、<strong>解密</strong>、<strong>Cache 管理</strong>。</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">java</span>
+        <span class="code-file">service/KmsService.java</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="ann">@Slf4j</span>
+<span class="ann">@Service</span>
+<span class="ann">@RequiredArgsConstructor</span>
+<span class="kw">public class</span> <span class="typ">KmsService</span> {
+
+    <span class="kw">private final</span> KmsProperties kmsProperties;
+    <span class="kw">private</span> KeyManagementServiceClient kmsClient;
+
+    <span class="ann">@PostConstruct</span>
+    <span class="kw">public void</span> <span class="typ">init</span>() <span class="kw">throws</span> IOException {
+        <span class="kw">this</span>.kmsClient = KeyManagementServiceClient.create();
+        log.info(<span class="str">"KMS client initialized for key: {}"</span>,
+                 kmsProperties.getKeyVersionName());
+    }
+
+    <span class="ann">@PreDestroy</span>
+    <span class="kw">public void</span> <span class="typ">destroy</span>() {
+        <span class="kw">if</span> (kmsClient != <span class="kw">null</span>) kmsClient.close();
+    }
+
+    <span class="cm">// ─── 1. 取公鑰（快取 24hr）─────────────────</span>
+
+    <span class="ann">@Cacheable</span>(value = CacheConfig.PUBLIC_KEY_CACHE, key = <span class="str">"#keyVersion"</span>)
+    <span class="kw">public</span> String <span class="typ">getPublicKeyPem</span>(String keyVersion) {
+        log.info(<span class="str">"Cache MISS - fetching public key from KMS for version: {}"</span>,
+                 keyVersion);
+
+        CryptoKeyVersionName keyVersionName = buildKeyVersionName(keyVersion);
+        PublicKey publicKey = kmsClient.getPublicKey(keyVersionName);
+
+        String pem = publicKey.getPem();
+        log.info(<span class="str">"Public key fetched successfully, algorithm: {}"</span>,
+                 publicKey.getAlgorithm());
+        <span class="kw">return</span> pem;
+    }
+
+    <span class="kw">public</span> String <span class="typ">getCurrentPublicKeyPem</span>() {
+        <span class="kw">return</span> getPublicKeyPem(kmsProperties.getKeyVersion());
+    }
+
+    <span class="cm">// ─── 2. 解密（快取 1hr）──────────────────</span>
+
+    <span class="ann">@Cacheable</span>(value = CacheConfig.DECRYPT_RESULT_CACHE, key = <span class="str">"#ciphertextBase64"</span>)
+    <span class="kw">public</span> String <span class="typ">decrypt</span>(String ciphertextBase64) {
+        log.info(<span class="str">"Cache MISS - calling KMS to decrypt"</span>);
+
+        <span class="kw">try</span> {
+            <span class="kw">byte</span>[] ciphertext = Base64.getDecoder().decode(ciphertextBase64);
+
+            CryptoKeyVersionName keyVersionName = buildKeyVersionName(
+                kmsProperties.getKeyVersion()
+            );
+
+            AsymmetricDecryptResponse response = kmsClient.asymmetricDecrypt(
+                keyVersionName,
+                ByteString.copyFrom(ciphertext)
+            );
+
+            String plaintext = response.getPlaintext().toStringUtf8();
+            log.info(<span class="str">"Decryption successful"</span>);
+            <span class="kw">return</span> plaintext;
+
+        } <span class="kw">catch</span> (Exception e) {
+            log.error(<span class="str">"Decryption failed"</span>, e);
+            <span class="kw">throw new</span> KmsDecryptionException(<span class="str">"Failed to decrypt data"</span>, e);
+        }
+    }
+
+    <span class="cm">// ─── 3. Cache 管理 ────────────────────</span>
+
+    <span class="ann">@CacheEvict</span>(value = CacheConfig.PUBLIC_KEY_CACHE, allEntries = <span class="kw">true</span>)
+    <span class="kw">public void</span> <span class="typ">evictPublicKeyCache</span>() {
+        log.info(<span class="str">"Public key cache evicted"</span>);
+    }
+
+    <span class="ann">@CacheEvict</span>(value = CacheConfig.DECRYPT_RESULT_CACHE, allEntries = <span class="kw">true</span>)
+    <span class="kw">public void</span> <span class="typ">evictDecryptResultCache</span>() {
+        log.info(<span class="str">"Decrypt result cache evicted"</span>);
+    }
+
+    <span class="cm">// ─── Private helpers ──────────────────</span>
+
+    <span class="kw">private</span> CryptoKeyVersionName <span class="typ">buildKeyVersionName</span>(String version) {
+        <span class="kw">return</span> CryptoKeyVersionName.of(
+            kmsProperties.getProjectId(),
+            kmsProperties.getLocation(),
+            kmsProperties.getKeyRing(),
+            kmsProperties.getKeyId(),
+            version
+        );
+    }
+
+    <span class="cm">// ─── Custom Exception ─────────────────</span>
+
+    <span class="kw">public static class</span> <span class="typ">KmsDecryptionException</span>
+            <span class="kw">extends</span> RuntimeException {
+        <span class="kw">public</span> KmsDecryptionException(String msg, Throwable cause) {
+            <span class="kw">super</span>(msg, cause);
+        }
+    }
+}</pre>
+      </div>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">程式碼重點提示</div>
+      <p><code>@Cacheable</code> 是 Spring Cache 的註解 — 第一次呼叫會執行方法並存入快取，之後同樣的參數直接回傳快取結果，不再打 KMS API。</p>
+      <p><code>@CacheEvict</code> 則是手動清除快取的方法，金鑰輪替時會用到。</p>
+      <p><code>buildKeyVersionName()</code> 用 SDK 內建的 <code>CryptoKeyVersionName.of()</code> 組出 resource name，比手動 format 字串更安全。</p>
+      <p><code>KmsDecryptionException</code> 是自訂例外，方便上層統一處理解密失敗的情境。</p>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 5: Controller
+       ========================================= -->
+  <section class="section fade-in" id="controller">
+    <h2 class="section-anchor">REST Controller</h2>
+    <div class="section-rule"></div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">java</span>
+        <span class="code-file">controller/KmsController.java</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="ann">@Slf4j</span>
+<span class="ann">@RestController</span>
+<span class="ann">@RequestMapping</span>(<span class="str">"/api/v1/kms"</span>)
+<span class="ann">@RequiredArgsConstructor</span>
+<span class="kw">public class</span> <span class="typ">KmsController</span> {
+
+    <span class="kw">private final</span> KmsService kmsService;
+
+    <span class="cm">// ─── 公鑰端點（給廠商取用）──────────</span>
+    <span class="ann">@GetMapping</span>(value = <span class="str">"/public-key"</span>, produces = MediaType.TEXT_PLAIN_VALUE)
+    <span class="kw">public</span> ResponseEntity&lt;String&gt; <span class="typ">getPublicKey</span>() {
+        String pem = kmsService.getCurrentPublicKeyPem();
+        <span class="kw">return</span> ResponseEntity.ok(pem);
+    }
+
+    <span class="cm">// ─── 解密端點（收廠商密文）──────────</span>
+    <span class="ann">@PostMapping</span>(<span class="str">"/decrypt"</span>)
+    <span class="kw">public</span> ResponseEntity&lt;DecryptResponse&gt; <span class="typ">decrypt</span>(
+            <span class="ann">@RequestBody</span> DecryptRequest request) {
+        log.info(<span class="str">"Received decrypt request"</span>);
+
+        String plaintext = kmsService.decrypt(request.getEncryptedData());
+
+        <span class="cm">// ⚠️ 實務上不要直接回傳明文！這裡只是示意。</span>
+        <span class="cm">// 應該在 service 層直接處理業務邏輯（比對、儲存等）</span>
+        <span class="kw">return</span> ResponseEntity.ok(<span class="kw">new</span> DecryptResponse(plaintext));
+    }
+
+    <span class="cm">// ─── Cache 管理（內部使用，應加上權限控制）──</span>
+    <span class="ann">@PostMapping</span>(<span class="str">"/cache/evict/public-key"</span>)
+    <span class="kw">public</span> ResponseEntity&lt;String&gt; <span class="typ">evictPublicKeyCache</span>() {
+        kmsService.evictPublicKeyCache();
+        <span class="kw">return</span> ResponseEntity.ok(<span class="str">"Public key cache evicted"</span>);
+    }
+
+    <span class="ann">@PostMapping</span>(<span class="str">"/cache/evict/decrypt"</span>)
+    <span class="kw">public</span> ResponseEntity&lt;String&gt; <span class="typ">evictDecryptCache</span>() {
+        kmsService.evictDecryptResultCache();
+        <span class="kw">return</span> ResponseEntity.ok(<span class="str">"Decrypt result cache evicted"</span>);
+    }
+
+    <span class="cm">// ─── DTOs ──────────────────────────</span>
+
+    <span class="ann">@Data</span>
+    <span class="kw">public static class</span> <span class="typ">DecryptRequest</span> {
+        <span class="kw">private</span> String encryptedData;  <span class="cm">// Base64 encoded ciphertext</span>
+    }
+
+    <span class="ann">@Data</span>
+    <span class="kw">public static class</span> <span class="typ">DecryptResponse</span> {
+        <span class="kw">private final</span> String data;
+    }
+}</pre>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>注意</strong>：<code>/decrypt</code> 端點範例直接回傳明文只是為了示意。正式環境應該在 service 層直接處理業務邏輯（比對、儲存），<strong>不要把身分證字號明文回傳到前端或其他外部系統</strong>。</p>
+      <p>另外，<code>/cache/evict/*</code> 端點應加上權限控制（例如 <code>@PreAuthorize("hasRole('ADMIN')")</code>），避免任何人都能清除快取。</p>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 6: Vendor Sample
+       ========================================= -->
+  <section class="section fade-in" id="vendor">
+    <h2 class="section-anchor">給廠商的加密範例程式</h2>
+    <div class="section-rule"></div>
+    <p>把以下程式碼連同公鑰 PEM 檔一起給廠商。強調三個重點：<strong>演算法</strong>、<strong>填充方式</strong>、<strong>Base64 編碼</strong>。</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">java</span>
+        <span class="code-file">VendorEncryptionExample.java</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="cm">/**
+ * 【廠商端】加密範例程式
+ *
+ * 廠商拿到我方提供的 PEM 公鑰後，
+ * 用此程式將身分證字號加密，再以 Base64 傳給我方。
+ *
+ * 重點：
+ *   Algorithm: RSA/ECB/OAEPWithSHA-256AndMGF1Padding
+ *   ⚠️ 必須明確指定 OAEPParameterSpec，否則 MGF1 預設 SHA-1 → KMS 解密失敗
+ */</span>
+<span class="kw">public class</span> <span class="typ">VendorEncryptionExample</span> {
+
+    <span class="kw">public static</span> String <span class="typ">encrypt</span>(String pemPublicKey, String plaintext)
+            <span class="kw">throws</span> Exception {
+
+        <span class="cm">// 1. PEM → PublicKey 物件</span>
+        String pemContent = pemPublicKey
+            .replace(<span class="str">"-----BEGIN PUBLIC KEY-----"</span>, <span class="str">""</span>)
+            .replace(<span class="str">"-----END PUBLIC KEY-----"</span>, <span class="str">""</span>)
+            .replaceAll(<span class="str">"\\s+"</span>, <span class="str">""</span>);
+
+        <span class="kw">byte</span>[] keyBytes = Base64.getDecoder().decode(pemContent);
+        X509EncodedKeySpec keySpec = <span class="kw">new</span> X509EncodedKeySpec(keyBytes);
+        PublicKey publicKey = KeyFactory.getInstance(<span class="str">"RSA"</span>)
+            .generatePublic(keySpec);
+
+        <span class="cm">// 2. 加密 — 必須用 OAEPWithSHA-256AndMGF1Padding</span>
+        <span class="cm">//    ⚠️ 如果用錯 padding（例如 PKCS1），KMS 會解密失敗</span>
+        <span class="cm">//    ⚠️ 必須明確指定 OAEPParameterSpec，</span>
+        <span class="cm">//       否則 MGF1 預設為 SHA-1，導致 KMS 解密失敗</span>
+        Cipher cipher = Cipher.getInstance(
+            <span class="str">"RSA/ECB/OAEPWithSHA-256AndMGF1Padding"</span>
+        );
+        OAEPParameterSpec oaepParams = <span class="kw">new</span> OAEPParameterSpec(
+            <span class="str">"SHA-256"</span>,                     <span class="cm">// OAEP 主摘要</span>
+            <span class="str">"MGF1"</span>,                        <span class="cm">// Mask Generation Function</span>
+            MGF1ParameterSpec.SHA256,      <span class="cm">// ← MGF1 也要 SHA-256！</span>
+            PSource.PSpecified.DEFAULT
+        );
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepParams);
+
+        <span class="kw">byte</span>[] ciphertext = cipher.doFinal(
+            plaintext.getBytes(StandardCharsets.UTF_8)
+        );
+
+        <span class="cm">// 3. Base64 編碼後回傳</span>
+        <span class="kw">return</span> Base64.getEncoder().encodeToString(ciphertext);
+    }
+
+    <span class="kw">public static void</span> <span class="typ">main</span>(String[] args) <span class="kw">throws</span> Exception {
+        <span class="cm">// 模擬：從我方 API 取得公鑰（或離線拿到的 PEM 檔）</span>
+        String pemPublicKey = <span class="str">"""
+                -----BEGIN PUBLIC KEY-----
+                MIICIjANBgkqhkiG9w0BAQE...（實際公鑰內容）...
+                -----END PUBLIC KEY-----
+                """</span>;
+
+        String encrypted = encrypt(pemPublicKey, <span class="str">"A123456789"</span>);
+        System.out.println(<span class="str">"Encrypted (Base64): "</span> + encrypted);
+
+        <span class="cm">// 廠商再把這個 encrypted 值透過 API 傳給我方：</span>
+        <span class="cm">// POST /api/v1/kms/decrypt</span>
+        <span class="cm">// { "encryptedData": "&lt;encrypted&gt;" }</span>
+    }
+}</pre>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">給廠商的 Checklist</div>
+      <p>✅ 公鑰 PEM 檔 — 從我方取得<br>
+         ✅ Cipher — <code>RSA/ECB/OAEPWithSHA-256AndMGF1Padding</code><br>
+         ✅ OAEPParameterSpec — MGF1 必須指定 <code>MGF1ParameterSpec.SHA256</code>（Java 預設是 SHA-1）<br>
+         ✅ 密文格式 — Base64 編碼後再透過 API 傳送<br>
+         ✅ 編碼 — 明文用 UTF-8</p>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 7: Cache Strategy
+       ========================================= -->
+  <section class="section fade-in" id="cache">
+    <h2 class="section-anchor">Cache 策略</h2>
+    <div class="section-rule"></div>
+
+    <h3>為什麼要 Cache？</h3>
+    <p>每次呼叫 KMS API 都會產生費用和網路延遲（asia-east1 約 5-15ms）。同樣的操作沒必要重複呼叫。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cache 對象</th><th>為什麼快取</th><th>TTL</th><th>Max Size</th><th>範圍</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>公鑰 PEM</strong></td>
+            <td>公鑰不常變；KMS API 有 rate limit</td>
+            <td><span class="tag tag-blue">24 小時</span></td>
+            <td>10</td>
+            <td><span class="tag tag-green">單 Pod</span></td>
+          </tr>
+          <tr>
+            <td><strong>解密結果</strong></td>
+            <td>同一密文不重複解密，省 API 費用</td>
+            <td><span class="tag tag-orange">1 小時</span></td>
+            <td>10,000</td>
+            <td><span class="tag tag-green">單 Pod</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="padding:10px 18px 12px; font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--border-light);">
+        ⚠️ 目前使用 Caffeine（in-process memory），快取範圍僅限單一 Pod。多 Pod 架構請參考下方說明改用 Redis。
+      </div>
+    </div>
+
+    <h3>解密請求的 Cache 流程</h3>
+    <div class="cache-flow">
+      <div class="cf-label">解密 API 呼叫流程</div>
+      <div class="cf-row">
+        <div class="cf-box req">📨 收到密文</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-box cache-hit">查 Caffeine Cache</div>
+      </div>
+      <div class="cf-row">
+        <div class="cf-box cache-hit" style="background:#D1FAE5">✓ Cache HIT</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-box result">直接回傳明文（0ms）</div>
+      </div>
+      <div class="cf-row">
+        <div class="cf-box cache-miss">✗ Cache MISS</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-box kms">呼叫 KMS API</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-box result">回傳 + 存入 Cache</div>
+      </div>
+    </div>
+
+    <h3>快取 PII 的安全考量</h3>
+    <div class="callout callout-warning">
+      <p><strong>身分證字號是個人資料（PII）</strong>，快取時要注意：</p>
+      <p>• TTL 不要太長 — 1 小時足以應付短期重複請求</p>
+      <p>• 用記憶體內快取（Caffeine） — 不落磁碟、不寫 log</p>
+      <p>• 如果改用 Redis — 務必加密 value、設 TLS、限制存取</p>
+      <p>• 設 maxSize 上限 — 避免記憶體不斷成長</p>
+      <p>• 如果安全政策嚴格不允許快取 PII → <strong>只快取公鑰，不快取解密結果</strong></p>
+    </div>
+
+    <h3>多 Pod 架構注意事項</h3>
+    <div class="callout callout-warning">
+      <p><strong>Caffeine 是 in-process memory cache，每個 Pod 各自維護自己的快取，彼此不共享。</strong></p>
+      <p>如果你的服務部署在 Kubernetes 多 Pod 架構下，會遇到以下問題：</p>
+      <p>• <strong>快取不一致</strong> — Pod A 快取了公鑰，Pod B 仍要打 KMS API；同一筆密文被不同 Pod 處理會重複解密</p>
+      <p>• <strong>清除快取要打所有 Pod</strong> — 呼叫 <code>/cache/evict/*</code> 只清到被 Load Balancer 分配到的那個 Pod</p>
+      <p>• <strong>記憶體浪費</strong> — 每個 Pod 各存一份快取，N 個 Pod 就是 N 倍記憶體消耗</p>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">解法：改用 Redis 等分散式快取</div>
+      <p>把 Caffeine 換成 Redis（或 Memcached），所有 Pod 共用同一份快取：</p>
+      <p>• 依賴改用 <code>spring-boot-starter-data-redis</code></p>
+      <p>• <code>CacheManager</code> 改用 <code>RedisCacheManager</code></p>
+      <p>• <code>@Cacheable</code> / <code>@CacheEvict</code> 不用改 — Spring Cache 抽象層會自動切換底層實作</p>
+      <p>• 別忘了對 PII 敏感資料加密 value、設 TLS、限制 Redis 存取權限</p>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 8: Key Rotation SOP
+       ========================================= -->
+  <section class="section fade-in" id="rotation">
+    <h2 class="section-anchor">金鑰輪替 SOP</h2>
+    <div class="section-rule"></div>
+    <p>非對稱金鑰不支援自動輪替，需要手動執行。以下是完整步驟：</p>
+
+    <div class="sop-timeline">
+      <div class="sop-step">
+        <div class="sop-dot red">1</div>
+        <h4>在 KMS 建立新的 Key Version</h4>
+        <p>在同一個 Crypto Key 下新增 version（例如 v2）。KMS 會自動產生新的公私鑰對。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot blue">2</div>
+        <h4>匯出新公鑰並提供給廠商</h4>
+        <p>用 <code>gcloud kms keys versions get-public-key 2 ...</code> 匯出新公鑰 PEM，交給廠商替換。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot teal">3</div>
+        <h4>更新我方設定 + 清除 Cache</h4>
+        <p>把 <code>application.yml</code> 的 <code>key-version</code> 改成 <code>2</code>，重新部署，然後呼叫 <code>POST /cache/evict/public-key</code> 清除公鑰快取。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot gold">4</div>
+        <h4>過渡期：保留舊版本</h4>
+        <p>廠商可能還有用舊公鑰加密的密文在途中。保留舊 key version（v1）至少 <strong>7-30 天</strong>，直到確認所有舊密文都已處理完畢。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot red">5</div>
+        <h4>停用舊版本</h4>
+        <p>確認沒有舊密文後，將舊 version disable：<code>gcloud kms keys versions disable 1 ...</code>。停用而非銷毀，萬一需要還能重新啟用。</p>
+      </div>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">過渡期怎麼處理新舊密文？</div>
+      <p>如果廠商同時有 v1 公鑰加密的舊密文和 v2 公鑰加密的新密文，解法有兩種：</p>
+      <p><strong>方案 A</strong>：讓廠商在 payload 中帶上 key version 資訊，我方根據 version 呼叫對應的 KMS key version 解密。</p>
+      <p><strong>方案 B</strong>：先試 v2 解密，失敗再 fallback 試 v1。簡單但效率較低。</p>
+    </div>
+
+    <h3>輪替時的 gcloud 指令</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="cm"># 1. 建立新版本（v2）</span>
+gcloud kms keys versions create \
+  <span class="ann">--key</span>=<span class="str">id-encrypt-key</span> \
+  <span class="ann">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="ann">--location</span>=<span class="str">asia-east1</span>
+
+<span class="cm"># 2. 匯出新公鑰</span>
+gcloud kms keys versions get-public-key <span class="num">2</span> \
+  <span class="ann">--key</span>=<span class="str">id-encrypt-key</span> \
+  <span class="ann">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="ann">--location</span>=<span class="str">asia-east1</span> \
+  <span class="ann">--output-file</span>=<span class="str">public_key_v2.pem</span>
+
+<span class="cm"># 3. 過渡期結束後，停用舊版本</span>
+gcloud kms keys versions disable <span class="num">1</span> \
+  <span class="ann">--key</span>=<span class="str">id-encrypt-key</span> \
+  <span class="ann">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="ann">--location</span>=<span class="str">asia-east1</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Completion -->
+  <div class="complete-banner">
+    <div class="cb-icon">🎉</div>
+    <h3>全部教學完成！</h3>
+    <p>你已經掌握 GCP KMS 非對稱加密的觀念、架構、建置方式、Spring Boot 實作、Cache 策略和金鑰輪替 SOP。<br>可以直接開始串接了！</p>
+  </div>
+
+  <!-- Chapter Nav -->
+  <nav class="ch-nav">
+    <a class="ch-nav-link" href="chapter3.html">
+      <span class="ch-nav-label">← 上一章</span>
+      <span class="ch-nav-title">Ch.3 動手實作</span>
+    </a>
+    <a class="ch-nav-link next" href="chapter1.html">
+      <span class="ch-nav-label">回到開頭 ↺</span>
+      <span class="ch-nav-title">Ch.1 基礎觀念</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="footer">GCP KMS 非對稱加密教學 · 團隊內部學習用</footer>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => btn.textContent = '複製', 1500);
+  });
+}
+
+// fade-in：捲動到可視範圍才觸發動畫
+const fadeObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        fadeObserver.unobserve(entry.target);
+      }
+    });
+  },
+  { threshold: 0.1 }
+);
+document.querySelectorAll('.fade-in').forEach((el) => fadeObserver.observe(el));
+</script>
+</body>
+</html>

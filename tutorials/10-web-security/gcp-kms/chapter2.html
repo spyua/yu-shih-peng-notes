@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.2 架構與流程 — GCP KMS 非對稱加密教學</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F6F3EE;
+  --bg-warm: #EFEADF;
+  --bg-card: #FFFFFF;
+  --bg-dark: #16161D;
+  --bg-code: #111118;
+  --text: #2A2A35;
+  --text-secondary: #5E5E6E;
+  --text-muted: #9494A3;
+  --accent: #D35233;
+  --accent-hover: #B8432A;
+  --accent-soft: #FADAD2;
+  --teal: #1A9E8F;
+  --teal-soft: #D0F0EA;
+  --blue: #2563EB;
+  --blue-soft: #DBEAFE;
+  --gold: #C88B2E;
+  --gold-soft: #FDF3DC;
+  --border: #E0DCD4;
+  --border-light: #EDEAE4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --content-width: 760px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== NAV (shared) ===== */
+.topnav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(246,243,238,0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.topnav-inner {
+  max-width: var(--content-width); margin: 0 auto;
+  display: flex; align-items: center; height: 56px; gap: 24px;
+}
+.topnav-brand { font-weight:900; font-size:14px; color:var(--accent); letter-spacing:-0.02em; text-decoration:none; white-space:nowrap; }
+.topnav-chapters { display:flex; gap:2px; flex:1; justify-content:center; }
+.topnav-ch { padding:6px 16px; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border-radius:100px; transition:all 0.15s; white-space:nowrap; }
+.topnav-ch:hover { color:var(--text); background:var(--bg-warm); }
+.topnav-ch.active { color:var(--accent); background:var(--accent-soft); }
+.topnav-progress { display:flex; gap:6px; align-items:center; }
+.topnav-dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all 0.2s; }
+.topnav-dot.filled { background:var(--accent); }
+.topnav-dot.current { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+@media (max-width:640px) { .topnav-chapters { display:none; } }
+
+/* ===== HERO ===== */
+.ch-hero { padding:72px 24px 56px; position:relative; overflow:hidden; }
+.ch-hero::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:var(--border); }
+.ch-hero-inner { max-width:var(--content-width); margin:0 auto; }
+.ch-number { font-family:'Crimson Pro',serif; font-size:80px; font-weight:900; color:var(--accent); line-height:1; opacity:0.12; position:absolute; top:30px; right:max(24px,calc((100% - var(--content-width))/2)); user-select:none; }
+.ch-overline { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--accent); margin-bottom:12px; }
+.ch-title { font-family:'Crimson Pro',serif; font-size:clamp(2rem,4.5vw,2.8rem); font-weight:900; line-height:1.25; margin-bottom:14px; color:var(--bg-dark); }
+.ch-desc { font-size:17px; color:var(--text-secondary); max-width:540px; }
+
+/* ===== MAIN ===== */
+.main { max-width:var(--content-width); margin:0 auto; padding:48px 24px 80px; }
+.section { margin-bottom:72px; }
+.section-anchor { scroll-margin-top:72px; }
+h2 { font-family:'Crimson Pro',serif; font-size:26px; font-weight:900; color:var(--bg-dark); margin-bottom:8px; line-height:1.3; }
+.section-rule { width:40px; height:3px; background:var(--accent); border-radius:2px; margin-bottom:20px; }
+h3 { font-size:19px; font-weight:700; margin:40px 0 12px; color:var(--bg-dark); }
+p { margin-bottom:16px; }
+code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); padding:2px 7px; border-radius:5px; font-size:0.87em; color:var(--accent); font-weight:500; }
+
+/* Callouts */
+.callout { border-radius:var(--radius); padding:24px 24px 24px 64px; margin:28px 0; position:relative; font-size:15px; }
+.callout::before { position:absolute; left:22px; top:22px; font-size:24px; }
+.callout .callout-title { font-weight:700; font-size:14px; margin-bottom:6px; }
+.callout p { margin-bottom:8px; }
+.callout p:last-child { margin-bottom:0; }
+.callout-analogy { background:var(--gold-soft); border:1px solid #ECD9A8; }
+.callout-analogy::before { content:'💡'; }
+.callout-analogy .callout-title { color:#8B6914; }
+.callout-analogy p { color:#6B5420; }
+.callout-warning { background:#FEF2F2; border:1px solid #FECACA; }
+.callout-warning::before { content:'⚠️'; }
+.callout-warning p { color:#991B1B; }
+.callout-tip { background:var(--teal-soft); border:1px solid #A7E8D8; }
+.callout-tip::before { content:'✅'; }
+.callout-tip .callout-title { color:#065F46; }
+.callout-tip p { color:#065F46; }
+
+/* Tables */
+.table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow-sm); }
+.table-wrap table { width:100%; border-collapse:collapse; font-size:14.5px; }
+.table-wrap th { background:var(--bg-dark); color:#fff; padding:13px 18px; text-align:left; font-weight:600; font-size:13px; }
+.table-wrap td { padding:13px 18px; border-bottom:1px solid var(--border-light); vertical-align:top; }
+.table-wrap tr:last-child td { border-bottom:none; }
+.table-wrap tr:hover td { background:#FDFCFA; }
+
+/* Key hierarchy visual */
+.hierarchy-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px;
+  margin: 28px 0;
+  box-shadow: var(--shadow-sm);
+}
+.hierarchy-card .card-label {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 24px;
+}
+.h-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.h-node {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  transition: transform 0.15s;
+  cursor: default;
+}
+.h-node:hover { transform: translateX(6px); }
+.h-icon {
+  width: 46px; height: 46px;
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+  font-weight: 700;
+}
+.h-name { font-weight: 700; font-size: 15px; }
+.h-desc { font-size: 13px; color: var(--text-secondary); }
+.h-example { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); margin-top: 2px; }
+.h-connector { width: 2px; height: 12px; background: var(--border); margin-left: 42px; }
+
+.h-node.l1 { background: #EDE9FE; }
+.h-node.l1 .h-icon { background: #6D28D9; color: #fff; }
+.h-node.l2 { background: var(--accent-soft); }
+.h-node.l2 .h-icon { background: var(--accent); color: #fff; }
+.h-node.l3 { background: var(--teal-soft); }
+.h-node.l3 .h-icon { background: var(--teal); color: #fff; }
+.h-node.l4 { background: var(--gold-soft); }
+.h-node.l4 .h-icon { background: var(--gold); color: #fff; }
+
+/* Resource name block */
+.resource-block {
+  background: var(--bg-code);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+.resource-block pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 2;
+  color: #E2E8F0;
+  white-space: pre;
+  margin: 0;
+}
+.resource-block .hl { color: #34D399; font-weight: 600; }
+.resource-block .dim { color: #6B7280; }
+.resource-block .val { color: #F59E0B; }
+
+/* Flow diagram */
+.flow-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 28px;
+  margin: 28px 0;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.flow-card .card-label {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 28px;
+  text-align: center;
+}
+.flow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.flow-node {
+  text-align: center;
+  padding: 16px 18px;
+  border-radius: 12px;
+  min-width: 100px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.flow-node:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.flow-node .f-icon { font-size: 28px; margin-bottom: 6px; }
+.flow-node .f-label { font-size: 13px; font-weight: 700; }
+.flow-node .f-sub { font-size: 11px; margin-top: 2px; }
+.flow-node.fn-us { background: var(--teal); color: #fff; }
+.flow-node.fn-us .f-sub { color: rgba(255,255,255,0.6); }
+.flow-node.fn-vendor { background: var(--bg-dark); color: #fff; }
+.flow-node.fn-vendor .f-sub { color: rgba(255,255,255,0.5); }
+.flow-node.fn-data { background: var(--accent); color: #fff; }
+.flow-node.fn-data .f-sub { color: rgba(255,255,255,0.6); }
+.flow-node.fn-kms { background: var(--blue); color: #fff; }
+.flow-node.fn-kms .f-sub { color: rgba(255,255,255,0.6); }
+
+.flow-arrow {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 6px; flex-shrink: 0;
+}
+.flow-arrow .fa-line { font-size: 18px; color: var(--accent); line-height: 1; }
+.flow-arrow .fa-text { font-size: 10px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+
+/* Step cards */
+.steps { display: flex; flex-direction: column; gap: 16px; margin: 28px 0; }
+.step {
+  display: flex; gap: 18px; padding: 22px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.15s;
+}
+.step:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+.step-num {
+  width: 40px; height: 40px;
+  background: var(--accent); color: #fff;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 17px; flex-shrink: 0;
+}
+.step h4 { font-size: 15.5px; font-weight: 700; margin-bottom: 4px; }
+.step p { font-size: 14.5px; color: var(--text-secondary); margin-bottom: 0; }
+
+/* Chapter nav */
+.ch-nav { display:flex; justify-content:space-between; align-items:stretch; gap:16px; padding-top:48px; border-top:1px solid var(--border); margin-top:72px; }
+.ch-nav-link { display:flex; flex-direction:column; gap:4px; text-decoration:none; padding:20px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); transition:all 0.2s; flex:1; max-width:48%; }
+.ch-nav-link:hover { border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-2px); }
+.ch-nav-link.next { text-align:right; margin-left:auto; }
+.ch-nav-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); }
+.ch-nav-title { font-weight:700; font-size:15px; color:var(--text); }
+
+.footer { text-align:center; padding:32px 24px; font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--border); max-width:var(--content-width); margin:0 auto; }
+
+/* Animation */
+.fade-in { opacity:0; transform:translateY(24px); animation:fadeUp 0.5s ease forwards; }
+.fade-in:nth-child(2) { animation-delay:0.08s; }
+.fade-in:nth-child(3) { animation-delay:0.14s; }
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+@media (max-width:640px) {
+  .flow-row { flex-direction:column; }
+  .flow-arrow { transform:rotate(90deg); padding:4px 0; }
+  .ch-nav { flex-direction:column; }
+  .ch-nav-link { max-width:100%; }
+  .ch-number { display:none; }
+  .step { flex-direction:column; gap:10px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 基礎觀念</a>
+      <a class="topnav-ch active" href="chapter2.html">Ch.2 架構與流程</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 動手實作</a>
+      <a class="topnav-ch" href="chapter4.html">Ch.4 程式實作</a>
+    </div>
+    <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+      <div class="topnav-dot"></div>
+      <div class="topnav-dot"></div>
+    </div>
+  </div>
+</nav>
+
+<header class="ch-hero">
+  <div class="ch-number">02</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 2 of 4</div>
+    <h1 class="ch-title">架構與流程</h1>
+    <p class="ch-desc">KMS 裡的金鑰不是一個檔案，而是有層級的結構。這章帶你看清楚「金鑰長什麼樣」以及「我們跟廠商之間的完整流程」。</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Section: Key Structure -->
+  <section class="section fade-in" id="structure">
+    <h2 class="section-anchor">KMS 的金鑰結構</h2>
+    <div class="section-rule"></div>
+    <p>GCP KMS 裡的金鑰是一個 <strong>四層結構</strong>，從大到小：</p>
+
+    <div class="hierarchy-card">
+      <div class="card-label">金鑰層級關係</div>
+      <div class="h-stack">
+        <div class="h-node l1">
+          <div class="h-icon">📍</div>
+          <div>
+            <div class="h-name">Location（位置）</div>
+            <div class="h-desc">金鑰放在哪個機房</div>
+            <div class="h-example">asia-east1（台灣彰化）</div>
+          </div>
+        </div>
+        <div class="h-connector"></div>
+        <div class="h-node l2">
+          <div class="h-icon">💍</div>
+          <div>
+            <div class="h-name">Key Ring（金鑰環）</div>
+            <div class="h-desc">一組金鑰的容器，像資料夾一樣分組</div>
+            <div class="h-example">my-keyring</div>
+          </div>
+        </div>
+        <div class="h-connector"></div>
+        <div class="h-node l3">
+          <div class="h-icon">🔑</div>
+          <div>
+            <div class="h-name">Crypto Key（金鑰）</div>
+            <div class="h-desc">一把金鑰的定義：用途＋演算法</div>
+            <div class="h-example">id-encrypt-key</div>
+          </div>
+        </div>
+        <div class="h-connector"></div>
+        <div class="h-node l4">
+          <div class="h-icon">🏷️</div>
+          <div>
+            <div class="h-name">Key Version（版本）</div>
+            <div class="h-desc">金鑰的實際版本，輪替時產生新版本</div>
+            <div class="h-example">v1, v2, v3…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>所以要指定一把金鑰，完整路徑（Resource Name）長這樣：</p>
+
+    <div class="resource-block">
+<pre><span class="dim">projects/</span><span class="val">my-project</span><span class="dim">/locations/</span><span class="val">asia-east1</span><span class="dim">/keyRings/</span><span class="val">my-keyring</span><span class="dim">/cryptoKeys/</span><span class="val">id-encrypt-key</span><span class="dim">/cryptoKeyVersions/</span><span class="val">1</span>
+         <span class="hl">↑ GCP 專案</span>          <span class="hl">↑ 位置</span>            <span class="hl">↑ 金鑰環</span>            <span class="hl">↑ 金鑰名稱</span>                      <span class="hl">↑ 版本</span></pre>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">比喻：辦公室檔案櫃</div>
+      <p><strong>Location</strong> = 哪棟辦公大樓（機房位置）</p>
+      <p><strong>Key Ring</strong> = 哪一排檔案櫃（分組容器）</p>
+      <p><strong>Crypto Key</strong> = 哪一個抽屜（定義了金鑰的規格）</p>
+      <p><strong>Key Version</strong> = 抽屜裡的第幾份文件（實際的金鑰內容）</p>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">注意事項</div>
+      <p>Key Ring 建好後<strong>無法刪除</strong>（只能 disable 裡面的 key），所以命名要想清楚。建議用 <code>專案名-用途</code> 的格式，例如 <code>myapp-encryption</code>。</p>
+    </div>
+  </section>
+
+  <!-- Section: Our Flow -->
+  <section class="section fade-in" id="flow">
+    <h2 class="section-anchor">我們的加解密流程</h2>
+    <div class="section-rule"></div>
+    <p>了解結構後，來看我們跟廠商之間的完整互動：</p>
+
+    <div class="flow-card">
+      <div class="card-label">端對端流程</div>
+      <div class="flow-row">
+        <div class="flow-node fn-us">
+          <div class="f-icon">🏢</div>
+          <div class="f-label">我方</div>
+          <div class="f-sub">建 KMS 金鑰</div>
+        </div>
+        <div class="flow-arrow">
+          <div class="fa-text">匯出公鑰</div>
+          <div class="fa-line">→</div>
+        </div>
+        <div class="flow-node fn-vendor">
+          <div class="f-icon">🏭</div>
+          <div class="f-label">廠商</div>
+          <div class="f-sub">拿到公鑰</div>
+        </div>
+        <div class="flow-arrow">
+          <div class="fa-text">傳送密文</div>
+          <div class="fa-line">→</div>
+        </div>
+        <div class="flow-node fn-data">
+          <div class="f-icon">📨</div>
+          <div class="f-label">我方服務</div>
+          <div class="f-sub">收到密文</div>
+        </div>
+        <div class="flow-arrow">
+          <div class="fa-text">送 KMS 解密</div>
+          <div class="fa-line">→</div>
+        </div>
+        <div class="flow-node fn-kms">
+          <div class="f-icon">☁️</div>
+          <div class="f-label">GCP KMS</div>
+          <div class="f-sub">私鑰解密</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>逐步拆解</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h4>我方在 GCP KMS 建立非對稱金鑰</h4>
+          <p>選擇 purpose = <code>ASYMMETRIC_DECRYPT</code>，演算法 = <code>RSA_DECRYPT_OAEP_4096_SHA256</code>。KMS 自動產生一對公私鑰。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h4>匯出公鑰交給廠商</h4>
+          <p>用 gcloud 指令匯出 PEM 格式的公鑰，公鑰可以公開傳輸，不怕被攔截。<strong>私鑰永遠留在 KMS 裡。</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h4>廠商用公鑰加密身分證字號</h4>
+          <p>廠商用我們給的公鑰 + <code>RSA-OAEP-SHA256</code> 演算法，把身分證字號加密成密文，再 Base64 編碼後透過 API 傳給我方。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h4>我方收到密文，呼叫 KMS API 解密</h4>
+          <p>Spring Boot 收到密文 → 呼叫 KMS 的 <code>asymmetricDecrypt</code> → KMS 用內部保管的私鑰解密 → 回傳身分證字號明文給我們。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>重要觀念</strong>：私鑰永遠不離開 KMS。我們的 server 看不到私鑰，只是把密文丟過去，KMS 解完回傳結果。即使我們的 server 被入侵，攻擊者也拿不到私鑰。</p>
+    </div>
+
+    <h3>廠商需要知道什麼？</h3>
+    <p>提供給廠商的資訊很簡單，就三樣：</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>給廠商的東西</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>公鑰 PEM 檔</strong></td><td>我方從 KMS 匯出的 PEM 格式公鑰</td></tr>
+          <tr><td><strong>加密演算法</strong></td><td>Java: <code>RSA/ECB/OAEPWithSHA-256AndMGF1Padding</code></td></tr>
+          <tr><td><strong>編碼格式</strong></td><td>密文用 Base64 編碼後傳送</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>廠商加密的 padding 一定要對</strong>：必須用 <code>OAEPWithSHA-256AndMGF1Padding</code>，如果用錯（例如用了舊的 PKCS1），KMS 解密會直接報錯。這是最常見的整合失敗原因。</p>
+    </div>
+  </section>
+
+  <!-- Chapter Nav -->
+  <nav class="ch-nav">
+    <a class="ch-nav-link" href="chapter1.html">
+      <span class="ch-nav-label">← 上一章</span>
+      <span class="ch-nav-title">Ch.1 基礎觀念</span>
+    </a>
+    <a class="ch-nav-link next" href="chapter3.html">
+      <span class="ch-nav-label">下一章 →</span>
+      <span class="ch-nav-title">Ch.3 動手實作</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="footer">GCP KMS 非對稱加密教學 · 團隊內部學習用</footer>
+</body>
+</html>

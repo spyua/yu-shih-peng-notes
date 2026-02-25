@@ -61,6 +61,11 @@
 - HTTPS / SSL / TLS | 中級
 - CORS / CSP Security | 中級
 - OWASP Top 10 Risks | 中級
+## GCP KMS 非對稱加密
+- Ch.1 基礎觀念 | 中級 | tutorials/10-web-security/gcp-kms/chapter1.html
+- Ch.2 架構與流程 | 中級 | tutorials/10-web-security/gcp-kms/chapter2.html
+- Ch.3 動手實作 | 中級 | tutorials/10-web-security/gcp-kms/chapter3.html
+- Ch.4 程式實作 | 中級 | tutorials/10-web-security/gcp-kms/chapter4.html
 
 # 🧪 測試 {#11-Testing}
 

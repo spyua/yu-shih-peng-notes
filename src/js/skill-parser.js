@@ -17,6 +17,7 @@ const parseSkillsMarkdown = (markdown) => {
     const categories = [];
     const lines = markdown.split('\n');
     let currentCategory = null;
+    let currentSubgroup = null;
 
     lines.forEach(line => {
         const trimmedLine = line.trim();
@@ -27,25 +28,42 @@ const parseSkillsMarkdown = (markdown) => {
         // 解析分類標題: # 🌐 Internet 基礎 {#01-Internet}
         const categoryMatch = trimmedLine.match(/^#\s+(\S+)\s+(.+?)\s+\{#(.+?)\}$/);
         if (categoryMatch) {
+            currentSubgroup = null;
             currentCategory = {
                 id: categoryMatch[3],
                 icon: categoryMatch[1],
                 name: categoryMatch[2],
-                skills: []
+                skills: [],
+                subgroups: []
             };
             categories.push(currentCategory);
+            return;
+        }
+
+        // 解析子群組標題: ## Sub Group Name
+        const subgroupMatch = trimmedLine.match(/^##\s+(.+)$/);
+        if (subgroupMatch && currentCategory) {
+            currentSubgroup = {
+                name: subgroupMatch[1].trim(),
+                skills: []
+            };
+            currentCategory.subgroups.push(currentSubgroup);
             return;
         }
 
         // 解析技能項目: - Skill Name | 初級 | optional-link
         const skillMatch = trimmedLine.match(/^-\s+(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(.+))?$/);
         if (skillMatch && currentCategory) {
-            const link = skillMatch[3]?.trim();
-            currentCategory.skills.push({
+            const skill = {
                 name: skillMatch[1].trim(),
                 level: skillMatch[2].trim(),
-                link: link || null
-            });
+                link: skillMatch[3]?.trim() || null
+            };
+            if (currentSubgroup) {
+                currentSubgroup.skills.push(skill);
+            } else {
+                currentCategory.skills.push(skill);
+            }
         }
     });
 

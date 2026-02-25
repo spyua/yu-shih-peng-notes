@@ -253,6 +253,67 @@ body {
     color: var(--error-color);
 }
 
+/* ==================== Subgroup Navigation ==================== */
+.nav-subgroup {
+    border-top: 1px solid var(--border-color);
+}
+
+.subgroup-header {
+    display: flex;
+    align-items: center;
+    padding: 0.625rem 1.5rem 0.625rem 3rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    gap: 0.5rem;
+}
+
+.subgroup-header:hover {
+    background: var(--bg-hover);
+}
+
+.subgroup-icon {
+    font-size: 0.85rem;
+    width: 20px;
+    text-align: center;
+}
+
+.subgroup-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.825rem;
+    color: var(--primary-color);
+}
+
+.subgroup-count {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--bg-dark);
+    padding: 0.1rem 0.4rem;
+    border-radius: 8px;
+}
+
+.subgroup-arrow {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.nav-subgroup.open .subgroup-arrow {
+    transform: rotate(90deg);
+}
+
+.subgroup-items {
+    display: none;
+}
+
+.nav-subgroup.open .subgroup-items {
+    display: block;
+}
+
+.nav-subgroup .skill-item {
+    padding-left: 4.5rem;
+}
+
 /* ==================== Main Content ==================== */
 .main-content {
     flex: 1;

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.3 動手實作 — GCP KMS 非對稱加密教學</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F6F3EE;
+  --bg-warm: #EFEADF;
+  --bg-card: #FFFFFF;
+  --bg-dark: #16161D;
+  --bg-code: #111118;
+  --text: #2A2A35;
+  --text-secondary: #5E5E6E;
+  --text-muted: #9494A3;
+  --accent: #D35233;
+  --accent-hover: #B8432A;
+  --accent-soft: #FADAD2;
+  --teal: #1A9E8F;
+  --teal-soft: #D0F0EA;
+  --blue: #2563EB;
+  --blue-soft: #DBEAFE;
+  --gold: #C88B2E;
+  --gold-soft: #FDF3DC;
+  --border: #E0DCD4;
+  --border-light: #EDEAE4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --content-width: 760px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== NAV ===== */
+.topnav { position:sticky; top:0; z-index:100; background:rgba(246,243,238,0.85); backdrop-filter:blur(16px) saturate(1.4); border-bottom:1px solid var(--border); padding:0 24px; }
+.topnav-inner { max-width:var(--content-width); margin:0 auto; display:flex; align-items:center; height:56px; gap:24px; }
+.topnav-brand { font-weight:900; font-size:14px; color:var(--accent); letter-spacing:-0.02em; text-decoration:none; white-space:nowrap; }
+.topnav-chapters { display:flex; gap:2px; flex:1; justify-content:center; }
+.topnav-ch { padding:6px 16px; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border-radius:100px; transition:all 0.15s; white-space:nowrap; }
+.topnav-ch:hover { color:var(--text); background:var(--bg-warm); }
+.topnav-ch.active { color:var(--accent); background:var(--accent-soft); }
+.topnav-progress { display:flex; gap:6px; align-items:center; }
+.topnav-dot { width:8px; height:8px; border-radius:50%; background:var(--border); }
+.topnav-dot.filled { background:var(--accent); }
+.topnav-dot.current { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+@media (max-width:640px) { .topnav-chapters { display:none; } }
+
+/* ===== HERO ===== */
+.ch-hero { padding:72px 24px 56px; position:relative; overflow:hidden; }
+.ch-hero::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:var(--border); }
+.ch-hero-inner { max-width:var(--content-width); margin:0 auto; }
+.ch-number { font-family:'Crimson Pro',serif; font-size:80px; font-weight:900; color:var(--accent); line-height:1; opacity:0.12; position:absolute; top:30px; right:max(24px,calc((100% - var(--content-width))/2)); user-select:none; }
+.ch-overline { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--accent); margin-bottom:12px; }
+.ch-title { font-family:'Crimson Pro',serif; font-size:clamp(2rem,4.5vw,2.8rem); font-weight:900; line-height:1.25; margin-bottom:14px; color:var(--bg-dark); }
+.ch-desc { font-size:17px; color:var(--text-secondary); max-width:540px; }
+
+/* ===== MAIN ===== */
+.main { max-width:var(--content-width); margin:0 auto; padding:48px 24px 80px; }
+.section { margin-bottom:72px; }
+.section-anchor { scroll-margin-top:72px; }
+h2 { font-family:'Crimson Pro',serif; font-size:26px; font-weight:900; color:var(--bg-dark); margin-bottom:8px; line-height:1.3; }
+.section-rule { width:40px; height:3px; background:var(--accent); border-radius:2px; margin-bottom:20px; }
+h3 { font-size:19px; font-weight:700; margin:40px 0 12px; color:var(--bg-dark); }
+p { margin-bottom:16px; }
+code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); padding:2px 7px; border-radius:5px; font-size:0.87em; color:var(--accent); font-weight:500; }
+
+/* Callouts */
+.callout { border-radius:var(--radius); padding:24px 24px 24px 64px; margin:28px 0; position:relative; font-size:15px; }
+.callout::before { position:absolute; left:22px; top:22px; font-size:24px; }
+.callout .callout-title { font-weight:700; font-size:14px; margin-bottom:6px; }
+.callout p { margin-bottom:8px; }
+.callout p:last-child { margin-bottom:0; }
+.callout-analogy { background:var(--gold-soft); border:1px solid #ECD9A8; }
+.callout-analogy::before { content:'💡'; }
+.callout-analogy .callout-title { color:#8B6914; }
+.callout-analogy p { color:#6B5420; }
+.callout-warning { background:#FEF2F2; border:1px solid #FECACA; }
+.callout-warning::before { content:'⚠️'; }
+.callout-warning p { color:#991B1B; }
+.callout-tip { background:var(--teal-soft); border:1px solid #A7E8D8; }
+.callout-tip::before { content:'✅'; }
+.callout-tip .callout-title { color:#065F46; }
+.callout-tip p { color:#065F46; }
+
+/* Tables */
+.table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow-sm); }
+.table-wrap table { width:100%; border-collapse:collapse; font-size:14.5px; }
+.table-wrap th { background:var(--bg-dark); color:#fff; padding:13px 18px; text-align:left; font-weight:600; font-size:13px; }
+.table-wrap td { padding:13px 18px; border-bottom:1px solid var(--border-light); vertical-align:top; }
+.table-wrap tr:last-child td { border-bottom:none; }
+.table-wrap tr:hover td { background:#FDFCFA; }
+.tag { display:inline-block; padding:2px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.tag-green { background:#D1FAE5; color:#065F46; }
+.tag-blue { background:#DBEAFE; color:#1E40AF; }
+
+/* Code blocks */
+.code-block { background:var(--bg-code); border-radius:12px; margin:24px 0; overflow:hidden; }
+.code-header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.06); }
+.code-header .code-lang { font-size:12px; font-weight:600; color:var(--teal); font-family:'JetBrains Mono',monospace; }
+.code-header .copy-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-family:'Noto Sans TC',sans-serif; transition:all 0.15s; }
+.copy-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+.code-body { padding:20px; overflow-x:auto; }
+.code-body pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.75; color:#E2E8F0; white-space:pre; margin:0; }
+.code-body .cm { color:#6B7280; }
+.code-body .kw { color:#C084FC; }
+.code-body .str { color:#34D399; }
+.code-body .flag { color:#F59E0B; }
+.code-body .var { color:#60A5FA; }
+
+/* Tabs */
+.tabs { display:flex; gap:4px; background:var(--bg-warm); border-radius:10px 10px 0 0; padding:6px 6px 0; }
+.tab-btn { padding:10px 20px; border:none; background:transparent; color:var(--text-muted); font-size:13.5px; font-weight:600; cursor:pointer; border-radius:8px 8px 0 0; font-family:'Noto Sans TC',sans-serif; transition:all 0.15s; }
+.tab-btn.active { background:var(--bg-card); color:var(--text); box-shadow:0 -2px 8px rgba(0,0,0,0.04); }
+.tab-btn:hover:not(.active) { color:var(--text); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.tab-content-area { background:var(--bg-card); border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:28px; }
+
+/* Steps */
+.steps { display:flex; flex-direction:column; gap:16px; margin:24px 0; }
+.step { display:flex; gap:18px; padding:22px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); transition:all 0.15s; }
+.step:hover { border-color:var(--accent); box-shadow:var(--shadow); }
+.step-num { width:40px; height:40px; background:var(--blue); color:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; flex-shrink:0; }
+.step h4 { font-size:15.5px; font-weight:700; margin-bottom:4px; }
+.step p { font-size:14.5px; color:var(--text-secondary); margin-bottom:0; }
+
+/* FAQ */
+.faq-list { display:flex; flex-direction:column; gap:8px; }
+.faq-item { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:all 0.2s; }
+.faq-item[open] { border-color:var(--accent); box-shadow:var(--shadow); }
+.faq-item summary { padding:20px 24px; font-weight:700; font-size:15.5px; cursor:pointer; list-style:none; display:flex; align-items:center; gap:12px; transition:background 0.15s; }
+.faq-item summary:hover { background:var(--bg); }
+.faq-item summary::before { content:'+'; width:28px; height:28px; background:var(--bg); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; color:var(--accent); flex-shrink:0; transition:all 0.2s; }
+.faq-item[open] summary::before { content:'−'; background:var(--accent); color:#fff; }
+.faq-item summary::-webkit-details-marker { display:none; }
+.faq-answer { padding:0 24px 20px 64px; color:var(--text-secondary); font-size:15px; line-height:1.8; }
+.faq-answer p { margin-bottom:0; color:var(--text-secondary); }
+
+/* Chapter nav */
+.ch-nav { display:flex; justify-content:space-between; align-items:stretch; gap:16px; padding-top:48px; border-top:1px solid var(--border); margin-top:72px; }
+.ch-nav-link { display:flex; flex-direction:column; gap:4px; text-decoration:none; padding:20px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); transition:all 0.2s; flex:1; max-width:48%; }
+.ch-nav-link:hover { border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-2px); }
+.ch-nav-link.next { text-align:right; margin-left:auto; }
+.ch-nav-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); }
+.ch-nav-title { font-weight:700; font-size:15px; color:var(--text); }
+.ch-nav-placeholder { flex:1; max-width:48%; }
+
+/* Completion banner */
+.complete-banner {
+  background: linear-gradient(135deg, var(--teal-soft), #D1FAE5);
+  border: 2px solid #6EE7B7;
+  border-radius: var(--radius);
+  padding: 36px;
+  text-align: center;
+  margin: 48px 0 0;
+}
+.complete-banner .cb-icon { font-size: 40px; margin-bottom: 12px; }
+.complete-banner h3 { font-family: 'Crimson Pro', serif; font-size: 24px; font-weight: 900; color: #065F46; margin: 0 0 8px; }
+.complete-banner p { color: #047857; margin-bottom: 0; font-size: 15px; }
+
+.footer { text-align:center; padding:32px 24px; font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--border); max-width:var(--content-width); margin:0 auto; }
+
+.fade-in { opacity:0; transform:translateY(24px); animation:fadeUp 0.5s ease forwards; }
+.fade-in:nth-child(2) { animation-delay:0.08s; }
+.fade-in:nth-child(3) { animation-delay:0.14s; }
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+@media (max-width:640px) {
+  .ch-nav { flex-direction:column; }
+  .ch-nav-link, .ch-nav-placeholder { max-width:100%; }
+  .ch-number { display:none; }
+  .step { flex-direction:column; gap:10px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 基礎觀念</a>
+      <a class="topnav-ch" href="chapter2.html">Ch.2 架構與流程</a>
+      <a class="topnav-ch active" href="chapter3.html">Ch.3 動手實作</a>
+      <a class="topnav-ch" href="chapter4.html">Ch.4 程式實作</a>
+    </div>
+    <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+      <div class="topnav-dot"></div>
+    </div>
+  </div>
+</nav>
+
+<header class="ch-hero">
+  <div class="ch-number">03</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 3 of 4</div>
+    <h1 class="ch-title">動手實作</h1>
+    <p class="ch-desc">前兩章搞懂觀念後，現在來實際操作。用 gcloud CLI 或 GCP Console 建置金鑰，設定權限，以及常見問題排解。</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Section: Create Key -->
+  <section class="section fade-in" id="create-key">
+    <h2 class="section-anchor">Step 1：建立金鑰</h2>
+    <div class="section-rule"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(event,'tab-cli')">gcloud CLI</button>
+      <button class="tab-btn" onclick="switchTab(event,'tab-console')">GCP Console 網頁</button>
+    </div>
+    <div class="tab-content-area">
+      <!-- CLI Tab -->
+      <div class="tab-panel active" id="tab-cli">
+        <div class="code-block" style="margin-top:0">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">複製</button>
+          </div>
+          <div class="code-body">
+<pre><span class="cm"># 1. 建立 Key Ring（金鑰環）</span>
+gcloud kms keyrings create <span class="var">my-keyring</span> \
+  <span class="flag">--location</span>=<span class="str">asia-east1</span>
+
+<span class="cm"># 2. 建立非對稱加密金鑰</span>
+gcloud kms keys create <span class="var">id-encrypt-key</span> \
+  <span class="flag">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="flag">--location</span>=<span class="str">asia-east1</span> \
+  <span class="flag">--purpose</span>=<span class="str">asymmetric-encryption</span> \
+  <span class="flag">--default-algorithm</span>=<span class="str">rsa-decrypt-oaep-4096-sha256</span> \
+  <span class="flag">--protection-level</span>=<span class="str">hsm</span>
+
+<span class="cm"># 3. 匯出公鑰（這個檔案要給廠商）</span>
+gcloud kms keys versions get-public-key <span class="var">1</span> \
+  <span class="flag">--key</span>=<span class="str">id-encrypt-key</span> \
+  <span class="flag">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="flag">--location</span>=<span class="str">asia-east1</span> \
+  <span class="flag">--output-file</span>=<span class="str">public_key.pem</span>
+
+<span class="cm"># 4. 驗證公鑰內容</span>
+cat public_key.pem
+<span class="cm"># 應該會看到 -----BEGIN PUBLIC KEY----- ... -----END PUBLIC KEY-----</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Console Tab -->
+      <div class="tab-panel" id="tab-console">
+        <div class="steps" style="margin-top:0">
+          <div class="step" style="border:none; box-shadow:none;">
+            <div class="step-num">1</div>
+            <div>
+              <h4>進入 Security → Key Management</h4>
+              <p>在 GCP Console 左側選單找到 Security，點進 Key Management</p>
+            </div>
+          </div>
+          <div class="step" style="border:none; box-shadow:none;">
+            <div class="step-num">2</div>
+            <div>
+              <h4>建立 Key Ring</h4>
+              <p>點「Create Key Ring」，名稱填 <code>my-keyring</code>，位置選 <code>asia-east1</code>（台灣）</p>
+            </div>
+          </div>
+          <div class="step" style="border:none; box-shadow:none;">
+            <div class="step-num">3</div>
+            <div>
+              <h4>建立 Key</h4>
+              <p>Key name → <code>id-encrypt-key</code><br>Purpose → <strong>Asymmetric decrypt</strong><br>Algorithm → <strong>4096 bit RSA - OAEP Padding - SHA256 Digest</strong><br>Protection level → <strong>HSM</strong>（正式環境）或 SOFTWARE（測試）</p>
+            </div>
+          </div>
+          <div class="step" style="border:none; box-shadow:none;">
+            <div class="step-num">4</div>
+            <div>
+              <h4>取得公鑰</h4>
+              <p>建好後點進 key → 點 version 1 → 右上角「⋯」→「Get public key」→ 下載 PEM 檔</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: IAM -->
+  <section class="section fade-in" id="iam">
+    <h2 class="section-anchor">Step 2：設定 IAM 權限</h2>
+    <div class="section-rule"></div>
+    <p>我方的 Service Account 需要兩個角色，不多不少：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>IAM Role</th><th>作用</th><th>誰需要</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>cloudkms.publicKeyViewer</code></td>
+            <td>可以讀取公鑰</td>
+            <td>我方的服務帳號</td>
+          </tr>
+          <tr>
+            <td><code>cloudkms.cryptoKeyDecrypter</code></td>
+            <td>可以呼叫解密 API</td>
+            <td>我方的服務帳號</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">複製</button>
+      </div>
+      <div class="code-body">
+<pre><span class="cm"># 給「看公鑰」的權限</span>
+gcloud kms keys add-iam-policy-binding <span class="var">id-encrypt-key</span> \
+  <span class="flag">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="flag">--location</span>=<span class="str">asia-east1</span> \
+  <span class="flag">--member</span>=<span class="str">serviceAccount:my-app@my-project.iam.gserviceaccount.com</span> \
+  <span class="flag">--role</span>=<span class="str">roles/cloudkms.publicKeyViewer</span>
+
+<span class="cm"># 給「解密」的權限</span>
+gcloud kms keys add-iam-policy-binding <span class="var">id-encrypt-key</span> \
+  <span class="flag">--keyring</span>=<span class="str">my-keyring</span> \
+  <span class="flag">--location</span>=<span class="str">asia-east1</span> \
+  <span class="flag">--member</span>=<span class="str">serviceAccount:my-app@my-project.iam.gserviceaccount.com</span> \
+  <span class="flag">--role</span>=<span class="str">roles/cloudkms.cryptoKeyDecrypter</span></pre>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">最小權限原則</div>
+      <p>廠商<strong>不需要任何 GCP IAM 權限</strong>，因為他們只用公鑰加密，公鑰是公開的。只有我方服務帳號需要 <code>cryptoKeyDecrypter</code> 來呼叫解密 API。</p>
+    </div>
+  </section>
+
+  <!-- Section: Parameters -->
+  <section class="section fade-in" id="params">
+    <h2 class="section-anchor">Step 3：參數白話文解釋</h2>
+    <div class="section-rule"></div>
+    <p>建金鑰時那些參數到底在設什麼？</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:25%">參數</th><th style="width:30%">我們的值</th><th style="width:45%">白話文</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>purpose</code></td>
+            <td><span class="tag tag-blue">ASYMMETRIC_DECRYPT</span></td>
+            <td>這把金鑰的用途是「非對稱解密」— 我方收密文要解開</td>
+          </tr>
+          <tr>
+            <td><code>algorithm</code></td>
+            <td>RSA_DECRYPT_OAEP<br>_4096_SHA256</td>
+            <td><strong>RSA</strong> = 演算法<br><strong>4096</strong> = 金鑰長度（越長越安全）<br><strong>OAEP + SHA256</strong> = 安全的填充方式</td>
+          </tr>
+          <tr>
+            <td><code>protection-level</code></td>
+            <td><span class="tag tag-green">HSM</span></td>
+            <td>金鑰存在硬體安全模組（防物理攻擊）。測試環境用 SOFTWARE 比較便宜</td>
+          </tr>
+          <tr>
+            <td><code>location</code></td>
+            <td>asia-east1</td>
+            <td>台灣彰化機房。資料不出國，呼叫延遲最低</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">RSA 4096 有多安全？</div>
+      <p>以目前最強的超級電腦，暴力破解一把 RSA-4096 金鑰需要的時間遠超過宇宙的年齡。簡單說：在量子電腦普及前，這個長度絕對夠用。</p>
+    </div>
+  </section>
+
+  <!-- Section: FAQ -->
+  <section class="section fade-in" id="faq">
+    <h2 class="section-anchor">常見問題 FAQ</h2>
+    <div class="section-rule"></div>
+
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>公鑰外洩了怎麼辦？</summary>
+        <div class="faq-answer">
+          <p><strong>完全不用擔心。</strong>公鑰本來就是設計成可以公開的。就像信箱的投信口，任何人都能投信，但只有你有鑰匙開信箱。外洩公鑰不會讓別人解密任何東西。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>私鑰有可能外洩嗎？</summary>
+        <div class="faq-answer">
+          <p>用 KMS 的好處就是：<strong>私鑰根本不會離開 KMS</strong>，你也下載不了。所以不存在「私鑰外洩」的問題。如果有人取得了 GCP IAM 權限，那是 IAM 層的問題（要鎖 IAM + 設 MFA）。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>金鑰需要定期更換（輪替）嗎？</summary>
+        <div class="faq-answer">
+          <p>建議定期輪替。做法：在同一個 Crypto Key 下建立新的 version（v2），然後把新公鑰給廠商。舊的 v1 先不停用，等確認所有舊密文都處理完再 disable。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>KMS 每次呼叫都要錢嗎？</summary>
+        <div class="faq-answer">
+          <p>是的，每次加解密 API 呼叫約 $0.03 / 10,000 次。金鑰本身也有月費（HSM 較貴）。所以我們用 <strong>Caffeine Cache</strong> 降低呼叫次數：快取公鑰（24hr）和解密結果（1hr，視安全需求調整）。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>OAEP 跟 PKCS1 差在哪？為什麼選 OAEP？</summary>
+        <div class="faq-answer">
+          <p>兩種都是 RSA 加密的「填充方式」。PKCS#1 v1.5 是舊版，有已知的 padding oracle 攻擊弱點。OAEP 是新版，抗攻擊性更強。<strong>廠商加密時的 padding 一定要跟 KMS 設定一致</strong>，否則解密報錯。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>身分證字號很短，直接用 RSA 加密 OK 嗎？</summary>
+        <div class="faq-answer">
+          <p>完全 OK！RSA-4096 with OAEP-SHA256 的明文上限約 446 bytes。身分證字號才 10 個字元（10 bytes），綽綽有餘。如果未來要加密大資料（如整份文件），就需要改用 Hybrid Encryption（RSA + AES 混合），但那是另一個架構了。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>解密失敗最常見的原因？</summary>
+        <div class="faq-answer">
+          <p>90% 是<strong>廠商端 padding 用錯</strong>。必須是 <code>RSA/ECB/OAEPWithSHA-256AndMGF1Padding</code>。常見錯誤包括：用了 PKCS1Padding、SHA-1 instead of SHA-256、或是加密時沒用我方最新版本的公鑰。</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>可以用 KMS 做「加密」嗎？（不是解密）</summary>
+        <div class="faq-answer">
+          <p>非對稱金鑰的加密不需要 KMS — 直接用公鑰在本地加密即可（跟廠商一樣）。KMS 主要負責「保管私鑰」和「解密」。如果你要做對稱加密（AES），KMS 有 <code>ENCRYPT_DECRYPT</code> purpose 可以用。</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- Chapter Nav -->
+  <nav class="ch-nav">
+    <a class="ch-nav-link" href="chapter2.html">
+      <span class="ch-nav-label">← 上一章</span>
+      <span class="ch-nav-title">Ch.2 架構與流程</span>
+    </a>
+    <a class="ch-nav-link next" href="chapter4.html">
+      <span class="ch-nav-label">下一章 →</span>
+      <span class="ch-nav-title">Ch.4 程式實作</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="footer">GCP KMS 非對稱加密教學 · 團隊內部學習用</footer>
+
+<script>
+function switchTab(e, tabId) {
+  const area = e.target.closest('.tabs').nextElementSibling;
+  area.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  e.target.classList.add('active');
+}
+
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => btn.textContent = '複製', 1500);
+  });
+}
+</script>
+</body>
+</html>
