@@ -197,6 +197,177 @@ code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); paddin
   margin-top:16px; transition:opacity 0.4s;
 }
 
+/* Pipeline animation */
+.pipeline-section { margin: 24px 0 12px; }
+.pipeline-label {
+  display:inline-block; font-size:13px; font-weight:700;
+  padding:6px 16px; border-radius:8px; margin-bottom:12px;
+}
+.encrypt-bg { background:var(--blue-soft); color:#1E40AF; }
+.decrypt-bg { background:var(--accent-soft); color:var(--accent); }
+
+.pipeline { display:flex; flex-direction:column; align-items:center; }
+
+.pipe-step {
+  display:flex; gap:14px; width:100%; max-width:520px;
+  padding:16px 18px; border-radius:12px;
+  border:2px solid var(--border); background:var(--bg);
+  opacity:0.3; transform:translateY(6px);
+  transition:all 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.pipe-step.active {
+  opacity:1; transform:translateY(0);
+  border-color:var(--accent); background:var(--bg-card);
+  box-shadow:0 4px 20px rgba(211,82,51,0.1);
+}
+.pipe-step.done {
+  opacity:0.85; transform:translateY(0);
+  border-color:var(--teal); background:var(--bg-card);
+}
+
+.pipe-num {
+  width:32px; height:32px; border-radius:50%;
+  background:var(--border); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; flex-shrink:0;
+  transition:background 0.4s;
+}
+.pipe-step.active .pipe-num { background:var(--accent); }
+.pipe-step.done .pipe-num { background:var(--teal); }
+
+.pipe-body { flex:1; min-width:0; }
+.pipe-title {
+  font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.pipe-badge {
+  font-size:10px; font-weight:700; padding:2px 8px;
+  border-radius:5px; text-transform:uppercase; letter-spacing:0.05em;
+}
+.teal-badge { background:var(--teal-soft); color:var(--teal); }
+
+.pipe-data {
+  font-family:'JetBrains Mono',monospace; font-size:12.5px;
+  padding:8px 14px; border-radius:8px; margin:6px 0;
+  word-break:break-all; font-weight:500;
+}
+.plain-data { background:var(--blue-soft); color:#1E40AF; border:1px solid #93C5FD; }
+.bytes-data { background:#F0FDF4; color:#166534; border:1px solid #86EFAC; letter-spacing:1px; }
+.cipher-data { background:var(--bg-dark); color:#34D399; border:1px solid #374151; }
+.final-result { background:#D1FAE5; color:#065F46; border:2px solid #34D399; font-size:15px; font-weight:700; text-align:center; }
+
+.pipe-note { font-size:12px; color:var(--text-muted); line-height:1.6; }
+.pipe-note em { color:var(--accent); font-style:normal; font-weight:600; }
+
+/* OAEP visual blocks */
+.pipe-oaep-visual {
+  display:flex; gap:4px; margin:8px 0; flex-wrap:wrap;
+}
+.oaep-block {
+  padding:5px 10px; border-radius:6px; font-size:10.5px;
+  font-weight:700; text-transform:uppercase; letter-spacing:0.03em;
+  transition:all 0.3s;
+}
+.oaep-block.seed { background:#EDE9FE; color:#6D28D9; }
+.oaep-block.hash { background:#FEF3C7; color:#92400E; }
+.oaep-block.msg { background:var(--blue-soft); color:#1E40AF; }
+.oaep-block.pad { background:#F3F4F6; color:#6B7280; }
+.oaep-block.strikethrough { text-decoration:line-through; opacity:0.5; }
+.pipe-oaep-visual.reverse .oaep-block.hash { background:#D1FAE5; color:#065F46; }
+
+/* RSA formula */
+.pipe-formula {
+  font-family:'JetBrains Mono',monospace; font-size:15px;
+  padding:10px 16px; background:#FDF4FF; border:1px solid #E9D5FF;
+  border-radius:8px; margin:8px 0; text-align:center;
+  color:#6D28D9; font-weight:600;
+}
+.f-var { color:#7C3AED; }
+.f-exp { color:var(--accent); font-size:12px; }
+
+.pipe-key-badge {
+  display:inline-block; font-size:11px; font-weight:700;
+  padding:3px 12px; border-radius:6px; margin:4px 0;
+}
+.pub-key-tag { background:var(--teal-soft); color:var(--teal); }
+.priv-key-tag { background:var(--accent-soft); color:var(--accent); }
+
+/* Connectors */
+.pipe-connector {
+  display:flex; flex-direction:column; align-items:center;
+  height:28px; opacity:0; transition:opacity 0.3s;
+}
+.pipe-connector.visible { opacity:1; }
+.pipe-connector-line { width:2px; flex:1; background:var(--border); }
+.pipe-connector-arrow { font-size:10px; color:var(--accent); line-height:1; }
+
+/* Transfer bar */
+.pipeline-transfer {
+  display:flex; align-items:center; gap:12px;
+  margin:20px 0; opacity:0; transition:opacity 0.5s;
+}
+.pipeline-transfer.visible { opacity:1; }
+.transfer-line { flex:1; height:2px; background:var(--accent); border-radius:1px; }
+.transfer-label {
+  font-size:12px; font-weight:700; color:var(--accent);
+  white-space:nowrap; padding:6px 14px;
+  background:var(--accent-soft); border-radius:100px;
+}
+
+/* Controls */
+.pipeline-controls { margin-top:24px; text-align:center; }
+.pipeline-status {
+  font-size:13px; font-weight:600; color:var(--text-secondary);
+  margin-top:10px; min-height:20px;
+}
+
+/* Sign vs Encrypt cards */
+.sign-vs-card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:28px; margin:24px 0;
+  box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.svc-label {
+  font-size:14px; font-weight:700; margin-bottom:20px;
+  padding:6px 14px; border-radius:8px; display:inline-block;
+}
+.encrypt-label { background:var(--blue-soft); color:#1E40AF; }
+.sign-label { background:#FEF3C7; color:#92400E; }
+.svc-flow {
+  display:flex; align-items:center; justify-content:center;
+  gap:12px; flex-wrap:wrap;
+}
+.svc-actor { text-align:center; flex-shrink:0; }
+.svc-actor-icon {
+  width:48px; height:48px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; margin:0 auto 6px;
+}
+.svc-actor-name { font-size:12px; font-weight:700; color:var(--text-secondary); }
+.svc-step-group {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  justify-content:center;
+}
+.svc-step-box {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:10px 16px; border:2px dashed; border-radius:10px;
+  font-size:13px; font-weight:600; color:var(--text);
+}
+.svc-key-badge {
+  font-size:11px; font-weight:700; padding:2px 10px;
+  border-radius:6px; white-space:nowrap;
+}
+.svc-arrow { font-size:18px; color:var(--text-muted); flex-shrink:0; }
+.svc-data {
+  padding:8px 16px; background:var(--bg-warm); border-radius:8px;
+  font-size:12px; font-weight:600; color:var(--text-secondary);
+  font-family:'JetBrains Mono',monospace;
+}
+.svc-purpose {
+  margin-top:16px; padding-top:14px; border-top:1px dashed var(--border);
+  font-size:13.5px; color:var(--text-secondary); text-align:center;
+}
+
 /* Algorithm cards */
 .algo-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin:28px 0; }
 .algo-card {
@@ -256,6 +427,9 @@ code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); paddin
   .ch-nav-link,.ch-nav-placeholder { max-width:100%; }
   .ch-number { display:none; }
   .algo-grid { grid-template-columns:1fr; }
+  .svc-flow { flex-direction:column; }
+  .svc-step-group { flex-direction:column; }
+  .svc-arrow { transform:rotate(90deg); }
 }
 </style>
 </head>
@@ -264,7 +438,7 @@ code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); paddin
 <!-- ===== TOP NAV ===== -->
 <nav class="topnav">
   <div class="topnav-inner">
-    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <a class="topnav-brand" href="chapter1.html">KMS 教學</a>
     <div class="topnav-chapters">
       <a class="topnav-ch active" href="chapter1.html">Ch.1 基礎觀念</a>
       <a class="topnav-ch" href="chapter2.html">Ch.2 架構與流程</a>
@@ -440,28 +614,159 @@ code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); paddin
     </div>
 
     <div class="demo" id="asym-demo">
-      <h4>🔐 互動示意：非對稱加密</h4>
-      <div class="demo-subtitle">加密用 🔑 公鑰，解密用 🗝️ 私鑰 — 兩把不同的鑰匙</div>
+      <h4>🔐 RSA-OAEP 加解密：演算法內部流程</h4>
+      <div class="demo-subtitle">點擊按鈕，逐步看廠商加密 → 我方 KMS 解密的完整內部處理</div>
 
-      <div class="demo-phase">STEP 1 — 廠商用公鑰加密</div>
-      <div class="demo-flow">
-        <div class="demo-box plain" id="a-plain">A123456789</div>
-        <div class="demo-arrow">＋</div>
-        <div class="demo-box key-pub">🔑 公鑰（可公開）</div>
-        <div class="demo-arrow">→</div>
-        <div class="demo-box cipher" id="a-cipher" style="opacity:0.25">mK3x9Qp7bR2w...</div>
+      <!-- ===== ENCRYPTION PIPELINE ===== -->
+      <div class="pipeline-section">
+        <div class="pipeline-label encrypt-bg">🏭 廠商端：加密流程</div>
+        <div class="pipeline" id="enc-pipeline">
+          <!-- Step 1 -->
+          <div class="pipe-step" id="enc-s1">
+            <div class="pipe-num">1</div>
+            <div class="pipe-body">
+              <div class="pipe-title">明文輸入</div>
+              <div class="pipe-data plain-data">A123456789</div>
+              <div class="pipe-note">身分證字號（10 字元）</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="enc-c1">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 2 -->
+          <div class="pipe-step" id="enc-s2">
+            <div class="pipe-num">2</div>
+            <div class="pipe-body">
+              <div class="pipe-title">UTF-8 編碼</div>
+              <div class="pipe-data bytes-data">41 31 32 33 34 35 36 37 38 39</div>
+              <div class="pipe-note">文字 → 位元組（10 bytes）</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="enc-c2">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 3 -->
+          <div class="pipe-step" id="enc-s3">
+            <div class="pipe-num">3</div>
+            <div class="pipe-body">
+              <div class="pipe-title">OAEP 填充 <span class="pipe-badge teal-badge">關鍵步驟</span></div>
+              <div class="pipe-oaep-visual">
+                <div class="oaep-block seed">隨機 Seed</div>
+                <div class="oaep-block hash">SHA-256 雜湊</div>
+                <div class="oaep-block msg">明文 bytes</div>
+                <div class="oaep-block pad">00 padding</div>
+              </div>
+              <div class="pipe-note">加入隨機數 + Hash → 填充到 512 bytes<br><em>同一份明文每次加密結果都不同（因為隨機 Seed）</em></div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="enc-c3">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 4 -->
+          <div class="pipe-step" id="enc-s4">
+            <div class="pipe-num">4</div>
+            <div class="pipe-body">
+              <div class="pipe-title">RSA 加密運算</div>
+              <div class="pipe-formula">
+                <span class="f-var">密文</span> = <span class="f-var">填充後明文</span><sup class="f-exp">e</sup> mod <span class="f-var">n</span>
+              </div>
+              <div class="pipe-key-badge pub-key-tag">🔑 公鑰提供 e 和 n</div>
+              <div class="pipe-note">用公鑰中的指數 e 和模數 n 做大數次方取餘數</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="enc-c4">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 5 -->
+          <div class="pipe-step" id="enc-s5">
+            <div class="pipe-num">5</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Base64 編碼 → 傳輸</div>
+              <div class="pipe-data cipher-data">mK3x9Qp7LbR2wZ5nYhT8...</div>
+              <div class="pipe-note">二進位密文 → Base64 文字，方便 API 傳送</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="demo-phase">STEP 2 — 我方用 KMS 的私鑰解密</div>
-      <div class="demo-flow" id="a-decrypt" style="opacity:0.25">
-        <div class="demo-box cipher">mK3x9Qp7bR2w...</div>
-        <div class="demo-arrow">＋</div>
-        <div class="demo-box key-priv">🗝️ 私鑰（KMS 保管）</div>
-        <div class="demo-arrow">→</div>
-        <div class="demo-box plain">A123456789</div>
+      <!-- ===== TRANSFER ===== -->
+      <div class="pipeline-transfer" id="transfer">
+        <div class="transfer-line"></div>
+        <div class="transfer-label">📨 密文透過 API 傳送到我方</div>
+        <div class="transfer-line"></div>
       </div>
 
-      <button class="demo-btn" onclick="runAsymDemo()">▶ 點我看非對稱加密過程</button>
+      <!-- ===== DECRYPTION PIPELINE ===== -->
+      <div class="pipeline-section">
+        <div class="pipeline-label decrypt-bg">🏢 我方 KMS：解密流程</div>
+        <div class="pipeline" id="dec-pipeline">
+          <!-- Step 6 -->
+          <div class="pipe-step" id="dec-s1">
+            <div class="pipe-num">6</div>
+            <div class="pipe-body">
+              <div class="pipe-title">Base64 解碼</div>
+              <div class="pipe-data cipher-data">mK3x9Qp7LbR2wZ5nYhT8...</div>
+              <div class="pipe-note">Base64 文字 → 二進位密文（512 bytes）</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="dec-c1">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 7 -->
+          <div class="pipe-step" id="dec-s2">
+            <div class="pipe-num">7</div>
+            <div class="pipe-body">
+              <div class="pipe-title">RSA 解密運算</div>
+              <div class="pipe-formula">
+                <span class="f-var">填充明文</span> = <span class="f-var">密文</span><sup class="f-exp">d</sup> mod <span class="f-var">n</span>
+              </div>
+              <div class="pipe-key-badge priv-key-tag">🗝️ 私鑰提供 d（KMS 保管，永不匯出）</div>
+              <div class="pipe-note">用私鑰的秘密指數 d 做逆向運算，還原填充後的明文</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="dec-c2">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 8 -->
+          <div class="pipe-step" id="dec-s3">
+            <div class="pipe-num">8</div>
+            <div class="pipe-body">
+              <div class="pipe-title">OAEP 反填充 <span class="pipe-badge teal-badge">驗證步驟</span></div>
+              <div class="pipe-oaep-visual reverse">
+                <div class="oaep-block seed">驗證 Seed</div>
+                <div class="oaep-block hash">驗證 SHA-256 ✓</div>
+                <div class="oaep-block msg">取出明文</div>
+                <div class="oaep-block pad strikethrough">移除 padding</div>
+              </div>
+              <div class="pipe-note">驗證 Hash 完整性 → 移除填充 → 取出原始 bytes<br><em>Hash 不對 = 密文被竄改或 padding 錯誤 → 直接拒絕</em></div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="dec-c3">
+            <div class="pipe-connector-line"></div>
+            <div class="pipe-connector-arrow">▼</div>
+          </div>
+          <!-- Step 9 -->
+          <div class="pipe-step" id="dec-s4">
+            <div class="pipe-num">9</div>
+            <div class="pipe-body">
+              <div class="pipe-title">UTF-8 解碼 → 取得明文</div>
+              <div class="pipe-data plain-data final-result">A123456789 ✅</div>
+              <div class="pipe-note">還原身分證字號，完成！</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-controls">
+        <button class="demo-btn" id="pipeline-btn" onclick="runPipeline()">▶ 開始逐步演示</button>
+        <div class="pipeline-status" id="pipeline-status"></div>
+      </div>
     </div>
 
     <div class="table-wrap">
@@ -484,7 +789,138 @@ code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); paddin
   </section>
 
   <!-- =========================================
-       Section 4: Encryption Algorithms (NEW)
+       Section 4: Sign vs Encrypt (NEW)
+       ========================================= -->
+  <section class="section fade-in" id="sign-vs-encrypt">
+    <h2 class="section-anchor">同樣是非對稱金鑰：簽章 vs 加密</h2>
+    <div class="section-rule"></div>
+    <p>上一段學到非對稱金鑰有公鑰和私鑰。但同樣是非對稱金鑰，<strong>根據用途不同，公私鑰的角色會完全反過來</strong>。這是很多人搞混的地方。</p>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">先看我們 GCP 裡已經有的一把 key</div>
+      <p>我們專案裡已經有一把 <code>token-gen-rsa</code>，用途是「非對稱式簽核」（ASYMMETRIC_SIGN）。它是拿來<strong>簽發 JWT Token</strong> 的。</p>
+      <p>現在要新建的 <code>id-encrypt-key</code>，用途是「非對稱式解密」（ASYMMETRIC_DECRYPT）。它是拿來<strong>解密廠商傳來的身分證字號</strong>的。</p>
+      <p>兩把都是 RSA 非對稱金鑰，但 <strong>purpose 不同、用法不同、不能混用</strong>。</p>
+    </div>
+
+    <h3>加密：確保「只有我能看」</h3>
+    <p>解決的問題是<strong>機密性</strong> — 資料內容不被第三方看到。</p>
+
+    <!-- Encrypt visual -->
+    <div class="sign-vs-card">
+      <div class="svc-label encrypt-label">🔐 加密場景：廠商傳身分證字號</div>
+      <div class="svc-flow">
+        <div class="svc-actor">
+          <div class="svc-actor-icon" style="background:var(--bg-dark);color:#fff">🏭</div>
+          <div class="svc-actor-name">廠商</div>
+        </div>
+        <div class="svc-step-group">
+          <div class="svc-step-box" style="border-color:var(--teal)">
+            <span class="svc-key-badge" style="background:var(--teal-soft);color:var(--teal)">🔑 公鑰</span>
+            <span>加密</span>
+          </div>
+          <div class="svc-arrow">→</div>
+          <div class="svc-data">密文</div>
+          <div class="svc-arrow">→</div>
+          <div class="svc-step-box" style="border-color:var(--accent)">
+            <span class="svc-key-badge" style="background:var(--accent-soft);color:var(--accent)">🗝️ 私鑰</span>
+            <span>解密</span>
+          </div>
+        </div>
+        <div class="svc-actor">
+          <div class="svc-actor-icon" style="background:var(--teal);color:#fff">🏢</div>
+          <div class="svc-actor-name">我方 (KMS)</div>
+        </div>
+      </div>
+      <div class="svc-purpose">目的：<strong>只有持有私鑰的我方能看到明文</strong></div>
+    </div>
+
+    <h3>簽章：證明「這真的是我發的」</h3>
+    <p>解決的問題是<strong>不可否認性</strong> — 證明這份資料確實是某人簽發的，且沒有被竄改。</p>
+
+    <!-- Sign visual -->
+    <div class="sign-vs-card">
+      <div class="svc-label sign-label">✍️ 簽章場景：簽發 JWT Token</div>
+      <div class="svc-flow">
+        <div class="svc-actor">
+          <div class="svc-actor-icon" style="background:var(--accent);color:#fff">🏢</div>
+          <div class="svc-actor-name">我方 (KMS)</div>
+        </div>
+        <div class="svc-step-group">
+          <div class="svc-step-box" style="border-color:var(--accent)">
+            <span class="svc-key-badge" style="background:var(--accent-soft);color:var(--accent)">🗝️ 私鑰</span>
+            <span>簽名</span>
+          </div>
+          <div class="svc-arrow">→</div>
+          <div class="svc-data">Token + 簽章</div>
+          <div class="svc-arrow">→</div>
+          <div class="svc-step-box" style="border-color:var(--teal)">
+            <span class="svc-key-badge" style="background:var(--teal-soft);color:var(--teal)">🔑 公鑰</span>
+            <span>驗證</span>
+          </div>
+        </div>
+        <div class="svc-actor">
+          <div class="svc-actor-icon" style="background:var(--bg-dark);color:#fff">👤</div>
+          <div class="svc-actor-name">驗證方</div>
+        </div>
+      </div>
+      <div class="svc-purpose">目的：<strong>任何人都能驗證 Token 確實是我方簽發的</strong></div>
+    </div>
+
+    <h3>公私鑰的角色完全相反</h3>
+    <p>注意看上面兩張圖，公鑰和私鑰的使用方向是<strong>反過來</strong>的：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:22%"></th><th style="width:39%">🔐 加密（Encrypt）</th><th style="width:39%">✍️ 簽章（Sign）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>解決什麼問題</strong></td>
+            <td>機密性 — 內容不被偷看</td>
+            <td>不可否認性 — 證明是我發的</td>
+          </tr>
+          <tr>
+            <td><strong>私鑰做什麼</strong></td>
+            <td>解密（還原明文）</td>
+            <td>簽名（產生簽章）</td>
+          </tr>
+          <tr>
+            <td><strong>公鑰做什麼</strong></td>
+            <td>加密（產生密文）</td>
+            <td>驗證（確認簽章合法）</td>
+          </tr>
+          <tr>
+            <td><strong>誰持有私鑰</strong></td>
+            <td>接收方（要解密的人）</td>
+            <td>發行方（簽 Token 的人）</td>
+          </tr>
+          <tr>
+            <td><strong>我們的 Key</strong></td>
+            <td><code>id-encrypt-key</code><br><span class="tag tag-blue">ASYMMETRIC_DECRYPT</span></td>
+            <td><code>token-gen-rsa</code><br><span class="tag tag-orange">ASYMMETRIC_SIGN</span></td>
+          </tr>
+          <tr>
+            <td><strong>KMS 演算法</strong></td>
+            <td>RSA-OAEP-4096-SHA256</td>
+            <td>RSA-PSS-2048-SHA256</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>兩把 key 不能混用！</strong>KMS 會根據 purpose 限制可呼叫的 API。簽章用的 key 無法呼叫 <code>asymmetricDecrypt</code>，加密用的 key 也無法呼叫 <code>asymmetricSign</code>。所以我們的 GCP 專案裡會有兩把各司其職的 key。</p>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">生活比喻</div>
+      <p><strong>加密</strong>像寄掛號信 — 你把信塞進只有收件人能打開的保險信封，保護的是<strong>信的內容</strong>。</p>
+      <p><strong>簽章</strong>像蓋公司大印 — 你在公文上蓋章，任何人都能看到內容，但蓋章證明<strong>這份公文確實是你發的</strong>。</p>
+    </div>
+  </section>
+
+  <!-- =========================================
+       Section 5: Encryption Algorithms
        ========================================= -->
   <section class="section fade-in" id="algorithms">
     <h2 class="section-anchor">加密演算法：我們用了什麼？</h2>
@@ -620,40 +1056,79 @@ function runSymDemo() {
   }, 2200);
 }
 
-/* ===== Asymmetric Demo ===== */
-let asymRunning = false;
-function runAsymDemo() {
-  if (asymRunning) return;
-  asymRunning = true;
-  const cipher = document.getElementById('a-cipher');
-  const plain = document.getElementById('a-plain');
-  const decryptRow = document.getElementById('a-decrypt');
-  const btn = document.querySelector('#asym-demo .demo-btn');
+/* ===== Detailed Pipeline Demo ===== */
+let pipeRunning = false;
+function runPipeline() {
+  if (pipeRunning) return;
+  pipeRunning = true;
+  const btn = document.getElementById('pipeline-btn');
+  const status = document.getElementById('pipeline-status');
+  const transfer = document.querySelector('.pipeline-transfer');
 
-  cipher.style.opacity = '0.25';
-  decryptRow.style.opacity = '0.25';
-  btn.textContent = '廠商加密中…';
+  // Reset all
+  document.querySelectorAll('.pipe-step').forEach(s => { s.className = 'pipe-step'; });
+  document.querySelectorAll('.pipe-connector').forEach(c => c.classList.remove('visible'));
+  transfer.classList.remove('visible');
+  btn.disabled = true;
+  btn.textContent = '演示中…';
 
+  const encSteps = [
+    { el:'enc-s1', conn:'enc-c1', msg:'Step 1/9 — 廠商輸入身分證字號明文' },
+    { el:'enc-s2', conn:'enc-c2', msg:'Step 2/9 — 將文字轉換為 UTF-8 位元組' },
+    { el:'enc-s3', conn:'enc-c3', msg:'Step 3/9 — OAEP 填充：加入隨機 Seed + SHA-256 雜湊' },
+    { el:'enc-s4', conn:'enc-c4', msg:'Step 4/9 — RSA 核心：用公鑰的 (e, n) 做大數冪次運算' },
+    { el:'enc-s5', conn:null,     msg:'Step 5/9 — 密文 Base64 編碼，準備傳送' },
+  ];
+  const decSteps = [
+    { el:'dec-s1', conn:'dec-c1', msg:'Step 6/9 — 我方收到密文，Base64 解碼' },
+    { el:'dec-s2', conn:'dec-c2', msg:'Step 7/9 — KMS 用私鑰的 d 做逆向 RSA 運算' },
+    { el:'dec-s3', conn:'dec-c3', msg:'Step 8/9 — OAEP 反填充：驗證 Hash + 移除 Padding' },
+    { el:'dec-s4', conn:null,     msg:'Step 9/9 — 還原明文，解密完成！🎉' },
+  ];
+
+  let delay = 0;
+  const stepDelay = 900;
+
+  // Encryption steps
+  encSteps.forEach((step, i) => {
+    delay += stepDelay;
+    setTimeout(() => {
+      // Mark previous as done
+      if (i > 0) document.getElementById(encSteps[i-1].el).classList.replace('active','done');
+      document.getElementById(step.el).classList.add('active');
+      if (step.conn) document.getElementById(step.conn).classList.add('visible');
+      status.textContent = step.msg;
+    }, delay);
+  });
+
+  // Mark last enc step done + show transfer
+  delay += stepDelay;
   setTimeout(() => {
-    plain.style.transform = 'scale(1.06)';
-    plain.style.boxShadow = '0 0 24px rgba(37,99,235,0.3)';
-  }, 200);
+    document.getElementById('enc-s5').classList.replace('active','done');
+    transfer.classList.add('visible');
+    status.textContent = '📨 密文正在傳送到我方…';
+  }, delay);
 
-  setTimeout(() => {
-    cipher.style.opacity = '1';
-    cipher.style.transition = 'all 0.5s';
-    cipher.style.boxShadow = '0 0 20px rgba(52,211,153,0.25)';
-    plain.style.transform = 'scale(1)';
-    plain.style.boxShadow = 'none';
-    btn.textContent = 'KMS 解密中…';
-  }, 900);
+  // Decryption steps
+  delay += stepDelay;
+  decSteps.forEach((step, i) => {
+    delay += stepDelay;
+    setTimeout(() => {
+      if (i > 0) document.getElementById(decSteps[i-1].el).classList.replace('active','done');
+      document.getElementById(step.el).classList.add('active');
+      if (step.conn) document.getElementById(step.conn).classList.add('visible');
+      status.textContent = step.msg;
+    }, delay);
+  });
 
+  // Done
+  delay += stepDelay + 200;
   setTimeout(() => {
-    decryptRow.style.opacity = '1';
-    decryptRow.style.transition = 'opacity 0.5s';
+    document.getElementById('dec-s4').classList.replace('active','done');
+    btn.disabled = false;
     btn.textContent = '▶ 再看一次';
-    asymRunning = false;
-  }, 1800);
+    pipeRunning = false;
+  }, delay);
 }
 </script>
 </body>
