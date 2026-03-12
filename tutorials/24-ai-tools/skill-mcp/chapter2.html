@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.2 架構分層 — Skill 與 MCP 分工邏輯</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F3EE;--bg-warm:#EFEADF;--bg-card:#FFFFFF;--bg-dark:#16161D;--bg-code:#111118;--text:#2A2A35;--text-secondary:#5E5E6E;--text-muted:#9494A3;--accent:#D35233;--accent-hover:#B8432A;--accent-soft:#FADAD2;--teal:#1A9E8F;--teal-soft:#D0F0EA;--blue:#2563EB;--blue-soft:#DBEAFE;--gold:#C88B2E;--gold-soft:#FDF3DC;--border:#E0DCD4;--border-light:#EDEAE4;--shadow-sm:0 1px 2px rgba(0,0,0,0.04);--shadow:0 2px 8px rgba(0,0,0,0.05),0 1px 2px rgba(0,0,0,0.04);--shadow-lg:0 8px 30px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);--radius:14px;--radius-sm:8px;--content-width:760px}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);line-height:1.85;font-size:16px;-webkit-font-smoothing:antialiased}
+.topnav{position:sticky;top:0;z-index:100;background:rgba(246,243,238,0.85);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border);padding:0 24px}
+.topnav-inner{max-width:var(--content-width);margin:0 auto;display:flex;align-items:center;height:56px;gap:24px}
+.topnav-brand{font-weight:900;font-size:14px;color:var(--accent);letter-spacing:-0.02em;text-decoration:none;white-space:nowrap}
+.topnav-chapters{display:flex;gap:2px;flex:1;justify-content:center}
+.topnav-ch{padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none;border-radius:100px;transition:all 0.15s;white-space:nowrap}
+.topnav-ch:hover{color:var(--text);background:var(--bg-warm)}.topnav-ch.active{color:var(--accent);background:var(--accent-soft)}
+.topnav-progress{display:flex;gap:6px;align-items:center}
+.topnav-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.topnav-dot.filled{background:var(--accent)}.topnav-dot.current{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ch-hero{padding:72px 24px 56px;position:relative;overflow:hidden}
+.ch-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--border)}
+.ch-hero-inner{max-width:var(--content-width);margin:0 auto}
+.ch-number{font-family:'Crimson Pro',serif;font-size:80px;font-weight:900;color:var(--accent);line-height:1;opacity:0.12;position:absolute;top:30px;right:max(24px,calc((100% - var(--content-width))/2));user-select:none}
+.ch-overline{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);margin-bottom:12px}
+.ch-title{font-family:'Crimson Pro',serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;line-height:1.25;margin-bottom:14px;color:var(--bg-dark)}
+.ch-desc{font-size:17px;color:var(--text-secondary);max-width:560px}
+.main{max-width:var(--content-width);margin:0 auto;padding:48px 24px 80px}
+.section{margin-bottom:72px;scroll-margin-top:72px}
+h2{font-family:'Crimson Pro',serif;font-size:26px;font-weight:900;color:var(--bg-dark);margin-bottom:8px;line-height:1.3}
+.section-rule{width:40px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:20px}
+h3{font-size:19px;font-weight:700;margin:40px 0 12px;color:var(--bg-dark)}
+p{margin-bottom:16px}
+code{font-family:'JetBrains Mono',monospace;background:var(--bg-warm);padding:2px 7px;border-radius:5px;font-size:0.87em;color:var(--accent);font-weight:500}
+.callout{border-radius:var(--radius);padding:24px 24px 24px 64px;margin:28px 0;position:relative;font-size:15px}
+.callout::before{position:absolute;left:22px;top:22px;font-size:24px}
+.callout .callout-title{font-weight:700;font-size:14px;margin-bottom:6px}
+.callout p{margin-bottom:8px}.callout p:last-child{margin-bottom:0}
+.callout-analogy{background:var(--gold-soft);border:1px solid #ECD9A8}
+.callout-analogy::before{content:'💡'}.callout-analogy .callout-title{color:#8B6914}.callout-analogy p{color:#6B5420}
+.callout-warning{background:#FEF2F2;border:1px solid #FECACA}
+.callout-warning::before{content:'⚠️'}.callout-warning p{color:#991B1B}
+.callout-tip{background:var(--teal-soft);border:1px solid #A7E8D8}
+.callout-tip::before{content:'✅'}.callout-tip .callout-title{color:#065F46}.callout-tip p{color:#065F46}
+.table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:28px 0;box-shadow:var(--shadow-sm)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:14.5px}
+.table-wrap th{background:var(--bg-dark);color:#fff;padding:13px 18px;text-align:left;font-weight:600;font-size:13px}
+.table-wrap td{padding:13px 18px;border-bottom:1px solid var(--border-light);vertical-align:top}
+.table-wrap tr:last-child td{border-bottom:none}.table-wrap tr:hover td{background:#FDFCFA}
+.flow-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:36px;margin:28px 0;box-shadow:var(--shadow-sm)}
+.flow-card .card-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:28px;text-align:center}
+.flow-row{display:flex;align-items:center;justify-content:center;gap:16px;margin:16px 0;flex-wrap:wrap}
+.flow-arrow{font-size:20px;color:var(--text-muted);flex-shrink:0}
+.flow-node{text-align:center;padding:16px 18px;border-radius:12px;min-width:110px;transition:transform 0.2s,box-shadow 0.2s}
+.flow-node:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.flow-node .f-icon{font-size:28px;margin-bottom:6px}
+.flow-node .f-label{font-size:13px;font-weight:700}
+.flow-node .f-sub{font-size:11px;margin-top:2px;opacity:0.85}
+.fn-orchestrate{background:var(--bg-dark);color:#fff}
+.fn-skill{background:var(--gold);color:#fff}
+.fn-mcp{background:var(--blue);color:#fff}
+.fn-external{background:var(--teal);color:#fff}
+.fn-output{background:var(--accent);color:#fff}
+.layer-stack{margin:28px 0;display:flex;flex-direction:column;gap:12px}
+.layer-item{border-radius:var(--radius);padding:20px 24px;border:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;gap:16px}
+.layer-item.l-orchestrate{border-left:4px solid var(--bg-dark);background:linear-gradient(to right,rgba(22,22,29,0.04),transparent)}
+.layer-item.l-skill{border-left:4px solid var(--gold);background:linear-gradient(to right,var(--gold-soft),transparent)}
+.layer-item.l-mcp{border-left:4px solid var(--blue);background:linear-gradient(to right,var(--blue-soft),transparent)}
+.layer-item.l-external{border-left:4px solid var(--teal);background:linear-gradient(to right,var(--teal-soft),transparent)}
+.layer-badge{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap}
+.layer-content{flex:1}
+.layer-title{font-weight:700;font-size:15px;margin-bottom:2px}
+.layer-desc{font-size:13.5px;color:var(--text-secondary);margin:0}
+.sop-timeline{position:relative;padding-left:36px;margin:28px 0}
+.sop-timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.sop-step{position:relative;margin-bottom:24px}
+.sop-step:last-child{margin-bottom:0}
+.sop-dot{position:absolute;left:-36px;top:4px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.sop-dot.red{background:var(--accent)}.sop-dot.blue{background:var(--blue)}.sop-dot.teal{background:var(--teal)}.sop-dot.gold{background:var(--gold)}
+.sop-step h4{font-size:15px;font-weight:700;margin-bottom:4px}
+.sop-step p{font-size:14px;color:var(--text-secondary);margin-bottom:0}
+.ch-nav{display:flex;justify-content:space-between;align-items:stretch;gap:16px;padding-top:48px;border-top:1px solid var(--border);margin-top:72px}
+.ch-nav-link{display:flex;flex-direction:column;gap:4px;text-decoration:none;padding:20px 24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);transition:all 0.2s;flex:1;max-width:48%}
+.ch-nav-link:hover{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-2px)}
+.ch-nav-link.next{text-align:right;margin-left:auto}
+.ch-nav-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)}
+.ch-nav-title{font-weight:700;font-size:15px;color:var(--text)}
+.footer{text-align:center;padding:32px 24px;font-size:12.5px;color:var(--text-muted);border-top:1px solid var(--border);max-width:var(--content-width);margin:0 auto}
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity 0.5s ease,transform 0.5s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+@media(max-width:640px){.topnav-chapters{display:none}.ch-nav{flex-direction:column}.ch-nav-link{max-width:100%}.ch-number{display:none}.flow-row{flex-direction:column}.flow-arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 核心觀念</a>
+      <a class="topnav-ch active" href="chapter2.html">Ch.2 架構分層</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 設計判準</a>
+      <a class="topnav-ch" href="chapter4.html">Ch.4 企業落地</a>
+      <a class="topnav-ch" href="chapter5.html">Ch.5 圖解範例</a>
+    </div>
+        <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+      <div class="topnav-dot"></div>
+      <div class="topnav-dot"></div>
+      <div class="topnav-dot"></div>
+    </div>
+  
+    </div>
+  </div>
+</nav>
+<header class="ch-hero">
+  <div class="ch-number">02</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 2 of 5</div>
+    <h1 class="ch-title">架構分層：Skill 與 MCP 如何共存？</h1>
+    <p class="ch-desc">看懂成熟 Agent 架構的層次結構，以及兩者在真實場景中的分工方式。</p>
+  </div>
+</header>
+<main class="main">
+
+  <section class="section fade-in" id="layer-model">
+    <h2>企業 Agent 架構的四個層次</h2>
+    <div class="section-rule"></div>
+    <p>要理解 Skill 與 MCP 的分工，最有效的方式是把 Agent 架構畫成「由上到下的分層模型」。每一層各有職責，彼此互補而非競爭。</p>
+
+    <div class="layer-stack">
+      <div class="layer-item l-orchestrate">
+        <span class="layer-badge" style="background:var(--bg-dark);color:#fff">Layer 1</span>
+        <div class="layer-content">
+          <div class="layer-title">任務編排層（Agent / Command）</div>
+          <p class="layer-desc">負責決策：「這個任務要用哪個 Skill？要調用哪個 MCP tool？」是整個 Agent 的「指揮中樞」。</p>
+        </div>
+      </div>
+      <div class="layer-item l-skill">
+        <span class="layer-badge" style="background:var(--gold);color:#fff">Layer 2</span>
+        <div class="layer-content">
+          <div class="layer-title">知識與方法層（Skill）</div>
+          <p class="layer-desc">負責「怎麼做」：定義流程步驟、規範、模板、檢查點與輸出格式。讓任務執行有穩定方法論。</p>
+        </div>
+      </div>
+      <div class="layer-item l-mcp">
+        <span class="layer-badge" style="background:var(--blue);color:#fff">Layer 3</span>
+        <div class="layer-content">
+          <div class="layer-title">能力接入層（MCP）</div>
+          <p class="layer-desc">負責「做得到」：以標準協定暴露外部工具、資源與提示。提供查詢系統、操作資料庫、送出請求等能力。</p>
+        </div>
+      </div>
+      <div class="layer-item l-external">
+        <span class="layer-badge" style="background:var(--teal);color:#fff">Layer 4</span>
+        <div class="layer-content">
+          <div class="layer-title">外部世界（API / Services / Data）</div>
+          <p class="layer-desc">真正的外部能力所在：Jira、GitHub、資料庫、雲端服務、知識庫。MCP 負責把這些標準化地接進來。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">關鍵判讀</div>
+      <p><strong>Skill 定義「怎麼做」，MCP 提供「做得到」的標準接入；真正的外部能力仍位於 API、服務與資料層。</strong></p>
+    </div>
+  </section>
+
+  <section class="section fade-in" id="data-flow">
+    <h2>資料流：一次任務是怎麼執行的？</h2>
+    <div class="section-rule"></div>
+    <p>以「事故根因分析」為例，讓我們看看一次完整任務是如何在各層之間流動的。</p>
+
+    <div class="flow-card">
+      <div class="card-label">事故根因分析 — 任務執行流程</div>
+      <div class="flow-row">
+        <div class="flow-node fn-orchestrate">
+          <div class="f-icon">🎯</div>
+          <div class="f-label">Agent</div>
+          <div class="f-sub">收到任務</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node fn-skill">
+          <div class="f-icon">📋</div>
+          <div class="f-label">Skill 載入</div>
+          <div class="f-sub">根因分析流程</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node fn-mcp">
+          <div class="f-icon">🔌</div>
+          <div class="f-label">MCP Tools</div>
+          <div class="f-sub">查詢外部系統</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node fn-external">
+          <div class="f-icon">🌐</div>
+          <div class="f-label">外部系統</div>
+          <div class="f-sub">回傳資料</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node fn-output">
+          <div class="f-icon">📊</div>
+          <div class="f-label">分析報告</div>
+          <div class="f-sub">輸出結果</div>
+        </div>
+      </div>
+    </div>
+
+    <p>每個步驟各司其職：</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>步驟</th><th>由誰負責</th><th>做什麼</th></tr></thead>
+        <tbody>
+          <tr><td>1. 收到任務</td><td>Agent / Command 層</td><td>判斷需要「根因分析」Skill，開始載入</td></tr>
+          <tr><td>2. 確認流程順序</td><td><strong>Skill</strong></td><td>規定：先確認版本變更 → 比對部署狀態 → 查詢日誌 → 分析指標</td></tr>
+          <tr><td>3. 查詢版本變更</td><td><strong>MCP Tool</strong></td><td>調用 GitHub MCP，取得近期 PR 清單</td></tr>
+          <tr><td>4. 查詢部署狀態</td><td><strong>MCP Tool</strong></td><td>調用 K8s MCP，取得 Pod 狀態</td></tr>
+          <tr><td>5. 查詢日誌與指標</td><td><strong>MCP Tool</strong></td><td>調用 Datadog MCP，取得錯誤日誌</td></tr>
+          <tr><td>6. 整合分析、輸出</td><td><strong>Skill</strong> 定義格式</td><td>按照 Skill 規定的報告模板，輸出根因分析</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">比喻：醫生看診流程</div>
+      <p><strong>Skill 是醫學診療規範</strong>（問診 → 理學檢查 → 抽血 → 影像 → 診斷的標準程序）；<strong>MCP 是各種醫療設備的操作介面</strong>（X 光機、血液分析儀、MRI 的標準操作協定）。</p>
+      <p>診療規範告訴醫生「該做什麼檢查、按什麼順序」，醫療設備提供「做得到這些檢查的能力」。兩者缺一不可。</p>
+    </div>
+  </section>
+
+  <section class="section fade-in" id="what-really-replaced">
+    <h2>Skill 真正取代了什麼？</h2>
+    <div class="section-rule"></div>
+    <p>若必須精確描述這波變化，較合理的說法是：<strong>Skill 正在取代某些錯誤的能力建模方式</strong>，而不是從根本上取代 MCP。</p>
+
+    <div class="sop-timeline">
+      <div class="sop-step">
+        <div class="sop-dot red">✗</div>
+        <h4>被取代的錯誤一：把流程與判斷邏輯寫死在工具層</h4>
+        <p>過去許多團隊把「先做 A 再做 B」的流程控制塞進 MCP tool 裡，導致工具過度耦合業務邏輯，難以重用與測試。Skill 讓流程回到更合適的方法層。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot red">✗</div>
+        <h4>被取代的錯誤二：把大量任務規範塞入 system prompt</h4>
+        <p>把所有 SOP 和規範塞進 system prompt，導致內容無法版本化、難以測試、也難以針對特定場景按需掛載。Skill 讓這些知識有了合適的容器。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot red">✗</div>
+        <h4>被取代的錯誤三：過早投資重量級協定化能力</h4>
+        <p>在尚未確認整合需求前，就為所有任務建立 MCP server，增加了不必要的工程成本。Skill 讓低整合需求的任務有了輕量替代方案。</p>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">精確的結論</div>
+      <p>Skill 的價值是讓<strong>能力分層變得更乾淨</strong>：該在整合層處理的，留在整合層（MCP）；該在知識與方法層處理的，回到知識與方法層（Skill）。</p>
+    </div>
+  </section>
+
+  <section class="section fade-in" id="interaction-table">
+    <h2>互動關係對照表</h2>
+    <div class="section-rule"></div>
+    <p>下表總結了 Skill 與 MCP 在各種維度上的互動關係，幫助你在架構討論中快速定位。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>面向</th><th>Skill</th><th>MCP</th><th>關係</th></tr></thead>
+        <tbody>
+          <tr><td><strong>層次定位</strong></td><td>知識/方法層</td><td>接入/整合層</td><td>互補，不競爭</td></tr>
+          <tr><td><strong>可以互相取代嗎？</strong></td><td colspan="2" style="text-align:center">❌ 不行，各自解決不同問題</td><td>—</td></tr>
+          <tr><td><strong>能否並用？</strong></td><td colspan="2" style="text-align:center">✅ 成熟架構的常態</td><td>協作關係</td></tr>
+          <tr><td><strong>Skill 能調用 MCP？</strong></td><td colspan="2" style="text-align:center">✅ Skill 定義「何時」調用「哪個」MCP tool</td><td>Skill 編排 MCP</td></tr>
+          <tr><td><strong>MCP 需要 Skill？</strong></td><td colspan="2" style="text-align:center">不一定，但 MCP 提供的能力通常被 Skill 組織使用</td><td>單向依賴</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>常見混淆點：</strong>有人認為既然 Skill 可以包含腳本與模板，本質上就是「輕量版 MCP」。這是不對的。Skill 的主要角色是封裝程序知識；MCP 的主要角色是以標準方式暴露能力。前者偏方法層，後者偏接入層——不宜視為同一物件的輕重版本。</p>
+    </div>
+  </section>
+
+  <nav class="ch-nav">
+    <a class="ch-nav-link" href="chapter1.html">
+      <span class="ch-nav-label">← 上一章</span>
+      <span class="ch-nav-title">Ch.1 核心觀念</span>
+    </a>
+    <a class="ch-nav-link next" href="chapter3.html">
+      <span class="ch-nav-label">下一章 →</span>
+      <span class="ch-nav-title">Ch.3 設計判準：我的需求該用哪個？</span>
+    </a>
+  </nav>
+</main>
+<footer class="footer">Skill 與 MCP 分工邏輯 · 白皮書教學文件 · 2026</footer>
+<script>
+const fadeObserver=new IntersectionObserver((entries)=>{entries.forEach((e)=>{if(e.isIntersecting){e.target.classList.add('visible');fadeObserver.unobserve(e.target);}});},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach((el)=>fadeObserver.observe(el));
+</script>
+</body>
+</html>

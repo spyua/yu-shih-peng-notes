@@ -136,3 +136,12 @@
 # 🧮 資料結構與演算法 {#23-DSA}
 
 - DFS / BFS 統一框架 | 中級 | tutorials/23-dsa/dfs-bfs-tutorial.html
+
+# 🤖 AI 工具設計 {#24-AI-Tools}
+
+## Skill 與 MCP 分工邏輯
+- Ch.1 核心觀念 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter1.html
+- Ch.2 架構分層 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter2.html
+- Ch.3 設計判準 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter3.html
+- Ch.4 企業落地 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter4.html
+- Ch.5 圖解範例 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter5.html

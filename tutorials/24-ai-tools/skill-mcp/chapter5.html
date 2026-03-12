@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" id="html-root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.5 圖解範例 — Skill 與 MCP 分工邏輯</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F3EE;--bg-warm:#EFEADF;--bg-card:#FFFFFF;--bg-dark:#16161D;--bg-code:#111118;--text:#2A2A35;--text-secondary:#5E5E6E;--text-muted:#9494A3;--accent:#D35233;--accent-hover:#B8432A;--accent-soft:#FADAD2;--teal:#1A9E8F;--teal-soft:#D0F0EA;--blue:#2563EB;--blue-soft:#DBEAFE;--gold:#C88B2E;--gold-soft:#FDF3DC;--border:#E0DCD4;--border-light:#EDEAE4;--shadow-sm:0 1px 2px rgba(0,0,0,0.04);--shadow:0 2px 8px rgba(0,0,0,0.05),0 1px 2px rgba(0,0,0,0.04);--shadow-lg:0 8px 30px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);--radius:14px;--radius-sm:8px;--content-width:760px}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);line-height:1.85;font-size:16px;-webkit-font-smoothing:antialiased}
+
+/* ── NAV ── */
+.topnav{position:sticky;top:0;z-index:100;background:rgba(246,243,238,0.92);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border);padding:0 24px}
+.topnav-inner{max-width:var(--content-width);margin:0 auto;display:flex;align-items:center;height:56px;gap:24px}
+.topnav-brand{font-weight:900;font-size:14px;color:var(--accent);letter-spacing:-0.02em;text-decoration:none;white-space:nowrap}
+.topnav-chapters{display:flex;gap:2px;flex:1;justify-content:center}
+.topnav-ch{padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none;border-radius:100px;transition:all 0.15s;white-space:nowrap}
+.topnav-ch:hover{color:var(--text);background:var(--bg-warm)}.topnav-ch.active{color:var(--accent);background:var(--accent-soft)}
+.topnav-progress{display:flex;gap:6px;align-items:center}
+.topnav-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.topnav-dot.filled{background:var(--accent)}.topnav-dot.current{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* ── HERO ── */
+.ch-hero{padding:72px 24px 56px;position:relative;overflow:hidden}
+.ch-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--border)}
+.ch-hero-inner{max-width:var(--content-width);margin:0 auto}
+.ch-number{font-family:'Crimson Pro',serif;font-size:80px;font-weight:900;color:var(--accent);line-height:1;opacity:0.12;position:absolute;top:30px;right:max(24px,calc((100% - var(--content-width))/2));user-select:none}
+.ch-overline{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);margin-bottom:12px}
+.ch-title{font-family:'Crimson Pro',serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;line-height:1.25;margin-bottom:14px;color:var(--bg-dark)}
+.ch-desc{font-size:17px;color:var(--text-secondary);max-width:560px}
+
+/* ── MAIN ── */
+.main{max-width:var(--content-width);margin:0 auto;padding:48px 24px 80px}
+.section{margin-bottom:80px;scroll-margin-top:72px}
+h2{font-family:'Crimson Pro',serif;font-size:26px;font-weight:900;color:var(--bg-dark);margin-bottom:8px;line-height:1.3}
+.section-rule{width:40px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:20px}
+h3{font-size:18px;font-weight:700;margin:36px 0 12px;color:var(--bg-dark)}
+p{margin-bottom:16px}
+code{font-family:'JetBrains Mono',monospace;background:var(--bg-warm);padding:2px 7px;border-radius:5px;font-size:0.87em;color:var(--accent);font-weight:500}
+
+/* ── CALLOUTS ── */
+.callout{border-radius:var(--radius);padding:22px 22px 22px 62px;margin:24px 0;position:relative;font-size:15px}
+.callout::before{position:absolute;left:20px;top:20px;font-size:22px}
+.callout .callout-title{font-weight:700;font-size:14px;margin-bottom:6px}
+.callout p{margin-bottom:8px}.callout p:last-child{margin-bottom:0}
+.callout-tip{background:var(--teal-soft);border:1px solid #A7E8D8}
+.callout-tip::before{content:'✅'}.callout-tip .callout-title{color:#065F46}.callout-tip p{color:#065F46}
+.callout-analogy{background:var(--gold-soft);border:1px solid #ECD9A8}
+.callout-analogy::before{content:'💡'}.callout-analogy .callout-title{color:#8B6914}.callout-analogy p{color:#6B5420}
+
+/* ── VISUAL SPLIT ── */
+/* Side-by-side Skill vs MCP visual pill row */
+.vs-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:28px 0}
+.vs-card{border-radius:var(--radius);padding:24px;border:2px solid transparent}
+.vs-card.skill{background:var(--accent-soft);border-color:var(--accent)}
+.vs-card.mcp{background:var(--blue-soft);border-color:var(--blue)}
+.vs-badge{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;padding:4px 12px;border-radius:100px;margin-bottom:12px}
+.vs-card.skill .vs-badge{background:var(--accent);color:#fff}
+.vs-card.mcp .vs-badge{background:var(--blue);color:#fff}
+.vs-question{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--bg-dark)}
+.vs-answer{font-size:14px;color:var(--text-secondary);line-height:1.7;margin:0}
+.vs-card.skill .vs-question{color:var(--accent)}
+.vs-card.mcp .vs-question{color:var(--blue)}
+
+/* ── FLOW DIAGRAM ── */
+.flow{margin:28px 0;display:flex;flex-direction:column;gap:0}
+.flow-step{display:flex;gap:16px;align-items:flex-start}
+.flow-line-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:44px}
+.flow-dot{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;font-weight:700;z-index:1}
+.flow-vline{width:2px;flex:1;min-height:24px;margin:4px 0}
+.flow-body{padding:4px 0 24px;flex:1}
+.flow-tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;padding:3px 10px;border-radius:100px;margin-bottom:8px}
+.flow-title{font-size:16px;font-weight:700;margin-bottom:4px;color:var(--bg-dark)}
+.flow-desc{font-size:14px;color:var(--text-secondary);line-height:1.7;margin:0}
+/* colour variants */
+.fd-agent .flow-dot{background:var(--bg-dark);color:#fff}
+.fd-agent .flow-vline{background:#C0BDB8}
+.fd-agent .flow-tag{background:var(--bg-dark);color:#fff}
+.fd-skill .flow-dot{background:var(--accent-soft);color:var(--accent)}
+.fd-skill .flow-vline{background:#F0C4B6}
+.fd-skill .flow-tag{background:var(--accent-soft);color:var(--accent)}
+.fd-mcp .flow-dot{background:var(--blue-soft);color:var(--blue)}
+.fd-mcp .flow-vline{background:#BFDBFE}
+.fd-mcp .flow-tag{background:var(--blue-soft);color:var(--blue)}
+.fd-api .flow-dot{background:var(--teal-soft);color:var(--teal)}
+.fd-api .flow-vline{background:#A7E8D8}
+.fd-api .flow-tag{background:var(--teal-soft);color:var(--teal)}
+
+/* ── SCENARIO CARD ── */
+.scenario{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:20px 0;box-shadow:var(--shadow-sm)}
+.scenario-header{padding:20px 24px 16px;border-bottom:1px solid var(--border-light);display:flex;gap:14px;align-items:flex-start}
+.scenario-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.scenario-meta{flex:1}
+.scenario-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:4px}
+.scenario-title{font-size:17px;font-weight:700;color:var(--bg-dark);margin-bottom:4px}
+.scenario-subtitle{font-size:13.5px;color:var(--text-secondary)}
+.scenario-body{padding:20px 24px}
+.scenario-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.scenario-col-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.scenario-col-label.s{color:var(--accent)}.scenario-col-label.m{color:var(--blue)}
+.scenario-item{font-size:13.5px;color:var(--text-secondary);padding:7px 10px 7px 22px;position:relative;line-height:1.6}
+.scenario-item::before{content:'›';position:absolute;left:6px;color:var(--text-muted);font-weight:700}
+.scenario-verdict{background:var(--teal-soft);border:1px solid #A7E8D8;border-radius:var(--radius-sm);padding:12px 16px;font-size:14px;color:#065F46;margin-top:4px}
+.scenario-verdict strong{display:block;margin-bottom:3px;font-size:13px}
+
+/* ── MISTAKE CARDS ── */
+.mistake-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:24px 0}
+.mistake-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden}
+.mistake-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:#FCA5A5}
+.mistake-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#DC2626;margin-bottom:8px}
+.mistake-bad{font-size:15px;font-weight:700;color:#991B1B;margin-bottom:6px}
+.mistake-good{font-size:14px;color:var(--teal);padding-left:16px;position:relative;line-height:1.7;margin:0}
+.mistake-good::before{content:'→';position:absolute;left:0;color:var(--teal);font-weight:700}
+
+/* ── DECISION TREE ── */
+.dtree{margin:28px 0}
+.dtree-q{background:var(--bg-dark);color:#fff;border-radius:var(--radius);padding:18px 22px;font-size:16px;font-weight:700;text-align:center;margin-bottom:20px;position:relative}
+.dtree-q::after{content:'';position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);width:2px;height:12px;background:#C0BDB8}
+.dtree-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dtree-branch{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.dtree-branch-header{padding:14px 18px;font-size:13px;font-weight:700;display:flex;gap:10px;align-items:center}
+.dtree-branch.yes .dtree-branch-header{background:var(--teal-soft);color:#065F46}
+.dtree-branch.no .dtree-branch-header{background:var(--accent-soft);color:var(--accent)}
+.dtree-branch-body{padding:14px 18px;background:var(--bg-card)}
+.dtree-result{font-size:15px;font-weight:700;margin-bottom:6px}
+.dtree-branch.yes .dtree-result{color:var(--blue)}
+.dtree-branch.no .dtree-result{color:var(--accent)}
+.dtree-explain{font-size:13.5px;color:var(--text-secondary);line-height:1.65;margin:0}
+
+/* ── ANALOGY CARD ── */
+.analogy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0}
+.analogy-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.analogy-emoji{font-size:28px;margin-bottom:10px}
+.analogy-world{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:6px}
+.analogy-skill{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:3px}
+.analogy-mcp{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:8px}
+.analogy-note{font-size:13px;color:var(--text-secondary);line-height:1.6;margin:0}
+
+/* ── BEFORE/AFTER ── */
+.ba-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:24px 0;box-shadow:var(--shadow-sm)}
+.ba-col{padding:0}
+.ba-header{padding:13px 18px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em}
+.ba-col.before .ba-header{background:#FEF2F2;color:#DC2626;border-bottom:1px solid #FECACA}
+.ba-col.after .ba-header{background:var(--teal-soft);color:#065F46;border-bottom:1px solid #A7E8D8;border-left:1px solid var(--border)}
+.ba-body{padding:16px 18px;background:var(--bg-card)}
+.ba-col.after .ba-body{border-left:1px solid var(--border)}
+.ba-item{font-size:14px;line-height:1.75;padding:5px 0 5px 20px;position:relative;color:var(--text-secondary)}
+.ba-col.before .ba-item::before{content:'✗';position:absolute;left:0;color:#DC2626;font-weight:700}
+.ba-col.after .ba-item::before{content:'✓';position:absolute;left:0;color:var(--teal);font-weight:700}
+
+/* ── BANNER ── */
+.banner{background:linear-gradient(135deg,#D0F0EA,#DBEAFE);border:1.5px solid #6EE7B7;border-radius:var(--radius);padding:36px 32px;text-align:center;margin-top:48px}
+.banner-icon{font-size:40px;margin-bottom:14px}
+.banner h3{font-family:'Crimson Pro',serif;font-size:24px;font-weight:900;color:#065F46;margin:0 0 10px}
+.banner p{color:#047857;font-size:15px;max-width:480px;margin:0 auto}
+
+/* ── CHAPTER NAV ── */
+.ch-nav{display:flex;justify-content:space-between;align-items:stretch;gap:16px;padding-top:48px;border-top:1px solid var(--border);margin-top:72px}
+.ch-nav-link{display:flex;flex-direction:column;gap:4px;text-decoration:none;padding:20px 24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);transition:all 0.2s;flex:1;max-width:48%}
+.ch-nav-link:hover{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-2px)}
+.ch-nav-link.restart{text-align:right;margin-left:auto}
+.ch-nav-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)}
+.ch-nav-title{font-weight:700;font-size:15px;color:var(--text)}
+.footer{text-align:center;padding:32px 24px;font-size:12.5px;color:var(--text-muted);border-top:1px solid var(--border);max-width:var(--content-width);margin:0 auto}
+.fade-in{opacity:0;transform:translateY(22px);transition:opacity 0.5s ease,transform 0.5s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+@media(max-width:640px){.topnav-chapters{display:none}.ch-nav{flex-direction:column}.ch-nav-link{max-width:100%}.ch-number{display:none}.vs-row,.scenario-row,.dtree-branches,.analogy-grid,.ba-wrap{grid-template-columns:1fr}.dtree-branches .dtree-branch.no{border-top:1px solid var(--border)}}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 核心觀念</a>
+      <a class="topnav-ch" href="chapter2.html">Ch.2 架構分層</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 設計判準</a>
+      <a class="topnav-ch" href="chapter4.html">Ch.4 企業落地</a>
+      <a class="topnav-ch active" href="chapter5.html">Ch.5 圖解範例</a>
+    </div>
+    <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<header class="ch-hero">
+  <div class="ch-number">05</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 5 of 5</div>
+    <h1 class="ch-title">圖解範例：看一遍就懂的分工邏輯</h1>
+    <p class="ch-desc">用真實場景、流程圖、Before/After 與生活比喻，把 Skill 與 MCP 的分工邏輯刻進直覺。</p>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ─────────────────────────────────────
+  § 1  生活比喻速查
+───────────────────────────────────── -->
+<section class="section fade-in" id="s1">
+  <h2>§1　三個場景・六個比喻</h2>
+  <div class="section-rule"></div>
+  <p>抽象定義看完容易忘記，用你每天會遇到的真實場景映射一次，記憶就會黏上去。</p>
+
+  <div class="analogy-grid">
+    <div class="analogy-card">
+      <div class="analogy-emoji">🍳</div>
+      <div class="analogy-world">餐廳廚房</div>
+      <div class="analogy-skill">Skill ＝ 食譜 SOP</div>
+      <div class="analogy-mcp">MCP ＝ 出貨系統接單</div>
+      <p class="analogy-note">食譜告訴廚師「怎麼做這道菜」；接單系統讓廚房連上外送平台收到訂單。兩者缺一不可，角色完全不同。</p>
+    </div>
+    <div class="analogy-card">
+      <div class="analogy-emoji">🏥</div>
+      <div class="analogy-world">醫院</div>
+      <div class="analogy-skill">Skill ＝ 診療流程指引</div>
+      <div class="analogy-mcp">MCP ＝ HIS 醫療資訊系統</div>
+      <p class="analogy-note">「先問主訴、再量血壓、最後開藥」是診療流程；HIS 是讓醫師連到病歷、檢驗結果的標準接入層。</p>
+    </div>
+    <div class="analogy-card">
+      <div class="analogy-emoji">🏗️</div>
+      <div class="analogy-world">建築工地</div>
+      <div class="analogy-skill">Skill ＝ 施工規範手冊</div>
+      <div class="analogy-mcp">MCP ＝ 機具吊掛 API</div>
+      <p class="analogy-note">規範說「澆灌混凝土前要先架好模板」；機具 API 讓你實際操作吊車。知道「怎麼做」和「能做到」是兩件事。</p>
+    </div>
+  </div>
+
+  <div class="callout callout-analogy">
+    <div class="callout-title">比喻的邊界</div>
+    <p>所有比喻都只是幫助記憶，不要拉太遠。核心映射就是：<strong>Skill = 方法與流程</strong>，<strong>MCP = 標準化能力接入</strong>。</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────
+  § 2  Skill vs MCP 的核心問題對比
+───────────────────────────────────── -->
+<section class="section fade-in" id="s2">
+  <h2>§2　核心問題對比：一眼看出分層</h2>
+  <div class="section-rule"></div>
+  <p>每次拿到一個需求，先問自己這兩個問題。答案自然會把你引到正確的層。</p>
+
+  <div class="vs-row">
+    <div class="vs-card skill">
+      <div class="vs-badge">Skill 的問題</div>
+      <div class="vs-question">「這件事應該怎麼做才對？」</div>
+      <p class="vs-answer">步驟是什麼？先做什麼後做什麼？輸出應該長什麼樣？哪些地方容易出錯需要提醒？這些都是 Skill 要封裝的內容。</p>
+    </div>
+    <div class="vs-card mcp">
+      <div class="vs-badge">MCP 的問題</div>
+      <div class="vs-question">「模型要怎麼安全地拿到外部能力？」</div>
+      <p class="vs-answer">要連接哪個系統？輸入 schema 是什麼？權限怎麼控管？多個 client 如何共用這個工具？這些都是 MCP 要解決的問題。</p>
+    </div>
+  </div>
+
+  <h3>再加一題讓你快速定位</h3>
+  <div class="dtree">
+    <div class="dtree-q">「這個需求，主要痛點是流程不穩、還是外部接入困難？」</div>
+    <div class="dtree-branches">
+      <div class="dtree-branch yes">
+        <div class="dtree-branch-header">
+          <span style="font-size:20px">🔁</span>
+          <span>流程不穩、容易做錯、輸出不一致</span>
+        </div>
+        <div class="dtree-branch-body">
+          <div class="dtree-result">→ 優先考慮 Skill</div>
+          <p class="dtree-explain">步驟、規範、範本、判斷條件——這些屬於方法層，用 SKILL.md 封裝最合適。執行能力通常已經存在（shell、腳本、既有工具）。</p>
+        </div>
+      </div>
+      <div class="dtree-branch no">
+        <div class="dtree-branch-header">
+          <span style="font-size:20px">🔌</span>
+          <span>需要接到外部系統、多方共用、權限治理</span>
+        </div>
+        <div class="dtree-branch-body">
+          <div class="dtree-result">→ 優先考慮 MCP</div>
+          <p class="dtree-explain">標準化的 Tools / Resources / Prompts 接入，是 MCP 存在的理由。涉及安全邊界、跨 client 共用、審計紀錄時尤其適合。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:6px;font-size:14px;color:var(--text-muted);text-align:center">※ 同時包含兩者時 → Skill 負責編排，MCP 負責執行外部操作</p>
+</section>
+
+<!-- ─────────────────────────────────────
+  § 3  真實場景流程圖：Incident Triage
+───────────────────────────────────── -->
+<section class="section fade-in" id="s3">
+  <h2>§3　完整流程圖：事故根因分析</h2>
+  <div class="section-rule"></div>
+  <p>以「Kubernetes 服務異常警報」為例，看一遍 Skill 與 MCP 在真實任務中怎麼分工協作。</p>
+
+  <div class="flow">
+    <div class="flow-step fd-agent">
+      <div class="flow-line-col">
+        <div class="flow-dot">🧠</div>
+        <div class="flow-vline"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">Agent / Command 層</span>
+        <div class="flow-title">接收警報，判斷意圖</div>
+        <p class="flow-desc">用戶輸入「DB pod 一直 CrashLoopBackOff」，Agent 判斷這是 Incident Triage 任務，載入對應的 Skill。</p>
+      </div>
+    </div>
+
+    <div class="flow-step fd-skill">
+      <div class="flow-line-col">
+        <div class="flow-dot">📋</div>
+        <div class="flow-vline"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">Skill 層 — 步驟 1</span>
+        <div class="flow-title">Skill 規定：先確認最近的版本變更</div>
+        <p class="flow-desc">SKILL.md 指定「先查 30 分鐘內的 deployment 記錄，再比對有無 config change」。這個判斷順序是 Skill 封裝的<strong>方法知識</strong>，不是工具本身。</p>
+      </div>
+    </div>
+
+    <div class="flow-step fd-mcp">
+      <div class="flow-line-col">
+        <div class="flow-dot">🔌</div>
+        <div class="flow-vline"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">MCP 層 — 執行接入</span>
+        <div class="flow-title">MCP tool：查詢 Kubernetes deployment history</div>
+        <p class="flow-desc"><code>k8s-mcp.get_deployment_events(namespace, since="30m")</code> — 這個能力由 MCP server 提供，有完整的 schema、權限控管與審計紀錄。</p>
+      </div>
+    </div>
+
+    <div class="flow-step fd-skill">
+      <div class="flow-line-col">
+        <div class="flow-dot">📋</div>
+        <div class="flow-vline"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">Skill 層 — 步驟 2</span>
+        <div class="flow-title">Skill 規定：比對後若有異動，查 pod log</div>
+        <p class="flow-desc">Skill 的判斷邏輯：「若有新 deployment，優先查對應 pod 的 log；若無，則查 resource quota 與 OOM 事件。」這是 Skill 提供的<strong>診斷順序</strong>。</p>
+      </div>
+    </div>
+
+    <div class="flow-step fd-mcp">
+      <div class="flow-line-col">
+        <div class="flow-dot">🔌</div>
+        <div class="flow-vline"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">MCP 層 — 執行接入</span>
+        <div class="flow-title">MCP tool：拉取 pod logs + metrics</div>
+        <p class="flow-desc"><code>k8s-mcp.get_pod_logs(pod_name, tail=200)</code> + <code>prometheus-mcp.query(metric, range)</code> — 兩個不同的 MCP server 提供不同的外部能力。</p>
+      </div>
+    </div>
+
+    <div class="flow-step fd-skill">
+      <div class="flow-line-col">
+        <div class="flow-dot">📋</div>
+        <div class="flow-vline"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">Skill 層 — 輸出格式</span>
+        <div class="flow-title">Skill 規定根因報告的格式與風險提醒</div>
+        <p class="flow-desc">「報告需包含：根因假設、受影響範圍、建議行動、升級條件」——這個<strong>輸出契約</strong>也是 Skill 封裝的內容，與工具層無關。</p>
+      </div>
+    </div>
+
+    <div class="flow-step fd-api">
+      <div class="flow-line-col">
+        <div class="flow-dot">📤</div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag">結果輸出</span>
+        <div class="flow-title">交付結構化根因分析報告給用戶</div>
+        <p class="flow-desc">最終輸出完全符合 Skill 定義的格式，使用的外部資料由 MCP 提供。兩者在各自的層發揮作用，彼此不越界。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">這個範例的關鍵觀察</div>
+    <p>Skill 貢獻了「查什麼、先後順序、判斷邏輯、輸出格式」；MCP 貢獻了「實際連到 K8s 和 Prometheus 的能力」。把任何一層拿掉，任務都會不完整或不穩定。</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────
+  § 4  三個完整場景分析
+───────────────────────────────────── -->
+<section class="section fade-in" id="s4">
+  <h2>§4　三個場景快速分析</h2>
+  <div class="section-rule"></div>
+  <p>每個場景給你「問題是什麼 → Skill 負責什麼 → MCP 負責什麼 → 最終判斷」四格。</p>
+
+  <!-- Scenario A -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <div class="scenario-icon" style="background:var(--accent-soft)">🔍</div>
+      <div class="scenario-meta">
+        <div class="scenario-label">場景 A</div>
+        <div class="scenario-title">PR Code Review 自動化</div>
+        <div class="scenario-subtitle">「讓 AI 幫我 review PR，輸出符合團隊規範的意見」</div>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="scenario-row">
+        <div>
+          <div class="scenario-col-label s">Skill 負責</div>
+          <div class="scenario-item">先看 diff 大小，超過 500 行先警告</div>
+          <div class="scenario-item">依序檢查：命名、錯誤處理、測試覆蓋</div>
+          <div class="scenario-item">輸出格式：嚴重 / 建議 / 讚美 三類</div>
+          <div class="scenario-item">team house style 規則（從 SKILL.md 載入）</div>
+        </div>
+        <div>
+          <div class="scenario-col-label m">MCP 負責</div>
+          <div class="scenario-item">GitHub MCP：拉取 PR diff 與 file tree</div>
+          <div class="scenario-item">GitHub MCP：讀取 repo 的 .eslintrc / tsconfig</div>
+          <div class="scenario-item">GitHub MCP：留 review comment</div>
+          <div class="scenario-item">（可選）Jira MCP：連結對應 ticket</div>
+        </div>
+      </div>
+      <div class="scenario-verdict">
+        <strong>✅ 結論：Skill 編排 MCP，兩者並用</strong>
+        主要痛點在「review 品質不穩、格式不一致」→ 這是 Skill 的領域；但讀取 PR 和留 comment 需要 GitHub 接入 → 這是 MCP 的領域。
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario B -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <div class="scenario-icon" style="background:var(--blue-soft)">🗄️</div>
+      <div class="scenario-meta">
+        <div class="scenario-label">場景 B</div>
+        <div class="scenario-title">多個 Agent 共用 Confluence 查詢能力</div>
+        <div class="scenario-subtitle">「文件 Bot、FAQ Bot、Onboarding Bot 都需要查公司知識庫」</div>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="scenario-row">
+        <div>
+          <div class="scenario-col-label s">Skill 負責</div>
+          <div class="scenario-item">各 Bot 的任務邏輯（各自的 SKILL.md）</div>
+          <div class="scenario-item">搜尋結果的整理與回應格式</div>
+          <div class="scenario-item">找不到資料時的 fallback 流程</div>
+        </div>
+        <div>
+          <div class="scenario-col-label m">MCP 負責</div>
+          <div class="scenario-item">Confluence MCP：統一的搜尋與讀取 tool</div>
+          <div class="scenario-item">統一的 OAuth 權限控管</div>
+          <div class="scenario-item">統一的審計紀錄（誰查了什麼）</div>
+          <div class="scenario-item">schema 穩定，各 Bot 不必各自實作</div>
+        </div>
+      </div>
+      <div class="scenario-verdict">
+        <strong>✅ 結論：MCP 是核心，Skill 是上層</strong>
+        「多個 client 共用同一能力、需要權限控管與審計」→ MCP 的典型使用場景。沒有理由讓三個 Bot 各自爬 Confluence API。
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario C -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <div class="scenario-icon" style="background:var(--gold-soft)">📦</div>
+      <div class="scenario-meta">
+        <div class="scenario-label">場景 C</div>
+        <div class="scenario-title">Release Checklist 自動執行</div>
+        <div class="scenario-subtitle">「每次發版前，讓 Agent 跑完所有清單，有問題就擋下來」</div>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="scenario-row">
+        <div>
+          <div class="scenario-col-label s">Skill 負責</div>
+          <div class="scenario-item">清單定義：15 個檢查項目與順序</div>
+          <div class="scenario-item">通過條件與封鎖條件的判斷邏輯</div>
+          <div class="scenario-item">不同環境（staging / prod）的不同規則</div>
+          <div class="scenario-item">輸出：Release Gate 報告格式</div>
+        </div>
+        <div>
+          <div class="scenario-col-label m">MCP 負責</div>
+          <div class="scenario-item">GitHub MCP：確認 PR 都已 merged</div>
+          <div class="scenario-item">CI MCP：確認所有 pipeline 為綠</div>
+          <div class="scenario-item">PagerDuty MCP：確認無 active incident</div>
+          <div class="scenario-item">Jira MCP：確認 release ticket 狀態</div>
+        </div>
+      </div>
+      <div class="scenario-verdict">
+        <strong>✅ 結論：Skill 驅動，MCP 提供多系統能力</strong>
+        清單邏輯與判斷條件是 Skill 的方法知識；真正連到四個不同系統的能力由 MCP 提供。這是最典型的「Skill 編排 MCP」模式。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────
+  § 5  三種常見錯誤建模
+───────────────────────────────────── -->
+<section class="section fade-in" id="s5">
+  <h2>§5　三種常見錯誤與正確重建</h2>
+  <div class="section-rule"></div>
+  <p>原文白皮書指出 Skill 真正取代的，是三種錯誤建模。用 Before/After 看得最清楚。</p>
+
+  <!-- Error 1 -->
+  <h3>錯誤一：把流程邏輯寫死在工具裡</h3>
+  <div class="ba-wrap">
+    <div class="ba-col before">
+      <div class="ba-header">❌ 錯誤做法</div>
+      <div class="ba-body">
+        <div class="ba-item">MCP tool <code>review_pr()</code> 內部寫死了「先看命名、再看測試、輸出三類意見」</div>
+        <div class="ba-item">換個團隊規範要改 tool 實作，重新部署</div>
+        <div class="ba-item">三個不同 Bot 各自 fork 出不同版本的 tool</div>
+        <div class="ba-item">工具越長越胖，難以測試與維護</div>
+      </div>
+    </div>
+    <div class="ba-col after">
+      <div class="ba-header">✅ 正確做法</div>
+      <div class="ba-body">
+        <div class="ba-item">MCP tool <code>get_pr_diff()</code> 只負責拉 diff，保持原子化</div>
+        <div class="ba-item">流程邏輯寫在 Skill 的 SKILL.md，可版本化、可替換</div>
+        <div class="ba-item">換規範只要更新 Skill，MCP tool 完全不動</div>
+        <div class="ba-item">MCP tool 可被任何 Skill 重用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error 2 -->
+  <h3>錯誤二：把所有 SOP 塞進 system prompt</h3>
+  <div class="ba-wrap">
+    <div class="ba-col before">
+      <div class="ba-header">❌ 錯誤做法</div>
+      <div class="ba-body">
+        <div class="ba-item">System prompt 長達 8,000 tokens，包含 PR review、release checklist、incident triage 三套 SOP</div>
+        <div class="ba-item">每次對話都帶入全部規範，浪費 context window</div>
+        <div class="ba-item">無法針對不同任務按需掛載不同規範</div>
+        <div class="ba-item">SOP 更新 = 改 prompt = 沒有版本控制</div>
+      </div>
+    </div>
+    <div class="ba-col after">
+      <div class="ba-header">✅ 正確做法</div>
+      <div class="ba-body">
+        <div class="ba-item">每套 SOP 是獨立的 Skill，有自己的 SKILL.md</div>
+        <div class="ba-item">Agent 判斷任務類型後，按需載入對應的 Skill</div>
+        <div class="ba-item">Context window 只在需要時才帶入對應知識</div>
+        <div class="ba-item">Skill 有版本號，可 A/B test，可回歸驗證</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error 3 -->
+  <h3>錯誤三：還沒確認整合需求就過早建 MCP</h3>
+  <div class="ba-wrap">
+    <div class="ba-col before">
+      <div class="ba-header">❌ 錯誤做法</div>
+      <div class="ba-body">
+        <div class="ba-item">任務只在本機 repo + shell 執行，完全不需要連外部系統</div>
+        <div class="ba-item">但團隊花兩週建了 MCP server，設計 schema、實作 OAuth</div>
+        <div class="ba-item">真正的問題（流程不穩）一直沒有解決</div>
+        <div class="ba-item">成本高、見效慢，導致對 MCP 的負面評價</div>
+      </div>
+    </div>
+    <div class="ba-col after">
+      <div class="ba-header">✅ 正確做法</div>
+      <div class="ba-body">
+        <div class="ba-item">先盤點：任務環境已有 shell + 腳本，主要缺的是方法論</div>
+        <div class="ba-item">先用一天整理出 SKILL.md，穩定流程</div>
+        <div class="ba-item">等到真正需要跨系統整合時，再投資 MCP</div>
+        <div class="ba-item">兩步走：Skill first → MCP when needed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">白皮書的精確說法</div>
+    <p>「Skill 所取代的，是那些把流程誤塞進工具層、把規範誤塞進 prompt、把整合需求與方法需求混為一談的設計。」</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────
+  § 6  快速自我測驗
+───────────────────────────────────── -->
+<section class="section fade-in" id="s6">
+  <h2>§6　快速自我測驗：這個需求該怎麼建？</h2>
+  <div class="section-rule"></div>
+  <p>看每個描述，先在心裡判斷答案，再展開看解析。</p>
+
+  <div class="mistake-grid">
+    <div class="mistake-card">
+      <div class="mistake-label">需求 Q1</div>
+      <div class="mistake-bad">「讓 AI 幫我們統一 Git commit message 的格式與內容規範」</div>
+      <p class="mistake-good">→ <strong>Skill</strong>。痛點是格式不一致、規範沒有貫徹——這是方法層的問題。commit message 可以由 Agent 在 shell 中產生，不需要外部接入。用 SKILL.md 封裝你的 Conventional Commits 規範即可。</p>
+    </div>
+    <div class="mistake-card">
+      <div class="mistake-label">需求 Q2</div>
+      <div class="mistake-bad">「讓五個不同部門的 Agent 都能查詢同一個內部 ERP 系統的庫存資料」</div>
+      <p class="mistake-good">→ <strong>MCP</strong>。五個 client 共用同一能力、需要 OAuth 授權、有審計需求——這是 MCP 的經典場景。不應該讓每個 Agent 各自爬 ERP API。</p>
+    </div>
+    <div class="mistake-card">
+      <div class="mistake-label">需求 Q3</div>
+      <div class="mistake-bad">「自動化上線前的 smoke test：跑腳本、確認 health check、如有失敗立即通知 Slack」</div>
+      <p class="mistake-good">→ <strong>Skill 編排 MCP</strong>。「先跑哪個腳本、判斷失敗條件、決定通知層級」是 Skill 的流程知識；「實際執行腳本、打 Slack Webhook」可能需要 MCP（若跨環境或多 client 共用）或直接 shell（若在既有執行環境內）。</p>
+    </div>
+    <div class="mistake-card">
+      <div class="mistake-label">需求 Q4</div>
+      <div class="mistake-bad">「目前把整套 incident triage SOP 寫在每個 Bot 的 system prompt，想要改善」</div>
+      <p class="mistake-good">→ <strong>重構為 Skill</strong>。這正是「把規範誤塞進 prompt」的典型錯誤。把 SOP 提取出來做成 SKILL.md，按需載入，立刻解決 context 浪費與無法版本化的問題。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────
+  完結 Banner
+───────────────────────────────────── -->
+<div class="banner fade-in">
+  <div class="banner-icon">🎓</div>
+  <h3>你現在已經能用直覺判斷了</h3>
+  <p>流程、方法、規範、SOP → <strong>Skill</strong><br>
+  外部接入、共用能力、schema、治理 → <strong>MCP</strong><br>
+  兩者都需要時 → <strong>Skill 編排 MCP</strong></p>
+</div>
+
+<!-- ── CHAPTER NAV ── -->
+<nav class="ch-nav">
+  <a class="ch-nav-link" href="chapter4.html">
+    <span class="ch-nav-label">← 上一章</span>
+    <span class="ch-nav-title">Ch.4 企業落地</span>
+  </a>
+  <a class="ch-nav-link restart" href="chapter1.html">
+    <span class="ch-nav-label">重新開始 ↺</span>
+    <span class="ch-nav-title">Ch.1 核心觀念</span>
+  </a>
+</nav>
+</main>
+
+<footer class="footer">
+  Skill 與 MCP 的分工邏輯 · 公開版白皮書 · 2026年3月
+</footer>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

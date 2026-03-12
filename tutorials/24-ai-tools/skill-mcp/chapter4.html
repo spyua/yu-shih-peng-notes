@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.4 企業落地 — Skill 與 MCP 分工邏輯</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F3EE;--bg-warm:#EFEADF;--bg-card:#FFFFFF;--bg-dark:#16161D;--bg-code:#111118;--text:#2A2A35;--text-secondary:#5E5E6E;--text-muted:#9494A3;--accent:#D35233;--accent-hover:#B8432A;--accent-soft:#FADAD2;--teal:#1A9E8F;--teal-soft:#D0F0EA;--blue:#2563EB;--blue-soft:#DBEAFE;--gold:#C88B2E;--gold-soft:#FDF3DC;--border:#E0DCD4;--border-light:#EDEAE4;--shadow-sm:0 1px 2px rgba(0,0,0,0.04);--shadow:0 2px 8px rgba(0,0,0,0.05),0 1px 2px rgba(0,0,0,0.04);--shadow-lg:0 8px 30px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);--radius:14px;--radius-sm:8px;--content-width:760px}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);line-height:1.85;font-size:16px;-webkit-font-smoothing:antialiased}
+.topnav{position:sticky;top:0;z-index:100;background:rgba(246,243,238,0.85);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border);padding:0 24px}
+.topnav-inner{max-width:var(--content-width);margin:0 auto;display:flex;align-items:center;height:56px;gap:24px}
+.topnav-brand{font-weight:900;font-size:14px;color:var(--accent);letter-spacing:-0.02em;text-decoration:none;white-space:nowrap}
+.topnav-chapters{display:flex;gap:2px;flex:1;justify-content:center}
+.topnav-ch{padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none;border-radius:100px;transition:all 0.15s;white-space:nowrap}
+.topnav-ch:hover{color:var(--text);background:var(--bg-warm)}.topnav-ch.active{color:var(--accent);background:var(--accent-soft)}
+.topnav-progress{display:flex;gap:6px;align-items:center}
+.topnav-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.topnav-dot.filled{background:var(--accent)}.topnav-dot.current{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ch-hero{padding:72px 24px 56px;position:relative;overflow:hidden}
+.ch-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--border)}
+.ch-hero-inner{max-width:var(--content-width);margin:0 auto}
+.ch-number{font-family:'Crimson Pro',serif;font-size:80px;font-weight:900;color:var(--accent);line-height:1;opacity:0.12;position:absolute;top:30px;right:max(24px,calc((100% - var(--content-width))/2));user-select:none}
+.ch-overline{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);margin-bottom:12px}
+.ch-title{font-family:'Crimson Pro',serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;line-height:1.25;margin-bottom:14px;color:var(--bg-dark)}
+.ch-desc{font-size:17px;color:var(--text-secondary);max-width:560px}
+.main{max-width:var(--content-width);margin:0 auto;padding:48px 24px 80px}
+.section{margin-bottom:72px;scroll-margin-top:72px}
+h2{font-family:'Crimson Pro',serif;font-size:26px;font-weight:900;color:var(--bg-dark);margin-bottom:8px;line-height:1.3}
+.section-rule{width:40px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:20px}
+h3{font-size:19px;font-weight:700;margin:40px 0 12px;color:var(--bg-dark)}
+p{margin-bottom:16px}
+code{font-family:'JetBrains Mono',monospace;background:var(--bg-warm);padding:2px 7px;border-radius:5px;font-size:0.87em;color:var(--accent);font-weight:500}
+.callout{border-radius:var(--radius);padding:24px 24px 24px 64px;margin:28px 0;position:relative;font-size:15px}
+.callout::before{position:absolute;left:22px;top:22px;font-size:24px}
+.callout .callout-title{font-weight:700;font-size:14px;margin-bottom:6px}
+.callout p{margin-bottom:8px}.callout p:last-child{margin-bottom:0}
+.callout-analogy{background:var(--gold-soft);border:1px solid #ECD9A8}
+.callout-analogy::before{content:'💡'}.callout-analogy .callout-title{color:#8B6914}.callout-analogy p{color:#6B5420}
+.callout-warning{background:#FEF2F2;border:1px solid #FECACA}
+.callout-warning::before{content:'⚠️'}.callout-warning p{color:#991B1B}
+.callout-tip{background:var(--teal-soft);border:1px solid #A7E8D8}
+.callout-tip::before{content:'✅'}.callout-tip .callout-title{color:#065F46}.callout-tip p{color:#065F46}
+.table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:28px 0;box-shadow:var(--shadow-sm)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:14.5px}
+.table-wrap th{background:var(--bg-dark);color:#fff;padding:13px 18px;text-align:left;font-weight:600;font-size:13px}
+.table-wrap td{padding:13px 18px;border-bottom:1px solid var(--border-light);vertical-align:top}
+.table-wrap tr:last-child td{border-bottom:none}.table-wrap tr:hover td{background:#FDFCFA}
+.sop-timeline{position:relative;padding-left:36px;margin:28px 0}
+.sop-timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.sop-step{position:relative;margin-bottom:28px}
+.sop-step:last-child{margin-bottom:0}
+.sop-dot{position:absolute;left:-36px;top:4px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.sop-dot.red{background:var(--accent)}.sop-dot.blue{background:var(--blue)}.sop-dot.teal{background:var(--teal)}.sop-dot.gold{background:var(--gold)}
+.sop-step h4{font-size:15px;font-weight:700;margin-bottom:6px}
+.sop-step p{font-size:14px;color:var(--text-secondary);margin-bottom:0}
+.gov-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.gov-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.gov-card-title{font-weight:700;font-size:16px}
+.gov-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px}
+.gov-items{list-style:none;display:flex;flex-direction:column;gap:8px}
+.gov-items li{font-size:14px;color:var(--text-secondary);padding-left:20px;position:relative}
+.gov-items li::before{content:'•';position:absolute;left:0;color:var(--accent)}
+.complete-banner{background:linear-gradient(135deg,var(--teal-soft),#D1FAE5);border:2px solid #6EE7B7;border-radius:var(--radius);padding:36px;text-align:center;margin:48px 0 0}
+.complete-banner .cb-icon{font-size:40px;margin-bottom:12px}
+.complete-banner h3{font-family:'Crimson Pro',serif;font-size:24px;font-weight:900;color:#065F46;margin:0 0 8px}
+.complete-banner p{color:#047857;margin-bottom:0;font-size:15px}
+.ch-nav{display:flex;justify-content:space-between;align-items:stretch;gap:16px;padding-top:48px;border-top:1px solid var(--border);margin-top:72px}
+.ch-nav-link{display:flex;flex-direction:column;gap:4px;text-decoration:none;padding:20px 24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);transition:all 0.2s;flex:1;max-width:48%}
+.ch-nav-link:hover{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-2px)}
+.ch-nav-link.restart{text-align:right;margin-left:auto}
+.ch-nav-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)}
+.ch-nav-title{font-weight:700;font-size:15px;color:var(--text)}
+.footer{text-align:center;padding:32px 24px;font-size:12.5px;color:var(--text-muted);border-top:1px solid var(--border);max-width:var(--content-width);margin:0 auto}
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity 0.5s ease,transform 0.5s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+@media(max-width:640px){.topnav-chapters{display:none}.ch-nav{flex-direction:column}.ch-nav-link{max-width:100%}.ch-number{display:none}}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 核心觀念</a>
+      <a class="topnav-ch" href="chapter2.html">Ch.2 架構分層</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 設計判準</a>
+      <a class="topnav-ch active" href="chapter4.html">Ch.4 企業落地</a>
+      <a class="topnav-ch" href="chapter5.html">Ch.5 圖解範例</a>
+    </div>
+        <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+      <div class="topnav-dot"></div>
+    </div>
+  
+    </div>
+  </div>
+</nav>
+<header class="ch-hero">
+  <div class="ch-number">04</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 4 of 5</div>
+    <h1 class="ch-title">企業落地：治理視角與導入順序</h1>
+    <p class="ch-desc">從治理角度重新認識分工，以及實務上如何安排導入順序，控制成本與風險。</p>
+  </div>
+</header>
+<main class="main">
+
+  <section class="section fade-in" id="governance-perspective">
+    <h2>治理視角：兩者是不同的治理對象</h2>
+    <div class="section-rule"></div>
+    <p>對企業而言，Skill 與 MCP 的差異不僅是設計語意的差異，更是<strong>治理對象的差異</strong>。把它們混為一談，會導致治理失焦。</p>
+
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <div class="gov-card-title">🔌 MCP — 平台能力目錄的管理</div>
+        <span class="gov-badge" style="background:var(--blue-soft);color:#1E40AF">能力治理</span>
+      </div>
+      <ul class="gov-items">
+        <li>需要當成「平台能力目錄」的一部分來管理</li>
+        <li>重點：命名規則、schema 穩定性、權限邊界</li>
+        <li>安全分類：哪些工具有寫入權限？哪些需要雙重確認？</li>
+        <li>審計機制：每次調用都需要可追查的紀錄</li>
+        <li>版本管理：schema 變更需要向後相容或版本控制</li>
+      </ul>
+    </div>
+
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <div class="gov-card-title">📋 Skill — 高頻任務的知識產品管理</div>
+        <span class="gov-badge" style="background:var(--gold-soft);color:#8B6914">知識治理</span>
+      </div>
+      <ul class="gov-items">
+        <li>需要被視為「高頻任務的知識產品」來管理</li>
+        <li>重點：命名與描述的可觸發性（讓 Agent 能找到正確 Skill）</li>
+        <li>流程版本化：Skill 的更新需要有記錄，支援回滾</li>
+        <li>輸出契約：定義清楚每個 Skill 的預期輸出格式</li>
+        <li>回歸驗證：Skill 更新後，需要驗證不破壞既有任務</li>
+      </ul>
+    </div>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">比喻：企業的兩種資產</div>
+      <p>MCP 更像企業的<strong>設備與系統清冊</strong>——需要資安審查、使用授權與定期稽核；Skill 更像企業的<strong>標準作業手冊</strong>——需要版本管理、定期更新與員工培訓。兩者都是企業資產，但管理方式完全不同。</p>
+    </div>
+  </section>
+
+  <section class="section fade-in" id="rollout-order">
+    <h2>導入順序：從 Skill 開始，再規劃 MCP</h2>
+    <div class="section-rule"></div>
+    <p>實務上，較合理的導入順序往往是由方法層出發，再向外擴展到整合層。這種順序既能控制成本，也更符合風險治理的節奏。</p>
+
+    <div class="sop-timeline">
+      <div class="sop-step">
+        <div class="sop-dot gold">1</div>
+        <h4>盤點高頻重複任務</h4>
+        <p>找出團隊中最常出錯、最耗時間、輸出最不穩定的任務。這些通常是 Skill 的第一批候選對象。典型例子：技術文件撰寫、程式碼審查、事故報告、週報產出。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot red">2</div>
+        <h4>優先將流程型工作做成 Skill</h4>
+        <p>整理流程、規範、模板與檢查點，製作第一批 Skill。此階段的投資低，見效快，也能讓團隊更清楚哪些任務真正需要外部整合能力。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot blue">3</div>
+        <h4>辨識真正需要外部接入的能力</h4>
+        <p>在使用 Skill 的過程中，會逐漸浮現「這個步驟如果能直接查 Jira 就好了」的需求。此時再規劃對應的 MCP server，需求更清晰，設計也更精準。</p>
+      </div>
+      <div class="sop-step">
+        <div class="sop-dot teal">4</div>
+        <h4>由 Agent 層編排 Skill 與 MCP</h4>
+        <p>最終由 Agent 或 Command 層決策：何時選擇哪個 Skill、何時調用哪個 MCP tool。Skill 定義「怎麼做」，MCP 提供「做得到」的能力，Agent 負責統籌。</p>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">為什麼這個順序更好？</div>
+      <p>先做 Skill 可以讓團隊以低成本驗證方法論，快速看到效果；接著在有足夠需求資訊的基礎上規劃 MCP，可以避免「先建好 MCP server，卻發現根本不知道要接什麼」的浪費。</p>
+    </div>
+  </section>
+
+  <section class="section fade-in" id="governance-table">
+    <h2>企業治理對照：管理 Skill vs 管理 MCP</h2>
+    <div class="section-rule"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>治理面向</th><th>管理 Skill</th><th>管理 MCP</th></tr></thead>
+        <tbody>
+          <tr><td><strong>命名規則</strong></td><td>以任務可觸發性為優先，如「製作技術白皮書」</td><td>以能力語意為優先，如「github.create_pr」</td></tr>
+          <tr><td><strong>版本管理</strong></td><td>流程文件版本化，支援回滾</td><td>Schema 版本管理，向後相容</td></tr>
+          <tr><td><strong>權限控管</strong></td><td>控制哪些 Agent 可以掛載哪些 Skill</td><td>控制哪些操作需要哪個層級的授權</td></tr>
+          <tr><td><strong>審計需求</strong></td><td>記錄 Skill 的使用頻率與輸出品質</td><td>每次工具調用都需要可追查的紀錄</td></tr>
+          <tr><td><strong>更新流程</strong></td><td>定期更新流程規範，驗證不破壞既有任務</td><td>Schema 變更需要通知所有使用方</td></tr>
+          <tr><td><strong>安全分類</strong></td><td>哪些 Skill 涉及敏感業務邏輯？</td><td>哪些工具有寫入/刪除/執行權限？</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section fade-in" id="conclusion">
+    <h2>結論：建模正確，才是真正的問題</h2>
+    <div class="section-rule"></div>
+    <p>「Skill 會取代 MCP」之所以流行，是因為它包裝了一個局部正確、但整體失真的敘事。Skill 的確在許多代理工作流中展現出遠高於傳統 prompt 寫法的穩定度，也降低了部分團隊對協定化整合的即時需求；然而，這並不等於協定層已經失去存在理由。</p>
+    <p>較嚴謹的結論是：<strong>Skill 與 MCP 分別回答不同問題。</strong>當一個團隊真正理解「能力接入」與「任務方法」是兩種不同設計工作之後，Skill 與 MCP 的爭論就不再是選邊站，而是建模是否正確、治理是否分層、投資順序是否合理。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>問題</th><th>正確答案</th></tr></thead>
+        <tbody>
+          <tr><td>Skill 取代 MCP 了嗎？</td><td>❌ 沒有。兩者解決不同問題，位於不同層次。</td></tr>
+          <tr><td>Skill 取代了「什麼」？</td><td>✅ 取代了把流程塞進工具層、把規範塞進 prompt 的錯誤建模方式。</td></tr>
+          <tr><td>什麼時候只需要 Skill？</td><td>任務在既有執行環境內，外部整合需求有限的場景。</td></tr>
+          <tr><td>什麼時候需要 MCP？</td><td>需要多系統存取、跨 client 共用、正式治理與審計的場景。</td></tr>
+          <tr><td>成熟架構應該怎麼做？</td><td>✅ 兩者並用：Skill 定義流程，MCP 提供能力。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>最後一個提醒：</strong>成本差異不等於角色等價。做 Skill 的初始門檻較低不代表 MCP 可以省略；能快速見效也不代表適用所有場景。正確的問題永遠是：「這個需求的本質是什麼？應該由哪一層來承擔？」</p>
+    </div>
+  </section>
+
+  <div class="complete-banner fade-in">
+    <div class="cb-icon">🎉</div>
+    <h3>教學完成！</h3>
+    <p>你已經完整學習了 Skill 與 MCP 的分工邏輯：核心觀念、架構分層、設計判準，以及企業治理的導入建議。<br>現在你可以在架構討論中提出更精準的問題，並做出更合理的建模決策。</p>
+  </div>
+
+  <nav class="ch-nav">
+    <a class="ch-nav-link" href="chapter3.html">
+      <span class="ch-nav-label">← 上一章</span>
+      <span class="ch-nav-title">Ch.3 設計判準</span>
+    </a>
+    <a class="ch-nav-link next" href="chapter5.html">
+      <span class="ch-nav-label">下一章 →</span>
+      <span class="ch-nav-title">Ch.5 圖解範例</span>
+    </a>
+  </nav>
+</main>
+<footer class="footer">Skill 與 MCP 分工邏輯 · 白皮書教學文件 · 2026</footer>
+<script>
+const fadeObserver=new IntersectionObserver((entries)=>{entries.forEach((e)=>{if(e.isIntersecting){e.target.classList.add('visible');fadeObserver.unobserve(e.target);}});},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach((el)=>fadeObserver.observe(el));
+</script>
+</body>
+</html>
