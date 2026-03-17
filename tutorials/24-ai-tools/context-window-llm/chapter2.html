@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.2 Context Window 深解 — Context Window 與 LLM 教學</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F6F3EE;
+  --bg-warm: #EFEADF;
+  --bg-card: #FFFFFF;
+  --bg-dark: #16161D;
+  --bg-code: #111118;
+  --text: #2A2A35;
+  --text-secondary: #5E5E6E;
+  --text-muted: #9494A3;
+  --accent: #D35233;
+  --accent-hover: #B8432A;
+  --accent-soft: #FADAD2;
+  --teal: #1A9E8F;
+  --teal-soft: #D0F0EA;
+  --blue: #2563EB;
+  --blue-soft: #DBEAFE;
+  --gold: #C88B2E;
+  --gold-soft: #FDF3DC;
+  --border: #E0DCD4;
+  --border-light: #EDEAE4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --content-width: 760px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'Noto Sans TC',sans-serif; background:var(--bg); color:var(--text); line-height:1.85; font-size:16px; -webkit-font-smoothing:antialiased; }
+
+.topnav { position:sticky; top:0; z-index:100; background:rgba(246,243,238,0.85); backdrop-filter:blur(16px) saturate(1.4); border-bottom:1px solid var(--border); padding:0 24px; }
+.topnav-inner { max-width:var(--content-width); margin:0 auto; display:flex; align-items:center; height:56px; gap:24px; }
+.topnav-brand { font-weight:900; font-size:14px; color:var(--accent); letter-spacing:-0.02em; text-decoration:none; white-space:nowrap; }
+.topnav-chapters { display:flex; gap:2px; flex:1; justify-content:center; }
+.topnav-ch { padding:6px 14px; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border-radius:100px; transition:all 0.15s; white-space:nowrap; }
+.topnav-ch:hover { color:var(--text); background:var(--bg-warm); }
+.topnav-ch.active { color:var(--accent); background:var(--accent-soft); }
+.topnav-progress { display:flex; gap:6px; align-items:center; }
+.topnav-dot { width:8px; height:8px; border-radius:50%; background:var(--border); }
+.topnav-dot.filled { background:var(--accent); }
+.topnav-dot.current { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
+.ch-hero { padding:72px 24px 56px; position:relative; overflow:hidden; }
+.ch-hero::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:var(--border); }
+.ch-hero-inner { max-width:var(--content-width); margin:0 auto; }
+.ch-number { font-family:'Crimson Pro',serif; font-size:80px; font-weight:900; color:var(--accent); line-height:1; opacity:0.12; position:absolute; top:30px; right:max(24px,calc((100% - var(--content-width))/2)); user-select:none; }
+.ch-overline { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--accent); margin-bottom:12px; }
+.ch-title { font-family:'Crimson Pro',serif; font-size:clamp(2rem,4.5vw,2.8rem); font-weight:900; line-height:1.25; margin-bottom:14px; color:var(--bg-dark); }
+.ch-desc { font-size:17px; color:var(--text-secondary); max-width:560px; }
+
+.main { max-width:var(--content-width); margin:0 auto; padding:48px 24px 80px; }
+.section { margin-bottom:72px; scroll-margin-top:72px; }
+
+h2 { font-family:'Crimson Pro',serif; font-size:26px; font-weight:900; color:var(--bg-dark); margin-bottom:8px; line-height:1.3; }
+.section-rule { width:40px; height:3px; background:var(--accent); border-radius:2px; margin-bottom:20px; }
+h3 { font-size:19px; font-weight:700; margin:40px 0 12px; color:var(--bg-dark); }
+h3:first-of-type { margin-top:24px; }
+p { margin-bottom:16px; }
+code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); padding:2px 7px; border-radius:5px; font-size:0.87em; color:var(--accent); font-weight:500; }
+
+.callout { border-radius:var(--radius); padding:24px 24px 24px 64px; margin:28px 0; position:relative; font-size:15px; }
+.callout::before { position:absolute; left:22px; top:22px; font-size:24px; }
+.callout .callout-title { font-weight:700; font-size:14px; margin-bottom:6px; }
+.callout p { margin-bottom:8px; }
+.callout p:last-child { margin-bottom:0; }
+.callout-analogy { background:var(--gold-soft); border:1px solid #ECD9A8; }
+.callout-analogy::before { content:'💡'; }
+.callout-analogy .callout-title { color:#8B6914; }
+.callout-analogy p { color:#6B5420; }
+.callout-warning { background:#FEF2F2; border:1px solid #FECACA; }
+.callout-warning::before { content:'⚠️'; }
+.callout-warning p { color:#991B1B; }
+.callout-tip { background:var(--teal-soft); border:1px solid #A7E8D8; }
+.callout-tip::before { content:'✅'; }
+.callout-tip .callout-title { color:#065F46; }
+.callout-tip p { color:#065F46; }
+
+.table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow-sm); }
+.table-wrap table { width:100%; border-collapse:collapse; font-size:14.5px; }
+.table-wrap th { background:var(--bg-dark); color:#fff; padding:13px 18px; text-align:left; font-weight:600; font-size:13px; }
+.table-wrap td { padding:13px 18px; border-bottom:1px solid var(--border-light); vertical-align:top; }
+.table-wrap tr:last-child td { border-bottom:none; }
+.table-wrap tr:hover td { background:#FDFCFA; }
+
+.code-block { background:var(--bg-code); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow); }
+.code-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
+.code-lang { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.06em; }
+.code-copy { background:rgba(255,255,255,0.08); border:none; color:#9CA3AF; font-size:12px; font-weight:600; padding:4px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s; font-family:'Noto Sans TC',sans-serif; }
+.code-copy:hover { background:rgba(255,255,255,0.15); color:#fff; }
+.code-block pre { padding:20px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13.5px; line-height:1.75; color:#E2E8F0; }
+.kw { color:#C084FC; } .str { color:#86EFAC; } .cm { color:#6B7280; font-style:italic; } .num { color:#FB923C; } .ann { color:#FDE68A; }
+
+/* Context visual diagram */
+.ctx-diagram { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin:28px 0; box-shadow:var(--shadow-sm); }
+.ctx-window { border:2px dashed var(--accent); border-radius:10px; padding:20px; background:rgba(211,82,51,0.03); }
+.ctx-window-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-bottom:16px; text-align:center; }
+.ctx-layers { display:flex; gap:12px; }
+.ctx-layer { flex:1; border-radius:8px; padding:16px 12px; text-align:center; }
+.ctx-layer.l1 { background:var(--blue-soft); border:1px solid #93C5FD; }
+.ctx-layer.l2 { background:var(--gold-soft); border:1px solid #ECD9A8; }
+.ctx-layer.l3 { background:var(--accent-soft); border:1px solid #FBBFB3; flex:2; }
+.ctx-layer-title { font-size:12px; font-weight:700; margin-bottom:6px; }
+.ctx-layer.l1 .ctx-layer-title { color:#1E40AF; }
+.ctx-layer.l2 .ctx-layer-title { color:#8B6914; }
+.ctx-layer.l3 .ctx-layer-title { color:var(--accent); }
+.ctx-layer-desc { font-size:11.5px; color:var(--text-secondary); line-height:1.5; }
+.ctx-total { text-align:center; margin-top:14px; font-size:13px; color:var(--text-secondary); }
+
+/* Layer breakdown */
+.layer-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); margin:16px 0; overflow:hidden; box-shadow:var(--shadow-sm); }
+.layer-header { display:flex; align-items:center; gap:14px; padding:18px 22px; border-bottom:1px solid var(--border-light); }
+.layer-num { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; flex-shrink:0; }
+.layer-num.n1 { background:var(--blue); }
+.layer-num.n2 { background:var(--gold); }
+.layer-num.n3 { background:var(--accent); }
+.layer-title { font-weight:700; font-size:15px; }
+.layer-pct { margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text-muted); }
+.layer-body { padding:16px 22px; font-size:14px; color:var(--text-secondary); }
+.layer-body ul { list-style:none; }
+.layer-body ul li { padding:4px 0; padding-left:20px; position:relative; }
+.layer-body ul li::before { content:'→'; position:absolute; left:0; color:var(--accent); font-weight:700; }
+
+/* Consequence cards */
+.consequence-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:24px 0; }
+.consequence-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:20px; }
+.consequence-icon { font-size:24px; margin-bottom:8px; }
+.consequence-title { font-weight:700; font-size:14px; color:var(--bg-dark); margin-bottom:6px; }
+.consequence-desc { font-size:13.5px; color:var(--text-secondary); }
+
+.tag { display:inline-block; padding:2px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.tag-green { background:#D1FAE5; color:#065F46; }
+.tag-blue { background:#DBEAFE; color:#1E40AF; }
+.tag-orange { background:#FED7AA; color:#9A3412; }
+.tag-red { background:#FEE2E2; color:#991B1B; }
+
+.ch-nav { display:flex; justify-content:space-between; align-items:stretch; gap:16px; padding-top:48px; border-top:1px solid var(--border); margin-top:72px; }
+.ch-nav-link { display:flex; flex-direction:column; gap:4px; text-decoration:none; padding:20px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); transition:all 0.2s; flex:1; max-width:48%; }
+.ch-nav-link:hover { border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-2px); }
+.ch-nav-link.next { text-align:right; margin-left:auto; }
+.ch-nav-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); }
+.ch-nav-title { font-weight:700; font-size:15px; color:var(--text); }
+
+.footer { text-align:center; padding:32px 24px; font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--border); max-width:var(--content-width); margin:0 auto; }
+
+/* FAQ */
+.faq-block { margin:56px 0 0; }
+.faq-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--blue); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+.faq-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.faq-list { display:flex; flex-direction:column; gap:10px; }
+.faq-item { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; transition:border-color 0.2s; }
+.faq-item.open { border-color:var(--accent); }
+.faq-q { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; cursor:pointer; user-select:none; }
+.faq-q-text { font-size:15px; font-weight:600; color:var(--bg-dark); line-height:1.5; }
+.faq-icon { width:26px; height:26px; border-radius:50%; background:var(--bg-warm); border:1px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.25s; font-size:14px; color:var(--text-muted); }
+.faq-item.open .faq-icon { background:var(--accent); border-color:var(--accent); color:#fff; transform:rotate(45deg); }
+.faq-a { max-height:0; overflow:hidden; transition:max-height 0.35s ease, padding 0.25s ease; padding:0 22px; font-size:14.5px; color:var(--text-secondary); line-height:1.8; }
+.faq-item.open .faq-a { max-height:400px; padding:0 22px 20px; }
+.faq-a strong { color:var(--bg-dark); }
+
+.fade-in { opacity:0; transform:translateY(24px); transition:opacity 0.5s ease, transform 0.5s ease; }
+.fade-in.visible { opacity:1; transform:translateY(0); }
+
+/* Learn box */
+.learn-box { background:var(--bg-dark); border-radius:var(--radius); padding:32px 36px; margin-bottom:56px; }
+.learn-box-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--accent); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.learn-box-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+.learn-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.learn-list li { display:flex; align-items:flex-start; gap:12px; font-size:14.5px; color:#C9C9D4; line-height:1.6; }
+.learn-list li::before { content:''; width:20px; height:20px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:2px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:center; background-size:12px; }
+
+/* Review box */
+.review-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:32px 36px; margin:56px 0 0; box-shadow:var(--shadow); }
+.review-box-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--teal); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+.review-box-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.review-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.review-item { background:var(--bg-warm); border-radius:var(--radius-sm); padding:16px 18px; }
+.review-concept { font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; }
+.review-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+
+@media (max-width:640px) {
+  .topnav-chapters { display:none; }
+  .ch-number { display:none; }
+  .ctx-layers { flex-direction:column; }
+  .consequence-grid { grid-template-columns:1fr; }
+  .ch-nav { flex-direction:column; }
+  .ch-nav-link { max-width:100%; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch" href="chapter1.html">Ch.1 LLM 模型基礎</a>
+      <a class="topnav-ch active" href="chapter2.html">Ch.2 Context Window</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 操作策略</a>
+    </div>
+    <div class="topnav-progress">
+      <div class="topnav-dot filled"></div>
+      <div class="topnav-dot current"></div>
+      <div class="topnav-dot"></div>
+    </div>
+  </div>
+</nav>
+
+<header class="ch-hero">
+  <div class="ch-number">02</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 2 of 3</div>
+    <h1 class="ch-title">Context Window 深解</h1>
+    <p class="ch-desc">理解 AI 的「工作記憶」如何被消耗，以及滿了之後會發生什麼事。</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Learn box -->
+  <div class="learn-box fade-in">
+    <div class="learn-box-label">📖 你會學到什麼</div>
+    <ul class="learn-list">
+      <li>Context Window 是什麼，以及它對 AI 的限制意義</li>
+      <li>Context 由哪三層組成，以及哪一層才是真正的大頭</li>
+      <li>Context 接近上限時會出現哪四種問題，以及它們如何悄悄影響品質</li>
+      <li>主動管理 Context 的核心指令（/clear、/compact）與背後邏輯</li>
+    </ul>
+  </div>
+
+  <!-- Section 1: What is Context Window -->
+  <section class="section fade-in" id="what-is-context">
+    <h2>什麼是 Context Window？</h2>
+    <div class="section-rule"></div>
+    <p>Context Window 是 LLM <strong>單次處理能夠「看到」的文字總量上限</strong>。你可以把它想成 AI 的工作記憶——就像人類在解題時，腦中能同時記住的資訊量是有限的。</p>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">生活比喻：書桌的面積</div>
+      <p>想像你在一張書桌上解題。Context Window 就是書桌的大小——你只能把「放得上桌面」的資料納入考量。超出桌面的書本，你就算知道它存在，也沒辦法同時參考。</p>
+    </div>
+
+    <h3>各模型的 Context Window 大小</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>模型系列</th><th>Context Window</th><th>約等於</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GPT-5 系列</td>
+            <td><span class="tag tag-blue">128K – 1M tokens</span></td>
+            <td>約 10 萬 – 75 萬中文字</td>
+          </tr>
+          <tr>
+            <td>Claude 4 系列</td>
+            <td><span class="tag tag-blue">200K tokens</span></td>
+            <td>約 15 萬中文字</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>看起來很多？實際上在 Agent Tool 場景中，Context 會被快速消耗——而且消耗的主力，並不是你打的對話。</p>
+  </section>
+
+  <!-- Section 2: Three layers -->
+  <section class="section fade-in" id="three-layers">
+    <h2>Context 的三層結構</h2>
+    <div class="section-rule"></div>
+    <p>在 Agent Tool 的使用場景中，Context 不只是你打的字。它由三層內容組成，而最大的消耗源往往是第三層。</p>
+
+    <div class="ctx-diagram">
+      <div class="ctx-window">
+        <div class="ctx-window-label">Context Window（總容量）</div>
+        <div class="ctx-layers">
+          <div class="ctx-layer l1">
+            <div class="ctx-layer-title">第 1 層</div>
+            <div class="ctx-layer-desc">System Prompt<br>系統指令</div>
+          </div>
+          <div class="ctx-layer l2">
+            <div class="ctx-layer-title">第 2 層</div>
+            <div class="ctx-layer-desc">Conversation<br>對話歷史</div>
+          </div>
+          <div class="ctx-layer l3">
+            <div class="ctx-layer-title">第 3 層</div>
+            <div class="ctx-layer-desc">Tool Call Outputs<br>工具調用回傳（大頭！）</div>
+          </div>
+        </div>
+      </div>
+      <div class="ctx-total">← 所有這些加起來，不能超過 Context 上限 →</div>
+    </div>
+
+    <div class="layer-card fade-in">
+      <div class="layer-header">
+        <div class="layer-num n1">1</div>
+        <div class="layer-title">System Prompt（系統指令）</div>
+        <div class="layer-pct">5–15%</div>
+      </div>
+      <div class="layer-body">
+        <ul>
+          <li>Agent Tool 本身的系統指令</li>
+          <li>CLAUDE.md / instructions 等設定檔</li>
+          <li>已註冊的 Skill / Command 定義</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="layer-card fade-in">
+      <div class="layer-header">
+        <div class="layer-num n2">2</div>
+        <div class="layer-title">Conversation History（對話歷史）</div>
+        <div class="layer-pct">隨對話增長</div>
+      </div>
+      <div class="layer-body">
+        <ul>
+          <li>你打的每一句話</li>
+          <li>AI 回覆的每一句話</li>
+          <li>對話越長，佔用越多</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="layer-card fade-in">
+      <div class="layer-header">
+        <div class="layer-num n3">3</div>
+        <div class="layer-title">Tool Call Outputs（工具調用回傳）</div>
+        <div class="layer-pct">⚠️ 50–80%</div>
+      </div>
+      <div class="layer-body">
+        <ul>
+          <li>Agent 讀取的檔案內容（整個檔案！）</li>
+          <li>搜尋結果（grep / find 的回傳）</li>
+          <li>執行指令的 stdout / stderr 輸出</li>
+          <li><strong>這才是大頭</strong>，也是最容易被忽略的</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>第三層是 Context 被快速消耗的主因。</strong> 每當 Agent 讀取一個 500 行的程式碼檔案，就是幾千個 tokens 的消耗。如果一個任務需要讀取 10 個檔案，Context 很快就會接近上限——而許多人對此毫無察覺。</p>
+    </div>
+  </section>
+
+  <!-- Section 3: When context fills up -->
+  <section class="section fade-in" id="context-full">
+    <h2>Context 滿了會怎樣？</h2>
+    <div class="section-rule"></div>
+    <p>當 Context 接近上限時，問題不會突然爆發，而是<strong>悄悄地讓 AI 品質下降</strong>。這是最危險的情況——你以為 AI 在正常運作，但它已經開始「忘記」重要資訊。</p>
+
+    <div class="consequence-grid">
+      <div class="consequence-card">
+        <div class="consequence-icon">🧠</div>
+        <div class="consequence-title">品質下降</div>
+        <div class="consequence-desc">AI 開始「忘記」早期對話中的重要資訊，回答變得不一致，甚至與之前的決定矛盾。</div>
+      </div>
+      <div class="consequence-card">
+        <div class="consequence-icon">✂️</div>
+        <div class="consequence-title">截斷風險</div>
+        <div class="consequence-desc">部分 Agent Tool 會自動截斷舊的對話，可能丟失關鍵指令或前置架構決策。</div>
+      </div>
+      <div class="consequence-card">
+        <div class="consequence-icon">🗜️</div>
+        <div class="consequence-title">自動壓縮</div>
+        <div class="consequence-desc">部分 Agent Tool 會自動 compact，但壓縮品質不可控，可能遺失細節。</div>
+      </div>
+      <div class="consequence-card">
+        <div class="consequence-icon">🚫</div>
+        <div class="consequence-title">直接報錯</div>
+        <div class="consequence-desc">到達硬上限時，Session 無法繼續，必須強制開啟新的對話。</div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">主動管理才是正解</div>
+      <p>Context Management 是 Agent Tool 操作的核心能力。<strong>/clear</strong> 可以清空 Context、釋放工作記憶；<strong>/compact</strong> 可以在不清空的前提下壓縮舊的對話。在問題發生之前主動介入，遠比事後補救有效。</p>
+    </div>
+
+    <h3>操作指令對照</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>操作</th><th>背後的原因</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/clear</code></td>
+            <td>清空 Context，釋放工作記憶給新任務</td>
+          </tr>
+          <tr>
+            <td><code>/compact</code></td>
+            <td>壓縮 Context，在不清空的前提下釋放空間</td>
+          </tr>
+          <tr>
+            <td>切換 Model</td>
+            <td>不同任務需要不同的推理深度與速度</td>
+          </tr>
+          <tr>
+            <td>調整 Reasoning Effort</td>
+            <td>控制 AI 花多少「腦力」在思考上</td>
+          </tr>
+          <tr>
+            <td>Agent 讀檔要有策略</td>
+            <td>每讀一個檔案都在消耗寶貴的 Context 空間</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <div class="faq-block fade-in">
+    <div class="faq-label">❓ 問答練習</div>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">Context Window 和「AI 記憶力」是同一件事嗎？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">不完全是。Context Window 是<strong>單次對話中 AI 能「看到」的文字總量上限</strong>，它更像是「工作桌的面積」而非「長期記憶」。AI 在 Context 之外沒有任何記憶——每次對話都是全新開始，它「記得」的一切都來自當前 Context 裡的內容。記憶力的比喻容易讓人誤以為 AI 能累積經驗，但實際上它只能參考「桌上現有的資料」。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">為什麼第三層（工具回傳）是 Context 的最大消耗源？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">因為 Agent 讀取檔案時，是把<strong>整個檔案內容</strong>塞進 Context，而不是摘要。一個 500 行的程式碼約 3,000–5,000 tokens，grep 搜尋結果可能幾百行，指令的 stdout/stderr 輸出可能更長。相較之下，你打的對話通常只有幾百 tokens，System Prompt 頂多幾千。一個複雜任務下來，工具回傳佔 Context 的 50–80% 是很常見的。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">/clear 和 /compact 的使用時機有什麼差別？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a"><strong>/clear</strong> 是完全清空 Context，重新開始——適合當前任務已完成、要切換到全新任務時使用。<strong>/compact</strong> 是壓縮並保留對話摘要——適合同一個任務還沒結束、但 Context 已經快滿的情況，它能釋放空間同時保留關鍵脈絡。選擇的邏輯很簡單：任務還沒完成用 compact，已完成要換任務用 clear。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">Context 快滿時，AI 表現變差的跡象有哪些？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">常見的跡象包括：<strong>前後不一致</strong>（與前幾輪說的不同）、<strong>重複定義</strong>（重新宣告已存在的變數或函式）、<strong>忽略前置條件</strong>（忘記你在早期對話中設定的限制或需求）、<strong>回答變得籠統</strong>（不再引用具體的程式碼細節，改用模糊描述）。這些都是 AI 開始「忘記」早期 Context 的信號，應該立即 /compact 或拆分任務。</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Review box -->
+  <div class="review-box fade-in">
+    <div class="review-box-label">✦ 本章複習</div>
+    <div class="review-grid">
+      <div class="review-item">
+        <div class="review-concept">Context Window</div>
+        <div class="review-desc">AI 的「工作記憶」，總量有限。Claude 4 系列為 200K tokens，約 15 萬中文字。</div>
+      </div>
+      <div class="review-item">
+        <div class="review-concept">三層結構</div>
+        <div class="review-desc">System Prompt（5–15%）+ 對話歷史 + 工具回傳（佔大頭 50–80%）。讀檔才是消耗主因。</div>
+      </div>
+      <div class="review-item">
+        <div class="review-concept">品質下降是漸進的</div>
+        <div class="review-desc">Context 滿了不會爆炸，而是悄悄讓 AI 忘記早期資訊，這才是最危險的。</div>
+      </div>
+      <div class="review-item">
+        <div class="review-concept">主動管理指令</div>
+        <div class="review-desc">/clear 清空重開；/compact 壓縮保留。在問題出現前介入，遠比事後補救有效。</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="ch-nav">
+    <a class="ch-nav-link" href="chapter1.html">
+      <span class="ch-nav-label">← 上一章</span>
+      <span class="ch-nav-title">Ch.1 LLM 模型基礎</span>
+    </a>
+    <a class="ch-nav-link next" href="chapter3.html">
+      <span class="ch-nav-label">下一章 →</span>
+      <span class="ch-nav-title">Ch.3 操作策略與實戰情境</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="footer">Context Window 與 LLM 教學 · Agent Tool 操作基礎</footer>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => btn.textContent = '複製', 1500);
+  });
+}
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => {
+    const item = q.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+const fadeObserver = new IntersectionObserver(
+  (entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObserver.unobserve(e.target); } }); },
+  { threshold: 0.08 }
+);
+document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+</script>
+</body>
+</html>

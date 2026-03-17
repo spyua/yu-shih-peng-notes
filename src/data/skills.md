@@ -145,3 +145,7 @@
 - Ch.3 設計判準 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter3.html
 - Ch.4 企業落地 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter4.html
 - Ch.5 圖解範例 | 中級 | tutorials/24-ai-tools/skill-mcp/chapter5.html
+## Context Window 與 LLM 教學
+- Ch.1 LLM 模型基礎 | 初級 | tutorials/24-ai-tools/context-window-llm/chapter1.html
+- Ch.2 Context Window 深解 | 初級 | tutorials/24-ai-tools/context-window-llm/chapter2.html
+- Ch.3 操作策略與實戰情境 | 初級 | tutorials/24-ai-tools/context-window-llm/chapter3.html

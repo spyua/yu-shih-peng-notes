@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.1 LLM 模型基礎 — Context Window 與 LLM 教學</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F6F3EE;
+  --bg-warm: #EFEADF;
+  --bg-card: #FFFFFF;
+  --bg-dark: #16161D;
+  --bg-code: #111118;
+  --text: #2A2A35;
+  --text-secondary: #5E5E6E;
+  --text-muted: #9494A3;
+  --accent: #D35233;
+  --accent-hover: #B8432A;
+  --accent-soft: #FADAD2;
+  --teal: #1A9E8F;
+  --teal-soft: #D0F0EA;
+  --blue: #2563EB;
+  --blue-soft: #DBEAFE;
+  --gold: #C88B2E;
+  --gold-soft: #FDF3DC;
+  --border: #E0DCD4;
+  --border-light: #EDEAE4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --content-width: 760px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'Noto Sans TC',sans-serif; background:var(--bg); color:var(--text); line-height:1.85; font-size:16px; -webkit-font-smoothing:antialiased; }
+
+/* Topnav */
+.topnav { position:sticky; top:0; z-index:100; background:rgba(246,243,238,0.85); backdrop-filter:blur(16px) saturate(1.4); border-bottom:1px solid var(--border); padding:0 24px; }
+.topnav-inner { max-width:var(--content-width); margin:0 auto; display:flex; align-items:center; height:56px; gap:24px; }
+.topnav-brand { font-weight:900; font-size:14px; color:var(--accent); letter-spacing:-0.02em; text-decoration:none; white-space:nowrap; }
+.topnav-chapters { display:flex; gap:2px; flex:1; justify-content:center; }
+.topnav-ch { padding:6px 14px; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border-radius:100px; transition:all 0.15s; white-space:nowrap; }
+.topnav-ch:hover { color:var(--text); background:var(--bg-warm); }
+.topnav-ch.active { color:var(--accent); background:var(--accent-soft); }
+.topnav-progress { display:flex; gap:6px; align-items:center; }
+.topnav-dot { width:8px; height:8px; border-radius:50%; background:var(--border); }
+.topnav-dot.current { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
+/* Hero */
+.ch-hero { padding:72px 24px 56px; position:relative; overflow:hidden; }
+.ch-hero::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:var(--border); }
+.ch-hero-inner { max-width:var(--content-width); margin:0 auto; }
+.ch-number { font-family:'Crimson Pro',serif; font-size:80px; font-weight:900; color:var(--accent); line-height:1; opacity:0.12; position:absolute; top:30px; right:max(24px,calc((100% - var(--content-width))/2)); user-select:none; }
+.ch-overline { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--accent); margin-bottom:12px; }
+.ch-title { font-family:'Crimson Pro',serif; font-size:clamp(2rem,4.5vw,2.8rem); font-weight:900; line-height:1.25; margin-bottom:14px; color:var(--bg-dark); }
+.ch-desc { font-size:17px; color:var(--text-secondary); max-width:560px; }
+
+/* Main */
+.main { max-width:var(--content-width); margin:0 auto; padding:48px 24px 80px; }
+.section { margin-bottom:72px; scroll-margin-top:72px; }
+
+/* Typography */
+h2 { font-family:'Crimson Pro',serif; font-size:26px; font-weight:900; color:var(--bg-dark); margin-bottom:8px; line-height:1.3; }
+.section-rule { width:40px; height:3px; background:var(--accent); border-radius:2px; margin-bottom:20px; }
+h3 { font-size:19px; font-weight:700; margin:40px 0 12px; color:var(--bg-dark); }
+h3:first-of-type { margin-top:24px; }
+p { margin-bottom:16px; }
+code { font-family:'JetBrains Mono',monospace; background:var(--bg-warm); padding:2px 7px; border-radius:5px; font-size:0.87em; color:var(--accent); font-weight:500; }
+
+/* Callouts */
+.callout { border-radius:var(--radius); padding:24px 24px 24px 64px; margin:28px 0; position:relative; font-size:15px; }
+.callout::before { position:absolute; left:22px; top:22px; font-size:24px; }
+.callout .callout-title { font-weight:700; font-size:14px; margin-bottom:6px; }
+.callout p { margin-bottom:8px; }
+.callout p:last-child { margin-bottom:0; }
+.callout-analogy { background:var(--gold-soft); border:1px solid #ECD9A8; }
+.callout-analogy::before { content:'💡'; }
+.callout-analogy .callout-title { color:#8B6914; }
+.callout-analogy p { color:#6B5420; }
+.callout-warning { background:#FEF2F2; border:1px solid #FECACA; }
+.callout-warning::before { content:'⚠️'; }
+.callout-warning p { color:#991B1B; }
+.callout-tip { background:var(--teal-soft); border:1px solid #A7E8D8; }
+.callout-tip::before { content:'✅'; }
+.callout-tip .callout-title { color:#065F46; }
+.callout-tip p { color:#065F46; }
+
+/* Tables */
+.table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow-sm); }
+.table-wrap table { width:100%; border-collapse:collapse; font-size:14.5px; }
+.table-wrap th { background:var(--bg-dark); color:#fff; padding:13px 18px; text-align:left; font-weight:600; font-size:13px; }
+.table-wrap td { padding:13px 18px; border-bottom:1px solid var(--border-light); vertical-align:top; }
+.table-wrap tr:last-child td { border-bottom:none; }
+.table-wrap tr:hover td { background:#FDFCFA; }
+
+/* Code blocks */
+.code-block { background:var(--bg-code); border-radius:var(--radius); overflow:hidden; margin:28px 0; box-shadow:var(--shadow); }
+.code-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
+.code-lang { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.06em; }
+.code-copy { background:rgba(255,255,255,0.08); border:none; color:#9CA3AF; font-size:12px; font-weight:600; padding:4px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s; font-family:'Noto Sans TC',sans-serif; }
+.code-copy:hover { background:rgba(255,255,255,0.15); color:#fff; }
+.code-block pre { padding:20px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13.5px; line-height:1.75; color:#E2E8F0; }
+.kw { color:#C084FC; } .str { color:#86EFAC; } .cm { color:#6B7280; font-style:italic; } .num { color:#FB923C; }
+
+/* Model cards */
+.model-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:28px 0; }
+.model-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:24px 20px; box-shadow:var(--shadow-sm); transition:all 0.2s; }
+.model-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+.model-badge { display:inline-block; padding:4px 12px; border-radius:100px; font-size:12px; font-weight:700; margin-bottom:12px; }
+.badge-mini { background:var(--teal-soft); color:#065F46; }
+.badge-std { background:var(--blue-soft); color:#1E40AF; }
+.badge-max { background:var(--accent-soft); color:var(--accent); }
+.model-name { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:600; color:var(--bg-dark); margin-bottom:8px; }
+.model-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.model-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.tag { display:inline-block; padding:2px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.tag-green { background:#D1FAE5; color:#065F46; }
+.tag-blue { background:#DBEAFE; color:#1E40AF; }
+.tag-orange { background:#FED7AA; color:#9A3412; }
+.tag-red { background:#FEE2E2; color:#991B1B; }
+
+/* Reasoning effort bars */
+.effort-list { margin:20px 0; display:flex; flex-direction:column; gap:12px; }
+.effort-item { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px 20px; display:flex; align-items:center; gap:16px; }
+.effort-label { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--bg-dark); min-width:80px; }
+.effort-bar-wrap { flex:1; background:var(--bg-warm); border-radius:100px; height:8px; overflow:hidden; }
+.effort-bar { height:8px; border-radius:100px; background:var(--accent); transition:width 0.3s; }
+.effort-note { font-size:13px; color:var(--text-secondary); min-width:120px; text-align:right; }
+
+/* Ch nav */
+.ch-nav { display:flex; justify-content:space-between; align-items:stretch; gap:16px; padding-top:48px; border-top:1px solid var(--border); margin-top:72px; }
+.ch-nav-link { display:flex; flex-direction:column; gap:4px; text-decoration:none; padding:20px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); transition:all 0.2s; flex:1; max-width:48%; }
+.ch-nav-link:hover { border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-2px); }
+.ch-nav-link.next { text-align:right; margin-left:auto; }
+.ch-nav-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); }
+.ch-nav-title { font-weight:700; font-size:15px; color:var(--text); }
+
+/* Footer */
+.footer { text-align:center; padding:32px 24px; font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--border); max-width:var(--content-width); margin:0 auto; }
+
+/* Learn box */
+.learn-box { background:var(--bg-dark); border-radius:var(--radius); padding:32px 36px; margin-bottom:56px; }
+.learn-box-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--accent); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.learn-box-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+.learn-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.learn-list li { display:flex; align-items:flex-start; gap:12px; font-size:14.5px; color:#C9C9D4; line-height:1.6; }
+.learn-list li::before { content:''; width:20px; height:20px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:center; background-size:12px; }
+
+/* Review box */
+.review-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:32px 36px; margin:56px 0 0; box-shadow:var(--shadow); }
+.review-box-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--teal); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+.review-box-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.review-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.review-item { background:var(--bg-warm); border-radius:var(--radius-sm); padding:16px 18px; }
+.review-concept { font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; }
+.review-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+
+/* FAQ */
+.faq-block { margin:56px 0 0; }
+.faq-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--blue); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+.faq-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.faq-list { display:flex; flex-direction:column; gap:10px; }
+.faq-item { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; transition:border-color 0.2s; }
+.faq-item.open { border-color:var(--accent); }
+.faq-q { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; cursor:pointer; user-select:none; }
+.faq-q-text { font-size:15px; font-weight:600; color:var(--bg-dark); line-height:1.5; }
+.faq-icon { width:26px; height:26px; border-radius:50%; background:var(--bg-warm); border:1px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.25s; font-size:14px; color:var(--text-muted); }
+.faq-item.open .faq-icon { background:var(--accent); border-color:var(--accent); color:#fff; transform:rotate(45deg); }
+.faq-a { max-height:0; overflow:hidden; transition:max-height 0.35s ease, padding 0.25s ease; padding:0 22px; font-size:14.5px; color:var(--text-secondary); line-height:1.8; }
+.faq-item.open .faq-a { max-height:400px; padding:0 22px 20px; }
+.faq-a strong { color:var(--bg-dark); }
+
+/* Fade */
+.fade-in { opacity:0; transform:translateY(24px); transition:opacity 0.5s ease, transform 0.5s ease; }
+.fade-in.visible { opacity:1; transform:translateY(0); }
+
+@media (max-width:640px) {
+  .topnav-chapters { display:none; }
+  .ch-number { display:none; }
+  .model-grid { grid-template-columns:1fr; }
+  .ch-nav { flex-direction:column; }
+  .ch-nav-link { max-width:100%; }
+  .effort-item { flex-wrap:wrap; }
+  .effort-note { min-width:auto; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="topnav-brand" href="../../../index.html">← 返回首頁</a>
+    <div class="topnav-chapters">
+      <a class="topnav-ch active" href="chapter1.html">Ch.1 LLM 模型基礎</a>
+      <a class="topnav-ch" href="chapter2.html">Ch.2 Context Window</a>
+      <a class="topnav-ch" href="chapter3.html">Ch.3 操作策略</a>
+    </div>
+    <div class="topnav-progress">
+      <div class="topnav-dot current"></div>
+      <div class="topnav-dot"></div>
+      <div class="topnav-dot"></div>
+    </div>
+  </div>
+</nav>
+
+<header class="ch-hero">
+  <div class="ch-number">01</div>
+  <div class="ch-hero-inner">
+    <div class="ch-overline">Chapter 1 of 3</div>
+    <h1 class="ch-title">LLM 模型基礎</h1>
+    <p class="ch-desc">搞懂大型語言模型的本質、能力等級與 Reasoning 機制，為操作 Agent Tool 打下基礎。</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Learn box -->
+  <div class="learn-box fade-in">
+    <div class="learn-box-label">📖 你會學到什麼</div>
+    <ul class="learn-list">
+      <li>LLM 的本質是什麼，為什麼它能處理的不只是「接龍」</li>
+      <li>模型能力等級（小型 / 標準 / 旗艦）的實際差距，以及如何根據任務選擇</li>
+      <li>Reasoning 是什麼，以及它對任務品質的影響</li>
+      <li>Token 的概念與快速估算方式，為後續 Context 管理打基礎</li>
+    </ul>
+  </div>
+
+  <!-- Section 1: What is LLM -->
+  <section class="section fade-in" id="what-is-llm">
+    <h2>什麼是 LLM？</h2>
+    <div class="section-rule"></div>
+    <p>LLM（Large Language Model，大型語言模型）是一個經過海量文本訓練的語言模型。它的核心機制說起來其實很簡單——</p>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">生活比喻：超強文字接龍選手</div>
+      <p>你可以把 LLM 想成一個極度博學的<strong>文字接龍高手</strong>：你給它前文，它就接後文。它讀過的文字量，比任何一個人一輩子能讀完的都多出幾個數量級。</p>
+    </div>
+
+    <p>但 LLM 不只是接龍。在大規模訓練之後，它展現出了推理、程式碼生成、多語言理解等「訓練時沒有明確教過」的能力——這被稱為 <strong>湧現能力（Emergent Abilities）</strong>。這讓它從「文字預測器」升級為「通用任務執行器」。</p>
+
+    <h3>模型的能力等級</h3>
+    <p>不同的 LLM 有不同的能力等級。選擇哪個等級的模型，直接影響任務品質、速度和成本。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>維度</th>
+            <th>小型（Mini/Light）</th>
+            <th>標準（Standard）</th>
+            <th>旗艦（Max/Reasoning）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>推理深度</strong></td>
+            <td>淺層推理，適合直覺型任務</td>
+            <td>中等推理，能處理多步驟邏輯</td>
+            <td>深度推理，能處理複雜架構決策</td>
+          </tr>
+          <tr>
+            <td><strong>上下文理解</strong></td>
+            <td>有限，容易忽略遠處的資訊</td>
+            <td>良好，能整合中等長度的上下文</td>
+            <td>優秀，能在大量資訊中找到關聯</td>
+          </tr>
+          <tr>
+            <td><strong>速度</strong></td>
+            <td><span class="tag tag-green">快</span></td>
+            <td><span class="tag tag-blue">中等</span></td>
+            <td><span class="tag tag-orange">慢</span></td>
+          </tr>
+          <tr>
+            <td><strong>成本</strong></td>
+            <td><span class="tag tag-green">低</span></td>
+            <td><span class="tag tag-blue">中等</span></td>
+            <td><span class="tag tag-red">高</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>主流模型對應</h3>
+    <div class="model-grid">
+      <div class="model-card">
+        <span class="model-badge badge-mini">小型</span>
+        <div class="model-name">Haiku / GPT mini</div>
+        <div class="model-desc">速度快、成本低。適合簡單 CRUD、格式轉換、快速問答。</div>
+        <div class="model-tags">
+          <span class="tag tag-green">速度快</span>
+          <span class="tag tag-green">成本低</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="model-badge badge-std">標準</span>
+        <div class="model-name">Sonnet / GPT standard</div>
+        <div class="model-desc">日常開發主力。能處理中等複雜任務，兼顧速度與品質。</div>
+        <div class="model-tags">
+          <span class="tag tag-blue">均衡</span>
+          <span class="tag tag-blue">主力</span>
+        </div>
+      </div>
+      <div class="model-card">
+        <span class="model-badge badge-max">旗艦</span>
+        <div class="model-name">Opus / GPT max</div>
+        <div class="model-desc">複雜任務首選。架構設計、跨檔案重構、深度 debug 的最佳選擇。</div>
+        <div class="model-tags">
+          <span class="tag tag-orange">最強</span>
+          <span class="tag tag-red">最貴</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>常見迷思：不是越強越好。</strong> 永遠用旗艦模型是錯的——旗艦模型速度慢、成本可能是小型的 10–50 倍，而且太強的模型有時會「想太多」，對簡單任務產出冗餘結果。正確做法是<strong>根據任務複雜度匹配模型</strong>。</p>
+    </div>
+  </section>
+
+  <!-- Section 2: Reasoning -->
+  <section class="section fade-in" id="reasoning">
+    <h2>Reasoning：讓模型先想再答</h2>
+    <div class="section-rule"></div>
+    <p>一般的 LLM 回答是「直覺式」的：看到問題就直接產出答案。但 Reasoning 模式讓模型在回答之前，先進行一段<strong>內部的思考推理過程</strong>。</p>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">生活比喻：打草稿 vs. 直接交卷</div>
+      <p>沒有 Reasoning，就像學生看到數學題直接把答案寫上去。有 Reasoning，就像先在草稿紙上把解題步驟寫一遍，確認無誤再填答案。複雜題目的差異，是天壤之別。</p>
+    </div>
+
+    <h3>Reasoning 的實際影響</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>場景</th>
+            <th>無 Reasoning</th>
+            <th>有 Reasoning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>簡單 CRUD</td>
+            <td>兩者差異不大</td>
+            <td>略慢，但結果相同</td>
+          </tr>
+          <tr>
+            <td>多檔案重構</td>
+            <td>容易遺漏邊界情況</td>
+            <td>會主動考慮影響範圍</td>
+          </tr>
+          <tr>
+            <td>架構決策</td>
+            <td>給出「看起來對」的方案</td>
+            <td>會權衡多種方案的 trade-off</td>
+          </tr>
+          <tr>
+            <td>Debug 複雜問題</td>
+            <td>表面修復</td>
+            <td>追蹤根因</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Reasoning Effort 等級（以 Codex 為例）</h3>
+    <p>不同的 Agent Tool 提供不同程度的 Reasoning 控制。以下是 Codex 的 <code>model_reasoning_effort</code> 設定：</p>
+
+    <div class="effort-list">
+      <div class="effort-item">
+        <span class="effort-label">minimal</span>
+        <div class="effort-bar-wrap"><div class="effort-bar" style="width:10%"></div></div>
+        <span class="effort-note">幾乎不思考，最快</span>
+      </div>
+      <div class="effort-item">
+        <span class="effort-label">low</span>
+        <div class="effort-bar-wrap"><div class="effort-bar" style="width:25%"></div></div>
+        <span class="effort-note">輕度思考</span>
+      </div>
+      <div class="effort-item">
+        <span class="effort-label">medium</span>
+        <div class="effort-bar-wrap"><div class="effort-bar" style="width:50%"></div></div>
+        <span class="effort-note">中等思考（預設）</span>
+      </div>
+      <div class="effort-item">
+        <span class="effort-label">high</span>
+        <div class="effort-bar-wrap"><div class="effort-bar" style="width:75%"></div></div>
+        <span class="effort-note">深度思考</span>
+      </div>
+      <div class="effort-item">
+        <span class="effort-label">xhigh</span>
+        <div class="effort-bar-wrap"><div class="effort-bar" style="width:100%"></div></div>
+        <span class="effort-note">極深度，最慢最強</span>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>Reasoning 也消耗 Context。</strong> 思考過程產生的 thinking tokens 會佔用 Context 空間。Reasoning Effort 開太高，除了速度變慢之外，也會加速 Context 的消耗——這在長任務中是需要主動管理的風險。</p>
+    </div>
+  </section>
+
+  <!-- Section 3: Tokens -->
+  <section class="section fade-in" id="tokens">
+    <h2>Token：AI 的計量單位</h2>
+    <div class="section-rule"></div>
+    <p>Token 是 LLM 處理文字的最小單位。它不是字元，也不是單字，而是模型的 tokenizer 切分後的片段。</p>
+
+    <div class="callout callout-analogy">
+      <div class="callout-title">生活比喻：積木塊</div>
+      <p>把文字想像成一堆積木。Token 就是那些積木塊——有些字是一塊積木，有些詞是一塊，有些符號也是一塊。整個 Context Window 能裝多少積木，就是它的大小上限。</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Tokenization 範例</span>
+        <button class="code-copy" onclick="copyCode(this)">複製</button>
+      </div>
+      <pre><span class="cm"># 英文</span>
+<span class="str">"Hello world"</span>  →  [<span class="str">"Hello"</span>, <span class="str">" world"</span>]  = <span class="num">2</span> tokens
+
+<span class="cm"># 中文</span>
+<span class="str">"你好世界"</span>      →  [<span class="str">"你好"</span>, <span class="str">"世界"</span>]    = <span class="num">2</span> tokens
+
+<span class="cm"># 程式碼（切分更細）</span>
+<span class="str">"function getData() {"</span>  →  <span class="num">5</span> tokens</pre>
+    </div>
+
+    <h3>快速估算指南</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>內容類型</th><th>每 1,000 tokens 約等於</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>英文文本</td><td>750 個單字</td></tr>
+          <tr><td>中文文本</td><td>500–700 個字</td></tr>
+          <tr><td>程式碼</td><td>100–150 行</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">為什麼要理解 Token</div>
+      <p>Context Window 的單位就是 Token（Claude 4 系列 = 200K tokens）。API 計費的單位也是 Token。理解這個單位，才能有效估算「讀取這個檔案會消耗多少 Context」。一個 500 行的程式碼檔案大約 3,000–5,000 tokens。</p>
+    </div>
+  </section>
+
+  <!-- Review box -->
+  <div class="review-box fade-in">
+    <div class="review-box-label">✦ 本章複習</div>
+    <div class="review-grid">
+      <div class="review-item">
+        <div class="review-concept">LLM 本質</div>
+        <div class="review-desc">文字預測器 + 湧現能力 = 通用任務執行器。規模夠大，能力就會突破訓練邊界。</div>
+      </div>
+      <div class="review-item">
+        <div class="review-concept">模型選擇原則</div>
+        <div class="review-desc">任務複雜度決定模型等級。小型快、旗艦強，永遠用最強的是浪費。</div>
+      </div>
+      <div class="review-item">
+        <div class="review-concept">Reasoning 代價</div>
+        <div class="review-desc">Reasoning 提升品質，但消耗更多時間與 Context。複雜任務才值得開高。</div>
+      </div>
+      <div class="review-item">
+        <div class="review-concept">Token 估算</div>
+        <div class="review-desc">500 行程式碼 ≈ 3,000–5,000 tokens。每次 Agent 讀檔都在消耗 Context 空間。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-block fade-in">
+    <div class="faq-label">❓ 問答練習</div>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">LLM 的「湧現能力」是什麼意思？它和一般的訓練有何不同？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">湧現能力（Emergent Abilities）指的是模型在訓練過程中<strong>從未被明確教過</strong>、卻在規模足夠大之後自然出現的能力，例如推理、程式碼生成、跨語言理解。這不像傳統 ML 任務那樣是一對一的訓練目標，而是在大量語言學習後「意外」獲得的能力——規模到了，能力就突破訓練邊界。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">為什麼對簡單任務使用旗艦模型反而可能是壞事？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">有三個原因：<strong>速度慢</strong>（旗艦模型回應時間長，簡單任務用它是浪費時間）、<strong>成本高</strong>（API 場景下費用可能是小型模型的 10–50 倍）、<strong>過度思考</strong>（太強的模型會對簡單問題「想太多」，反而加入不必要的功能或邏輯，讓結果變複雜）。正確做法是依任務複雜度匹配模型。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">Reasoning Effort 設得越高越好嗎？什麼情況應該調低？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">不是。Reasoning Effort 越高，<strong>思考時間越長、消耗 Context 也越多</strong>。適合調高的場景是：架構決策、跨模組重構、複雜 Debug 等需要深度推理的任務。應該調低的場景是：格式轉換、簡單 CRUD、快速問答等直覺型任務。開太高的 Reasoning 不只慢，還會把寶貴的 Context 空間吃掉，影響後續任務。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">一個 500 行的 Python 檔案大約消耗多少 tokens？</span>
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-a">大約 <strong>3,000–5,000 tokens</strong>。程式碼的 tokenization 比純文字細——每 1,000 tokens 約等於 100–150 行程式碼。所以 Agent 讀取一個 500 行的檔案，可能就消耗掉 Claude 4 系列 200K 總 Context 的 1.5–2.5%。如果一個任務要讀 10 個類似的檔案，光讀檔就可能消耗掉 15–25% 的 Context。</div>
+      </div>
+
+    </div>
+  </div>
+
+  <nav class="ch-nav">
+    <div></div>
+    <a class="ch-nav-link next" href="chapter2.html">
+      <span class="ch-nav-label">下一章 →</span>
+      <span class="ch-nav-title">Ch.2 Context Window 深解</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="footer">Context Window 與 LLM 教學 · Agent Tool 操作基礎</footer>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => btn.textContent = '複製', 1500);
+  });
+}
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => {
+    const item = q.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+const fadeObserver = new IntersectionObserver(
+  (entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObserver.unobserve(e.target); } }); },
+  { threshold: 0.08 }
+);
+document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+</script>
+</body>
+</html>
