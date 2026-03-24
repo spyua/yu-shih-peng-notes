@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026年3月 AI 新知識週報</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1628;
+    --card: #141c2e;
+    --card-hover: #1a2440;
+    --border: #1e2d4a;
+    --accent1: #4f8ef7;
+    --accent2: #a855f7;
+    --accent3: #06b6d4;
+    --text: #e2e8f0;
+    --text-muted: #8892a4;
+    --text-dim: #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Noto Sans TC', 'Microsoft JhengHei', BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .site-header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 40%, #131b3a 100%);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .site-logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 20px rgba(79,142,247,0.4);
+    flex-shrink: 0;
+  }
+  .site-title { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+  .site-subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+  .header-meta { display: flex; align-items: center; gap: 16px; }
+  .live-badge {
+    background: linear-gradient(90deg, #ef4444, #f97316);
+    color: white; font-size: 0.7rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px; letter-spacing: 0.05em;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+  .header-date { font-size: 0.8rem; color: var(--text-muted); }
+
+  .hero {
+    background: linear-gradient(160deg, #0d1535 0%, #0f1a3a 50%, #0a1228 100%);
+    padding: 60px 24px; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,142,247,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.15em; color: var(--accent1); text-transform: uppercase; margin-bottom: 16px; }
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, #a8c8ff 50%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 16px; line-height: 1.2;
+  }
+  .hero-desc { font-size: 1rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 32px; }
+  .hero-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, var(--accent1), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .stat-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .section-icon { font-size: 1.4rem; }
+  .section-title { font-size: 1.2rem; font-weight: 700; }
+  .section-count { font-size: 0.75rem; color: var(--text-muted); background: var(--card); border: 1px solid var(--border); padding: 2px 10px; border-radius: 20px; }
+
+  .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; margin-bottom: 48px; }
+  .news-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+  }
+  .news-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); background: var(--card-hover); border-color: rgba(79,142,247,0.3); }
+  .card-accent-bar { height: 3px; width: 100%; }
+  .card-body { padding: 22px; }
+  .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tag { font-size: 0.68rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.04em; border: 1px solid currentColor; }
+  .tag-anthropic { color: #f97316; border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.08); }
+  .tag-openai { color: #10b981; border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
+  .tag-google { color: #4f8ef7; border-color: rgba(79,142,247,0.3); background: rgba(79,142,247,0.08); }
+  .tag-agent { color: #a855f7; border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.08); }
+  .tag-nvidia { color: #76ca66; border-color: rgba(118,202,102,0.3); background: rgba(118,202,102,0.08); }
+  .tag-policy { color: #f59e0b; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
+  .tag-health { color: #06b6d4; border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.08); }
+  .tag-asia { color: #ec4899; border-color: rgba(236,72,153,0.3); background: rgba(236,72,153,0.08); }
+  .tag-breaking { color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1); animation: pulse 2s infinite; }
+  .card-date { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; }
+  .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; line-height: 1.4; letter-spacing: -0.01em; color: #f0f4ff; }
+  .card-summary { font-size: 0.85rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 16px; }
+  .card-details { list-style: none; margin-bottom: 16px; }
+  .card-details li { font-size: 0.82rem; color: var(--text-muted); padding: 4px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .card-details li::before { content: '▸'; color: var(--accent1); flex-shrink: 0; font-size: 0.75rem; margin-top: 2px; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+  .source-link { font-size: 0.73rem; color: var(--accent1); text-decoration: none; display: flex; align-items: center; gap: 4px; transition: color 0.15s; }
+  .source-link:hover { color: #7eb3ff; }
+  .impact-badge { font-size: 0.68rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .impact-high { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+  .impact-med { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+
+  .featured-card { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 700px) { .featured-card { grid-template-columns: 1fr; } }
+  .featured-left {
+    background: linear-gradient(135deg, rgba(79,142,247,0.12) 0%, rgba(168,85,247,0.08) 100%);
+    padding: 32px; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .featured-label { font-size: 0.7rem; font-weight: 700; color: var(--accent1); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  .featured-title { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 12px; }
+  .featured-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+  .featured-right { padding: 28px; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+  .featured-stat { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .featured-stat-num { font-size: 1.4rem; font-weight: 800; }
+  .featured-stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+  .quick-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px; margin-bottom: 48px; padding: 24px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .qs-item { text-align: center; padding: 8px 0; }
+  .qs-val { font-size: 1.6rem; font-weight: 800; display: block; }
+  .qs-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+
+  .section-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 48px 0; }
+
+  .timeline { margin-bottom: 48px; }
+  .timeline-item { display: flex; gap: 20px; padding: 20px 0; border-bottom: 1px solid rgba(30,45,74,0.6); }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 8px currentColor; }
+  .timeline-date { font-size: 0.78rem; color: var(--text-muted); min-width: 90px; flex-shrink: 0; margin-top: 1px; }
+  .timeline-content { flex: 1; }
+  .timeline-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+  .timeline-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+
+  footer { background: var(--bg2); border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; color: var(--text-muted); font-size: 0.8rem; line-height: 1.8; }
+  footer strong { color: var(--text); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 40px 16px; }
+    .container { padding: 28px 16px; }
+    .news-grid { grid-template-columns: 1fr; }
+    .hero-stats { gap: 20px; }
+    .site-title { font-size: 1rem; }
+    .featured-left { padding: 22px; border-right: none; border-bottom: 1px solid var(--border); }
+    .featured-title { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="site-logo">
+      <div class="logo-icon">🤖</div>
+      <div>
+        <div class="site-title">AI 新知識週報</div>
+        <div class="site-subtitle">2026年3月 · 深度報導</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="live-badge">● LIVE</span>
+      <span class="header-date">2026年3月24日</span>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-eyebrow">人工智慧最前線</div>
+  <h1>2026年3月 AI 新知識週報</h1>
+  <p class="hero-desc">涵蓋本月最重要的 AI 突破、模型發布、政策法規及產業動態，為您呈現完整的全球 AI 生態圖像。</p>
+  <div class="hero-stats">
+    <div class="stat-item"><div class="stat-num">8</div><div class="stat-label">主要報導主題</div></div>
+    <div class="stat-item"><div class="stat-num">$1T</div><div class="stat-label">NVIDIA 晶片需求預測</div></div>
+    <div class="stat-item"><div class="stat-num">GPT-5.4</div><div class="stat-label">OpenAI 最新旗艦模型</div></div>
+    <div class="stat-item"><div class="stat-num">Aug 2026</div><div class="stat-label">EU AI Act 全面生效</div></div>
+  </div>
+</section>
+
+<div class="container">
+
+  <div class="quick-stats">
+    <div class="qs-item">
+      <span class="qs-val" style="background:linear-gradient(135deg,#4f8ef7,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">14.5h</span>
+      <div class="qs-label">Claude Opus 4.6 任務完成時程</div>
+    </div>
+    <div class="qs-item">
+      <span class="qs-val" style="background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">1M</span>
+      <div class="qs-label">GPT-5.4 Context Window</div>
+    </div>
+    <div class="qs-item">
+      <span class="qs-val" style="background:linear-gradient(135deg,#76ca66,#4f8ef7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">10x</span>
+      <div class="qs-label">Vera Rubin 推理成本降幅</div>
+    </div>
+    <div class="qs-item">
+      <span class="qs-val" style="background:linear-gradient(135deg,#ec4899,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">60%</span>
+      <div class="qs-label">台灣全球晶圓代工市佔</div>
+    </div>
+    <div class="qs-item">
+      <span class="qs-val" style="background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent">€35M</span>
+      <div class="qs-label">EU AI Act 最高罰款額</div>
+    </div>
+  </div>
+
+  <!-- Anthropic -->
+  <div class="section-header">
+    <span class="section-icon">🔮</span>
+    <span class="section-title">Anthropic · Claude 系列</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card featured-card" style="border-color:rgba(249,115,22,0.25)">
+      <div class="featured-left">
+        <div class="featured-label">🔴 今日重磅 · 2026年3月24日</div>
+        <div class="featured-title" style="background:linear-gradient(135deg,#fff,#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Claude 正式登上 macOS — 自主電腦操控能力開放預覽</div>
+        <p class="featured-desc" style="margin-bottom:16px">Anthropic 今日宣布 Claude 的電腦使用功能（Computer Use）正式在 macOS 上推出研究預覽版。Claude 能夠開啟應用程式、操控瀏覽器、填寫試算表，並在幾乎不需要人工介入的情況下完成複雜任務。</p>
+        <p class="featured-desc">配合全新行動工具 <strong style="color:#ffb347">Dispatch</strong>，使用者可直接從手機指派任務給 Claude，Claude 在後台自動完成。目前開放給 Claude Pro 及 Max 訂閱用戶，在存取新應用程式前須先取得使用者授權。</p>
+      </div>
+      <div class="featured-right">
+        <div class="featured-stat" style="border-color:rgba(249,115,22,0.2)">
+          <div class="featured-stat-num" style="background:linear-gradient(135deg,#f97316,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Pro / Max</div>
+          <div class="featured-stat-label">開放對象：Claude Pro 及 Max 訂閱者</div>
+        </div>
+        <div class="featured-stat">
+          <div class="featured-stat-num" style="background:linear-gradient(135deg,#4f8ef7,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Dispatch</div>
+          <div class="featured-stat-label">新工具：手機端任務指派 App</div>
+        </div>
+        <div class="featured-stat">
+          <div class="featured-stat-num" style="background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">macOS</div>
+          <div class="featured-stat-label">首先支援 Apple 桌面系統</div>
+        </div>
+        <div style="padding-top:4px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="tag tag-anthropic">Anthropic</span>
+            <span class="tag tag-breaking">Breaking</span>
+            <span class="impact-badge impact-high">高度影響</span>
+          </div>
+          <a href="https://www.cnbc.com/2026/03/24/anthropic-claude-ai-agent-use-computer-finish-tasks.html" target="_blank" class="source-link" style="margin-top:12px;display:inline-flex">↗ CNBC 報導</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#f97316,#fbbf24)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-anthropic">Anthropic</span><span class="card-date">2026年2月5日</span></div>
+        <div class="card-title">Claude Opus 4.6 發布：代理團隊協作、14.5 小時任務時程</div>
+        <p class="card-summary">Anthropic 發布旗艦模型 Claude Opus 4.6，在 Terminal-Bench 2.0 及 Humanity's Last Exam 取得最高評分，首次支援代理團隊協作（Agent Team Coordination）。</p>
+        <ul class="card-details">
+          <li>METR 獨立評測：任務完成時間視界長達 14.5 小時</li>
+          <li>100 萬 token 超長上下文窗口（Beta 版）</li>
+          <li>支援多個 Claude 代理並行協作完成複雜工作流</li>
+          <li>2月17日：Sonnet 4.6 成為 claude.ai 預設免費模型</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://techcrunch.com/2026/02/05/anthropic-releases-opus-4-6-with-new-agent-teams/" target="_blank" class="source-link">↗ TechCrunch</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OpenAI -->
+  <div class="section-header">
+    <span class="section-icon">⚡</span>
+    <span class="section-title">OpenAI · GPT-5 系列</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#10b981,#06b6d4)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-openai">OpenAI</span><span class="card-date">2026年3月5日</span></div>
+        <div class="card-title">GPT-5.4 正式上線：1M Context、強化推理與代理能力</div>
+        <p class="card-summary">OpenAI 發布目前最強旗艦模型 GPT-5.4，整合推理、程式碼撰寫及自主代理工作流，採用 GPT-5.3-Codex 的程式碼能力。</p>
+        <ul class="card-details">
+          <li>100 萬 token 上下文窗口——OpenAI 歷史最大</li>
+          <li>個別聲明準確率提升 33%、整體回應錯誤率降低 18%</li>
+          <li>GPT-5.4 mini 開放 Free 及 Go 用戶使用 Thinking 功能</li>
+          <li>3月11日：GPT-5.1 Instant、Thinking 及 Pro 正式退役</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://techcrunch.com/2026/03/05/openai-launches-gpt-5-4-with-pro-and-thinking-versions/" target="_blank" class="source-link">↗ TechCrunch</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#10b981,#a855f7)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-openai">OpenAI</span><span class="card-date">2026年3月</span></div>
+        <div class="card-title">GPT-5 系列演進：Agentic 工作流成為核心設計</div>
+        <p class="card-summary">GPT-5 世代完成從語言模型到「自主代理執行引擎」的轉型，多模型協作成為 OpenAI 平台核心。</p>
+        <ul class="card-details">
+          <li>o3-pro 強化多步驟科學與數學推理能力</li>
+          <li>Operator（自主瀏覽器代理）擴展至更多企業用戶</li>
+          <li>ChatGPT Enterprise 新增多代理工作流管理介面</li>
+          <li>GPT-5 系列在 SWE-bench 程式碼修復基準持續領先</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://openai.com" target="_blank" class="source-link">↗ OpenAI 官網</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google -->
+  <div class="section-header">
+    <span class="section-icon">🌐</span>
+    <span class="section-title">Google · Gemini 系列</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#4f8ef7,#a855f7)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-google">Google</span><span class="card-date">2026年1月—3月</span></div>
+        <div class="card-title">Google 推進至 Gemini 3.1 世代，超越 2.5 Pro 系列</div>
+        <p class="card-summary">Gemini 2.5 Pro 在 2026 年初正式 GA 後，Google 迅速推出下一世代，Gemini 3.1 Pro 及 Flash Lite 相繼亮相。</p>
+        <ul class="card-details">
+          <li>Gemini 2.5 Pro GA：LMArena Elo 達 1470（+24 分）、WebDevArena 達 1443</li>
+          <li>2月19日：Gemini 3.1 Pro 正式取代 2.5 系列</li>
+          <li>3月3日：Gemini 3.1 Flash Lite 開放開發者 API 使用</li>
+          <li>在 Aider Polyglot、GPQA 及 Humanity's Last Exam 保持頂尖排名</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://blog.google/products-and-platforms/products/gemini/" target="_blank" class="source-link">↗ Google Blog</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#4f8ef7,#10b981)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-google">Google DeepMind</span><span class="card-date">2026年Q1</span></div>
+        <div class="card-title">DeepMind 科學突破：蛋白質設計、氣候建模持續領先</div>
+        <p class="card-summary">Google DeepMind 在科學 AI 領域持續推進，AlphaFold 衍生技術應用於藥物設計，進入臨床試驗階段。</p>
+        <ul class="card-details">
+          <li>AlphaFold 衍生平台：多個 AI 藥物候選物進入臨床試驗</li>
+          <li>Gemini 多模態能力用於衛星影像及醫學影像分析</li>
+          <li>NotebookLM 升級：整合 Gemini 3.1 提升研究摘要品質</li>
+          <li>Google Cloud AI 持續擴大亞太市場企業布局</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://deepmind.google" target="_blank" class="source-link">↗ DeepMind 官網</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- AI Agents -->
+  <div class="section-header">
+    <span class="section-icon">🤖</span>
+    <span class="section-title">AI 代理框架爆炸性成長</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#a855f7,#ec4899)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-agent">AI Coding Agents</span><span class="card-date">2026年2月</span></div>
+        <div class="card-title">多代理編程工具全面開花：Cursor 2.0、Windsurf Wave 13、Devin 2.0</div>
+        <p class="card-summary">2026年2月，主要 AI 編程工具在同一個兩週內全數推出多代理能力，「輔助編程」正式進化為「自主開發」。</p>
+        <ul class="card-details">
+          <li><strong>Cursor 2.0</strong>：最多 8 個並行代理、Composer 速度為競品 4 倍、Plan Mode</li>
+          <li><strong>Windsurf Wave 13</strong>：Arena Mode 盲測、Plan Mode，多項評比排名第一</li>
+          <li><strong>Devin 2.0</strong>：Interactive Planning、Devin Wiki；月費從 $500 大砍至 $20（降幅 96%）</li>
+          <li><strong>GitHub Copilot</strong> 同期推出多代理工作流，全行業完成轉型</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://blog.logrocket.com/ai-dev-tool-power-rankings/" target="_blank" class="source-link">↗ LogRocket 分析</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#f97316,#a855f7)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-agent">Claude Code</span><span class="card-date">2026年3月</span></div>
+        <div class="card-title">Claude Code：Sonnet 4.6 驅動、1M Token、定價不變</div>
+        <p class="card-summary">Anthropic 的終端機原生 AI 編程工具 Claude Code 持續獲大量開發者採用，在 agentic 開發流程中保持技術領先。</p>
+        <ul class="card-details">
+          <li>以 Claude Sonnet 4.6 驅動，支援 100 萬 token 上下文</li>
+          <li>定價不變：$3/$15 每百萬 tokens（輸入/輸出）</li>
+          <li>GitHub Actions、CI/CD 管線整合，全自動 PR 工作流</li>
+          <li>多步驟重構、測試撰寫及文件生成能力持續強化</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://www.anthropic.com/claude-code" target="_blank" class="source-link">↗ Anthropic</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NVIDIA -->
+  <div class="section-header">
+    <span class="section-icon">🚀</span>
+    <span class="section-title">NVIDIA GTC 2026</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#76ca66,#4f8ef7)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-nvidia">NVIDIA</span><span class="card-date">2026年3月中旬</span></div>
+        <div class="card-title">GTC 2026：Vera Rubin 平台登場，一兆美元晶片需求預期</div>
+        <p class="card-summary">黃仁勳在 GTC 2026 主題演講中發布 Vera Rubin AI 運算平台，宣告 AI 基礎設施進入下一世代，預估聯合採購訂單突破一兆美元。</p>
+        <ul class="card-details">
+          <li>Vera Rubin 推理 token 成本降低 10 倍、MoE 訓練所需 GPU 減少 4 倍</li>
+          <li>包含 6 款新晶片及 NVIDIA Vera CPU；新一代 NVLink 互聯</li>
+          <li>Rubin Ultra（2027年）：~5000 億顆電晶體、384GB HBM4E、32 TB/s</li>
+          <li>Kyber 機架：144 顆 GPU 垂直排列，提升密度降低延遲</li>
+          <li>Blackwell + Vera Rubin 聯合訂單預估達 1 兆美元（至 2027年）</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://www.cnbc.com/2026/03/16/nvidia-gtc-2026-ceo-jensen-huang-keynote-blackwell-vera-rubin.html" target="_blank" class="source-link">↗ CNBC 報導</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#76ca66,#a855f7)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-nvidia">NVIDIA</span><span class="card-date">2026年Q3 預期</span></div>
+        <div class="card-title">NVIDIA 收購 Groq 後推出首款 LPU：語言處理器革新推理市場</div>
+        <p class="card-summary">繼 2025年12月 NVIDIA 以約 200 億美元收購 Groq 後，首款整合 Groq 技術的語言處理單元（LPU）預計 2026年Q3 出貨。</p>
+        <ul class="card-details">
+          <li>LPU 架構專為語言模型推理最佳化，速度大幅超越傳統 GPU</li>
+          <li>預期整合至 DGX 及 Cloud 產品線，顛覆 AI 推理市場格局</li>
+          <li>目標讓 AI 推理延遲降至毫秒級，支援即時互動式 AI 應用</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://blogs.nvidia.com/blog/gtc-2026-news/" target="_blank" class="source-link">↗ NVIDIA Blog</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- Regulation -->
+  <div class="section-header">
+    <span class="section-icon">⚖️</span>
+    <span class="section-title">AI 法規政策動態</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#f59e0b,#ef4444)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-policy">歐盟 EU AI Act</span><span class="card-date">生效：2026年8月2日</span></div>
+        <div class="card-title">EU AI Act 倒數：距全面執法僅剩 4 個多月</div>
+        <p class="card-summary">歐盟 AI 法案將於 2026年8月2日全面生效執法，企業須完成高風險 AI 系統的合規準備，否則面臨嚴峻罰則。</p>
+        <ul class="card-details">
+          <li>最高罰款：€3500 萬（或全球年營收的 7%，取較高者）</li>
+          <li>合規要求：資料品質控管、透明度義務、人工監督、反歧視監測</li>
+          <li>歐洲委員會曾提議將高風險義務延後至 2027 年，仍待議會核准</li>
+          <li>全球企業紛紛成立 EU AI Act 合規工作小組因應</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://www.gunder.com/en/news-insights/insights/2026-ai-laws-update-key-regulations-and-practical-guidance" target="_blank" class="source-link">↗ Gunderson Dettmer</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#ef4444,#f59e0b)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-policy">美國 AI 政策</span><span class="card-date">2025年12月—2026年</span></div>
+        <div class="card-title">川普政府 AI 行政命令：聯邦統一監管、挑戰各州立法</div>
+        <p class="card-summary">2025年12月11日，川普總統簽署行政命令強化聯邦層級 AI 統一監管框架，挑戰各州自行立法的合憲性。</p>
+        <ul class="card-details">
+          <li>行政命令：「確保人工智慧國家政策框架」</li>
+          <li>目標將 AI 監管權集中至聯邦機構，避免各州法規碎片化</li>
+          <li>美國目前仍無單一聯邦 AI 法律，依現行法律由各機構執法</li>
+          <li>業界預估聯邦 AI 立法最快 2026年底至 2027年初通過</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://www.paulhastings.com/insights/client-alerts/president-trump-signs-executive-order-challenging-state-ai-laws" target="_blank" class="source-link">↗ Paul Hastings</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Healthcare -->
+  <div class="section-header">
+    <span class="section-icon">🏥</span>
+    <span class="section-title">AI 醫療、科學與程式突破</span>
+    <span class="section-count">2 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#06b6d4,#10b981)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-health">AI 醫療</span><span class="card-date">2026年Q1</span></div>
+        <div class="card-title">AI 醫療突破：失智診斷、生物年齡預測、邊緣 AI 穿戴</div>
+        <p class="card-summary">2026年初，多項 AI 醫療突破從研究轉化為臨床應用，AI 在診斷準確率、臨床效率及個人化醫療上持續創新。</p>
+        <ul class="card-details">
+          <li><strong>Mayo Clinic StateViewer</strong>：從單次腦部掃描辨識 9 種失智症類型</li>
+          <li>新 AI 模型可從胸部 X 光預測「生物年齡」，早期偵測心血管風險</li>
+          <li>新加坡 SingHealth <strong>Note Buddy</strong>：GenAI 同步以 4 種語言轉錄病患就診記錄</li>
+          <li>AI 藥物候選物已進入腫瘤學及罕見疾病中後期臨床試驗</li>
+          <li>邊緣 AI 穿戴：心律不整、敗血症早期偵測、閉迴路胰島素泵</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://www.massgeneralbrigham.org/en/about/newsroom/articles/2026-predictions-on-scientific-advancements" target="_blank" class="source-link">↗ Mass General Brigham</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#10b981,#a855f7)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-health">AI 科學</span><span class="card-date">2026年Q1</span></div>
+        <div class="card-title">空間生物學、氣候 AI、程式碼合成達新里程碑</div>
+        <p class="card-summary">AI 在基礎科學、氣候建模及自動化程式碼合成領域同步達到重要突破，「AI 加速科學發現」新紀元正式開啟。</p>
+        <ul class="card-details">
+          <li>次世代空間生物學 + AI，以前所未有解析度繪製人體組織細胞圖譜</li>
+          <li>AI 氣候模型預測極端天氣準確率較傳統數值模型提升 40%</li>
+          <li>SWE-bench Verified：頂尖 AI coding agent 自動修復缺陷成功率突破 70%</li>
+          <li>AI 材料科學：新型電池材料及超導體計算發現速度大幅加速</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://vertu.com/guides/ai-medical-breakthroughs-2026/" target="_blank" class="source-link">↗ VERTU AI Breakthroughs</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- Taiwan/Asia -->
+  <div class="section-header">
+    <span class="section-icon">🌏</span>
+    <span class="section-title">台灣 ✦ 亞洲 AI 產業動態</span>
+    <span class="section-count">3 則報導</span>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#ec4899,#f59e0b)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-asia">台灣 TSMC</span><span class="card-date">2026年3月</span></div>
+        <div class="card-title">台積電宣布台南新廠，AI 晶片 CAGR 預估達 50%+</div>
+        <p class="card-summary">台積電持續作為全球 AI 晶片生產核心樞紐，2026年資本支出達 520—560 億美元，並在台南科學園區新建先進製程廠。</p>
+        <ul class="card-details">
+          <li>台灣佔全球晶圓代工收入 60%+、先進製程超過 90%</li>
+          <li>3月5日：台積電宣布台南科學園區新廠，預計 2028 年完工</li>
+          <li>AI 晶片營收 CAGR：2029 年前維持 50% 中高段成長</li>
+          <li>NVIDIA 鎖定台積電 CoWoS 先進封裝超過 50% 產能至 2027 年</li>
+          <li>Google 因 CoWoS 緊缺，2026 年 TPU 目標從 400 萬顆降至 300 萬顆</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://www.fool.com/investing/2026/03/21/3-reasons-why-taiwan-semiconductor-is-the-ultimate/" target="_blank" class="source-link">↗ Motley Fool</a>
+          <span class="impact-badge impact-high">高度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#4f8ef7,#ec4899)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-asia">韓國・日本</span><span class="card-date">2026年Q1</span></div>
+        <div class="card-title">韓國 AI 基本法生效、日本 AI 預算翻近四倍</div>
+        <p class="card-summary">東北亞兩大科技強國大幅加碼 AI 國家戰略投入，積極角逐全球 AI 強權地位。</p>
+        <ul class="card-details">
+          <li><strong>韓國</strong>：《AI 發展框架法》2026年1月生效；「AI for All」目標前三大 AI 強國</li>
+          <li>韓國在半導體及顯示器 AI 品質檢測全球領先</li>
+          <li><strong>日本</strong>：METI 晶片及 AI 預算達 1.23 兆日圓（約 79 億美元），近前年四倍</li>
+          <li>Toyota、FANUC 大力導入製造 AI 及機器人智慧生產</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://eastasiaforum.org/2026/01/17/south-koreas-ai-revolution-is-forcing-a-us-china-balancing-act/" target="_blank" class="source-link">↗ East Asia Forum</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+    <div class="news-card">
+      <div class="card-accent-bar" style="background:linear-gradient(90deg,#ef4444,#f97316)"></div>
+      <div class="card-body">
+        <div class="card-meta"><span class="tag tag-asia">中國・東南亞</span><span class="card-date">2026年Q1</span></div>
+        <div class="card-title">中國年度 AI 投資 1250 億美元，東南亞 AI 合作加速</div>
+        <p class="card-summary">中國持續以每年 1250 億美元投入 AI，東南亞各國透過 ASEAN 數位合作框架加速 AI 基礎設施建設。</p>
+        <ul class="card-details">
+          <li>百度、阿里巴巴、騰訊持續發展自主基礎模型並大力推動開源</li>
+          <li>亞太地區 AI 資本支出約佔全球 30%（台灣+韓國為大宗）</li>
+          <li>2026 年 ASEAN 數位部長會議：跨國 AI 合作與資料治理框架</li>
+          <li>越南、印尼、泰國積極吸引 AI 資料中心投資</li>
+        </ul>
+        <div class="card-footer">
+          <a href="https://asianinsiders.com/2026/02/03/2026-asia-ai-opportunities/" target="_blank" class="source-link">↗ Asian Insiders</a>
+          <span class="impact-badge impact-med">中度影響</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="section-divider"></div>
+  <div class="section-header">
+    <span class="section-icon">📅</span>
+    <span class="section-title">2026年3月 重要時間軸</span>
+  </div>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#ef4444;color:#ef4444"></div>
+      <div class="timeline-date">3月24日</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Claude macOS 電腦操控預覽版 + Dispatch 行動工具上線</div>
+        <div class="timeline-desc">Anthropic 今日發布 Claude 自主電腦使用功能，標誌 AI 代理從「對話」進入「行動」的關鍵里程碑。</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#76ca66;color:#76ca66"></div>
+      <div class="timeline-date">3月中旬</div>
+      <div class="timeline-content">
+        <div class="timeline-title">NVIDIA GTC 2026：Vera Rubin 平台、一兆美元需求預測</div>
+        <div class="timeline-desc">黃仁勳 GTC 主題演講，Vera Rubin 平台正式亮相，NVIDIA 股價再創歷史新高。</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#10b981;color:#10b981"></div>
+      <div class="timeline-date">3月5日</div>
+      <div class="timeline-content">
+        <div class="timeline-title">OpenAI GPT-5.4 正式發布 + 台積電宣布台南新廠</div>
+        <div class="timeline-desc">目前最強旗艦模型上線，1M token 上下文；台積電同日宣布新一座先進製程廠房投資計畫。</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#06b6d4;color:#06b6d4"></div>
+      <div class="timeline-date">3月3日</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Google Gemini 3.1 Flash Lite 開放 API</div>
+        <div class="timeline-desc">Google 持續推進 Gemini 3.1 世代，Flash Lite 正式開放開發者調用。</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#f59e0b;color:#f59e0b"></div>
+      <div class="timeline-date">2月（回顧）</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Cursor 2.0 / Windsurf Wave 13 / Devin 2.0 同期發布</div>
+        <div class="timeline-desc">兩週內所有主流 AI 編程工具全數升級多代理能力，行業完成集體轉型。</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#f97316;color:#f97316"></div>
+      <div class="timeline-date">2月5日（回顧）</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Claude Opus 4.6：14.5 小時任務時程、代理團隊協作</div>
+        <div class="timeline-desc">Anthropic 旗艦模型大幅強化 agentic 能力，多項頂尖基準測試取得最高分。</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#a855f7;color:#a855f7"></div>
+      <div class="timeline-date">前瞻：2026年8月2日</div>
+      <div class="timeline-content">
+        <div class="timeline-title">EU AI Act 全面生效執法</div>
+        <div class="timeline-desc">歐盟 AI 法案高風險條款正式執法，企業合規倒數計時，最高罰款 €3500 萬。</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p><strong>2026年3月 AI 新知識週報</strong></p>
+  <p>資料來源：TechCrunch · CNBC · Fortune · NVIDIA Blog · Google Blog · Anthropic · Paul Hastings · East Asia Forum · Motley Fool</p>
+  <p style="margin-top:8px;color:var(--text-dim)">本頁面資訊截至 2026年3月24日。所有外部連結僅供參考，不代表本站立場。</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.news-card, .timeline-item, .section-header, .quick-stats').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+
+  window.addEventListener('scroll', () => {
+    document.querySelector('.site-header').style.borderBottomColor =
+      window.scrollY > 10 ? 'rgba(79,142,247,0.2)' : 'var(--border)';
+  });
+</script>
+</body>
+</html>
