@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026年3月 AI 新知週報（第四週）| YU-SHIH-PENG 筆記區</title>
+<style>
+  /* ==================== Variables ==================== */
+  :root {
+    --primary-color: #4f8ef7;
+    --secondary-color: #a855f7;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --bg-dark: #0a0e1a;
+    --bg-deeper: #0f1628;
+    --bg-card: #141c2e;
+    --bg-hover: #1a2440;
+    --border-color: #1e2d4a;
+    --text-primary: #e2e8f0;
+    --text-secondary: #8892a4;
+    --text-muted: #4a5568;
+    --tag-model-bg: rgba(79,142,247,0.15);
+    --tag-model-fg: #4f8ef7;
+    --tag-tool-bg: rgba(168,85,247,0.15);
+    --tag-tool-fg: #a855f7;
+    --tag-research-bg: rgba(6,182,212,0.15);
+    --tag-research-fg: #06b6d4;
+    --tag-policy-bg: rgba(245,158,11,0.15);
+    --tag-policy-fg: #f59e0b;
+    --tag-asia-bg: rgba(16,185,129,0.15);
+    --tag-asia-fg: #10b981;
+  }
+
+  /* ==================== Reset ==================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Noto Sans TC', 'Microsoft JhengHei', BlinkMacSystemFont, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  /* ==================== Site Header ==================== */
+  .site-header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 40%, #131b3a 100%);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px rgba(79,142,247,0.35);
+    flex-shrink: 0;
+  }
+  .logo-text { display: flex; flex-direction: column; }
+  .logo-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+  .logo-sub { font-size: 0.72rem; color: var(--text-secondary); }
+  .header-nav { display: flex; gap: 8px; }
+  .nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--primary-color); border-color: var(--primary-color); }
+
+  /* ==================== Hero ==================== */
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 50%, #0f1a3a 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 56px 24px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(79,142,247,0.10) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(168,85,247,0.06) 0%, transparent 60%);
+  }
+  .hero-content { position: relative; max-width: 720px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+  }
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .hero h1 {
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 55%, var(--secondary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 14px;
+    letter-spacing: -0.5px;
+    line-height: 1.25;
+  }
+  .hero-meta {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+  }
+  .hero-meta span { color: var(--accent-cyan); }
+  .hero-stats {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat-num { font-size: 1.5rem; font-weight: 800; color: var(--primary-color); }
+  .stat-label { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 22px;
+    border-radius: 24px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(79,142,247,0.35);
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(79,142,247,0.5); }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 10px 22px;
+    border-radius: 24px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: var(--primary-color); color: var(--primary-color); }
+
+  /* ==================== Main ==================== */
+  .main { max-width: 1100px; margin: 0 auto; padding: 36px 24px 60px; }
+
+  /* ==================== NotebookLM CTA ==================== */
+  .notebooklm-cta {
+    background: linear-gradient(135deg, rgba(79,142,247,0.08) 0%, rgba(168,85,247,0.08) 100%);
+    border: 1px solid rgba(79,142,247,0.25);
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 44px;
+    flex-wrap: wrap;
+  }
+  .cta-icon { font-size: 2.4rem; flex-shrink: 0; }
+  .cta-content { flex: 1; min-width: 200px; }
+  .cta-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .cta-desc { font-size: 0.85rem; color: var(--text-secondary); }
+
+  /* ==================== Section ==================== */
+  .section { margin-bottom: 44px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .section-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .section-icon.model { background: var(--tag-model-bg); }
+  .section-icon.tool { background: var(--tag-tool-bg); }
+  .section-icon.research { background: var(--tag-research-bg); }
+  .section-icon.policy { background: var(--tag-policy-bg); }
+  .section-icon.asia { background: var(--tag-asia-bg); }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+  .section-count {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+
+  /* ==================== News Grid ==================== */
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  /* ==================== News Card ==================== */
+  .news-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 22px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .news-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .news-card.model::before { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); }
+  .news-card.tool::before { background: linear-gradient(90deg, var(--secondary-color), #ec4899); }
+  .news-card.research::before { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); }
+  .news-card.policy::before { background: linear-gradient(90deg, var(--accent-amber), #ef4444); }
+  .news-card.asia::before { background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); }
+  .news-card:hover {
+    background: var(--bg-hover);
+    border-color: rgba(79,142,247,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .news-card:hover::before { opacity: 1; }
+
+  /* Card header */
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .model .card-num { background: var(--tag-model-bg); color: var(--tag-model-fg); }
+  .tool .card-num { background: var(--tag-tool-bg); color: var(--tag-tool-fg); }
+  .research .card-num { background: var(--tag-research-bg); color: var(--tag-research-fg); }
+  .policy .card-num { background: var(--tag-policy-bg); color: var(--tag-policy-fg); }
+  .asia .card-num { background: var(--tag-asia-bg); color: var(--tag-asia-fg); }
+
+  .card-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .model .card-tag { background: var(--tag-model-bg); color: var(--tag-model-fg); }
+  .tool .card-tag { background: var(--tag-tool-bg); color: var(--tag-tool-fg); }
+  .research .card-tag { background: var(--tag-research-bg); color: var(--tag-research-fg); }
+  .policy .card-tag { background: var(--tag-policy-bg); color: var(--tag-policy-fg); }
+  .asia .card-tag { background: var(--tag-asia-bg); color: var(--tag-asia-fg); }
+
+  .card-title { font-size: 0.98rem; font-weight: 700; color: var(--text-primary); line-height: 1.45; }
+  .card-body { font-size: 0.86rem; color: var(--text-secondary); line-height: 1.7; flex: 1; }
+  .card-body strong { color: var(--text-primary); }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.78rem;
+  }
+  .card-source { color: var(--text-muted); }
+  .card-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+  }
+  .card-link:hover { color: var(--secondary-color); }
+
+  /* ==================== Footer ==================== */
+  footer {
+    background: var(--bg-deeper);
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    padding: 24px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--text-secondary); text-decoration: none; }
+  footer a:hover { color: var(--primary-color); }
+
+  /* ==================== Responsive ==================== */
+  @media (max-width: 768px) {
+    .news-grid { grid-template-columns: 1fr; }
+    .hero { padding: 40px 20px 36px; }
+    .notebooklm-cta { flex-direction: column; text-align: center; }
+    .header-nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== Site Header ==================== -->
+<header class="site-header">
+  <div class="header-inner">
+    <a href="../../../" class="site-logo">
+      <div class="logo-icon">🤖</div>
+      <div class="logo-text">
+        <span class="logo-title">AI 新知週報</span>
+        <span class="logo-sub">每週 AI 趨勢精選</span>
+      </div>
+    </a>
+    <nav class="header-nav">
+      <a href="../../../" class="nav-link">📚 歷史期刊</a>
+      <a href="../../../../" class="nav-link">🏠 首頁</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Breadcrumb -->
+<nav style="max-width:1100px;margin:0 auto;padding:12px 24px;font-size:0.82rem;color:var(--text-secondary)">
+  <a href="../../../../" style="color:var(--text-secondary);text-decoration:none">首頁</a>
+  <span style="margin:0 6px">›</span>
+  <a href="../../../" style="color:var(--text-secondary);text-decoration:none">2026</a>
+  <span style="margin:0 6px">›</span>
+  <a href="../" style="color:var(--text-secondary);text-decoration:none">3月</a>
+  <span style="margin:0 6px">›</span>
+  <span style="color:var(--text-primary)">第四週</span>
+</nav>
+
+<!-- ==================== Hero ==================== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      2026 年 · 3 月第四週
+    </div>
+    <h1>2026年3月 AI 新知週報<br>第四週（3/18–3/25）</h1>
+    <p class="hero-meta">整理期間：<span>2026.03.18 — 2026.03.25</span> · 來源：英中媒體綜合報導</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">14</span>
+        <span class="stat-label">本期新聞</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">5</span>
+        <span class="stat-label">分類主題</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">4</span>
+        <span class="stat-label">新模型</span>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <a href="https://notebooklm.google.com/notebook/bb9b2e5d-08c7-42c2-b512-44563b46670a" target="_blank" class="btn-primary">
+        🎧 NotebookLM 語音摘要
+      </a>
+      <a href="../" class="btn-secondary">
+        📅 3月總覽
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== Main ==================== -->
+<main class="main">
+
+  <!-- NotebookLM CTA -->
+  <div class="notebooklm-cta">
+    <div class="cta-icon">🎙️</div>
+    <div class="cta-content">
+      <div class="cta-title">本期語音摘要已上架 NotebookLM</div>
+      <div class="cta-desc">透過 AI Podcast 形式聆聽本週 AI 重點新聞，隨時隨地掌握最新動態。</div>
+    </div>
+    <a href="https://notebooklm.google.com/notebook/bb9b2e5d-08c7-42c2-b512-44563b46670a" target="_blank" class="btn-primary">
+      開啟 NotebookLM →
+    </a>
+  </div>
+
+  <!-- Section: 新模型發布 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon model">🚀</div>
+      <span class="section-title">新模型發布</span>
+      <span class="section-count">4 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">01</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">OpenAI 發布 GPT-5.4，105 萬 Token 上下文、錯誤率降 33%</div>
+        <div class="card-body">
+          GPT-5.4 提供 <strong>Standard、Thinking、Pro</strong> 三版本，API 支援最高 <strong>105 萬 token</strong> 上下文。與 GPT-5.2 相比，單一聲明錯誤率降低 <strong>33%</strong>、全回應錯誤率降低 <strong>18%</strong>，GDPVal 基準達 <strong>83%</strong>，達到或超越人類專家水準。免費用戶可透過 Thinking 功能存取 GPT-5.4 mini。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">LLM Stats · 2026.03</span>
+          <a href="https://llm-stats.com/llm-updates" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">02</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">Alibaba Qwen 3.5 Small：9B 模型 GPQA 超越 GPT</div>
+        <div class="card-body">
+          Alibaba 推出 Qwen 3.5 Small 系列，涵蓋 <strong>0.8B、2B、4B、9B</strong> 四種規格。其中 9B 版在 <strong>GPQA Diamond</strong> 基準取得 <strong>81.7 分</strong>，超越 GPT-OSS-120B 的 71.5 分，充分展現小型模型在特定任務上的高性價比潛力，為邊緣部署提供強力選擇。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Build Fast with AI · 2026.03</span>
+          <a href="https://www.buildfastwithai.com/blogs/ai-models-march-2026-releases" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">03</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">DeepSeek V4 即將登場：兆參數 MoE 架構，優先支援華為昇騰</div>
+        <div class="card-body">
+          DeepSeek 下一代旗艦模型 <strong>V4</strong> 採用<strong>兆參數混合專家（MoE）</strong>架構，預計在推理效能上大幅超越 V3。值得注意的是，V4 將<strong>優先針對華為昇騰（Huawei Ascend）NPU</strong> 進行優化，顯示中國 AI 生態系正積極擺脫對 NVIDIA GPU 的依賴，另闢自主算力路線。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">AI 業界報導 · 2026.03</span>
+          <a href="https://www.deepseek.com" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">04</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">小米 MiMo-V2-Pro：1 兆參數 Agentic LLM 完全免費</div>
+        <div class="card-body">
+          前 DeepSeek 研究員羅福理主導的小米 AI 部門，於 3/18 在 OpenRouter 上架 <strong>MiMo-V2-Pro（Hunter Alpha）</strong>。規格：<strong>1 兆總參數</strong>（每次啟用 420 億）、100 萬 token 上下文、Agent 優先設計，且<strong>完全免費</strong>。表現接近 GPT-5.2 與 Claude Opus 4.6，成本大幅降低。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">VentureBeat · 2026.03.18</span>
+          <a href="https://venturebeat.com/technology/xiaomi-stuns-with-new-mimo-v2-pro-llm-nearing-gpt-5-2-opus-4-6-performance" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: 工具與平台更新 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon tool">🛠️</div>
+      <span class="section-title">工具與平台更新</span>
+      <span class="section-count">4 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card tool">
+        <div class="card-header">
+          <div class="card-num">05</div>
+          <span class="card-tag">工具</span>
+        </div>
+        <div class="card-title">NVIDIA GTC 2026：Vera Rubin 平台亮相，Dynamo 1.0 發布</div>
+        <div class="card-body">
+          NVIDIA GTC 2026 發表下一代 AI 算力平台 <strong>Vera Rubin</strong>，整合 CPU＋GPU 異構架構，效能較前代大幅提升。同步發布 AI 推理基礎設施框架 <strong>Dynamo 1.0</strong>，優化大規模 LLM 部署效率。黃仁勳強調 <strong>Physical AI</strong> 與機器人時代正式來臨，算力需求將持續爆炸性增長。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">NVIDIA GTC · 2026.03</span>
+          <a href="https://www.nvidia.com/gtc/" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card tool">
+        <div class="card-header">
+          <div class="card-num">06</div>
+          <span class="card-tag">工具</span>
+        </div>
+        <div class="card-title">Anthropic Claude 記憶功能全面上線，Anthropic Institute 同步成立</div>
+        <div class="card-body">
+          Claude <strong>Memory</strong> 功能向所有用戶開放，可跨對話保留偏好與上下文，並整合 <strong>Microsoft Excel 與 PowerPoint</strong>。Anthropic 同步宣布成立 <strong>Anthropic Institute</strong>，專注於 AI 安全研究、政策制定及與學術界合作，進一步強化其在 AI 治理領域的影響力。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Anthropic · 2026.03</span>
+          <a href="https://www.anthropic.com" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card tool">
+        <div class="card-header">
+          <div class="card-num">07</div>
+          <span class="card-tag">工具</span>
+        </div>
+        <div class="card-title">Apple Xcode 26.3 支援 Claude 與 OpenAI Agent</div>
+        <div class="card-body">
+          Xcode 26.3 原生相容 <strong>Anthropic Claude 及 OpenAI Agents</strong>，並支援開放標準 <strong>Model Context Protocol（MCP）</strong>。Siri 整合 Google Gemini 的大型升級預計隨 <strong>iOS 26.4</strong> 於 3 月底推出，為 iPhone 帶來更強大的 AI 體驗。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">MacRumors · 2026.02.26</span>
+          <a href="https://www.macrumors.com/2026/02/26/apple-releases-xcode-26-3/" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card tool">
+        <div class="card-header">
+          <div class="card-num">08</div>
+          <span class="card-tag">工具</span>
+        </div>
+        <div class="card-title">Google Gemini 3.1 Flash-Lite：2.5 倍速、極低成本</div>
+        <div class="card-body">
+          Gemini 3.1 Flash-Lite 回應速度較前代提升 <strong>2.5 倍</strong>、輸出速度快 45%，每百萬 input token 僅 <strong>$0.25 美元</strong>。同步在 Sheets 引入自然語言試算表功能，SpreadsheetBench 達成 <strong>70.48%</strong> 成功率。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">MarketingProfs · 2026.03.13</span>
+          <a href="https://www.marketingprofs.com/opinions/2026/54427/ai-update-march-13-2026-ai-news-and-views-from-the-past-week" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: 研究突破 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon research">🔬</div>
+      <span class="section-title">研究突破</span>
+      <span class="section-count">2 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card research">
+        <div class="card-header">
+          <div class="card-num">09</div>
+          <span class="card-tag">研究</span>
+        </div>
+        <div class="card-title">AI 預測癌症轉移準確率達 80%，MangroveGS 模型突破</div>
+        <div class="card-body">
+          AI 模型 <strong>MangroveGS</strong> 可預測多種癌症轉移風險，準確率約 <strong>80%</strong>，有望改變醫師積極治療決策。英國 <strong>17.5 萬名</strong>女性研究顯示，AI 篩檢可提升乳癌偵測率 <strong>10.4%</strong>，並將通知時間從 14 天縮短至 <strong>3 天</strong>，展現 AI 在精準醫療領域的巨大潛力。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">ScienceDaily · 2026.03.21</span>
+          <a href="https://www.sciencedaily.com/releases/2026/03/260321012709.htm" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card research">
+        <div class="card-header">
+          <div class="card-num">10</div>
+          <span class="card-tag">研究</span>
+        </div>
+        <div class="card-title">物理感知機器學習新演算法：讓 AI 遵守物理定律</div>
+        <div class="card-body">
+          夏威夷大學馬諾阿分校發布<strong>「物理感知機器學習」</strong>新演算法，讓 AI 處理複雜數據集時能遵守物理定律，大幅提升<strong>流體動力學</strong>與<strong>氣候模型</strong>預測精度，為科學研究與工程設計帶來新可能。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Crescendo AI · 2026.03</span>
+          <a href="https://www.crescendo.ai/news/latest-ai-news-and-updates" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: 法規與政策 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon policy">📋</div>
+      <span class="section-title">法規與政策</span>
+      <span class="section-count">2 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card policy">
+        <div class="card-header">
+          <div class="card-num">11</div>
+          <span class="card-tag">法規</span>
+        </div>
+        <div class="card-title">歐盟理事會修訂 AI Act，高風險規則延後 16 個月</div>
+        <div class="card-body">
+          歐盟理事會 3/13 通過立場，同意將高風險 AI 系統規則適用期延後最多 <strong>16 個月</strong>，待委員會確認標準與工具就緒後才執行。同步擴大 SME 豁免至小型中型企業，並<strong>新增禁止非合意性親密內容生成</strong>條款，緩和業界對合規壓力的疑慮。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">EU Council · 2026.03.13</span>
+          <a href="https://www.consilium.europa.eu/en/press/press-releases/2026/03/13/council-agrees-position-to-streamline-rules-on-artificial-intelligence/" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card policy">
+        <div class="card-header">
+          <div class="card-num">12</div>
+          <span class="card-tag">法規</span>
+        </div>
+        <div class="card-title">Anthropic vs 五角大廈：3/25 美國聯邦法院開庭聽審</div>
+        <div class="card-body">
+          Anthropic 就美國國防部（DoD / 五角大廈）涉嫌違反採購合規規定一案，於 <strong>2026 年 3 月 25 日</strong>在美國聯邦法院進行首次聽審。此案涉及 AI 模型在政府合約中的使用授權與責任認定，將成為 AI 企業與聯邦機構法律關係的重要參考判例。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">法律媒體報導 · 2026.03.25</span>
+          <a href="https://www.anthropic.com" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: 台灣 & 亞洲 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon asia">🌏</div>
+      <span class="section-title">台灣 &amp; 亞洲</span>
+      <span class="section-count">4 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card asia">
+        <div class="card-header">
+          <div class="card-num">13</div>
+          <span class="card-tag">台灣</span>
+        </div>
+        <div class="card-title">AI EXPO Taiwan 2026 盛大登場，16 家新創亮相 NVIDIA GTC</div>
+        <div class="card-body">
+          <strong>AI EXPO Taiwan 2026</strong> 於 <strong>3/25–3/27</strong> 在台北南港展覽館舉行，吸引超過百家 AI 企業參展。同期台灣 <strong>16 家 AI 新創</strong>赴美參加 NVIDIA GTC 2026，展示自主研發的 AI 解決方案，涵蓋醫療、製造、金融等領域，積極搶進全球 AI 供應鏈核心位置。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">數位時代 · 2026.03.25</span>
+          <a href="https://www.bnext.com.tw" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card asia">
+        <div class="card-header">
+          <div class="card-num">14</div>
+          <span class="card-tag">亞洲</span>
+        </div>
+        <div class="card-title">中國 AI 使用量超越美國，每週達 4.69 兆 Tokens</div>
+        <div class="card-body">
+          最新數據顯示，中國 AI 模型推理使用量已<strong>超越美國</strong>，每週處理量達 <strong>4.69 兆 tokens</strong>。這一里程碑反映 DeepSeek、Qwen 等開源模型在中國企業和消費者市場的快速滲透，也顯示全球 AI 算力需求重心正逐漸向亞太區移動。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">AI 產業分析 · 2026.03</span>
+          <a href="https://www.deepseek.com" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card asia">
+        <div class="card-header">
+          <div class="card-num">15</div>
+          <span class="card-tag">台灣</span>
+        </div>
+        <div class="card-title">台灣 AI 產業進入「電力與散熱」關鍵決勝期</div>
+        <div class="card-body">
+          台灣 AI 供應鏈正面臨技術替代關鍵時刻，焦點轉向<strong>「電怎麼來、熱往哪去」</strong>的物理瓶頸。IDC 調查顯示 <strong>54% 台灣企業</strong>計劃增加 AI 投資；資策會公布 2026 十大 AI 技術，以鑑別式、生成式、代理式 AI 為三大主軸。伺服器、晶片封裝、人形機器人為投資重點。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">數位時代 BusinessNext · 2026</span>
+          <a href="https://www.bnext.com.tw/article/89685/ai-industry-2026-trend-taiwan" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card asia">
+        <div class="card-header">
+          <div class="card-num">16</div>
+          <span class="card-tag">亞洲</span>
+        </div>
+        <div class="card-title">Crypto.com 因 AI 整合裁員 12%，引發就業衝擊討論</div>
+        <div class="card-body">
+          加密貨幣平台 Crypto.com 宣布裁減 <strong>12% 員工</strong>以加速 AI 整合。此案例引發亞洲科技業對<strong>「AI 取代人力」</strong>的廣泛討論，各界關注如何在自動化效率提升與就業市場衝擊之間取得平衡。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">大紀元 · 2026.03.19</span>
+          <a href="https://www.epochtimes.com/b5/26/3/19/n14722950.htm" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ==================== Footer ==================== -->
+<footer>
+  <p>
+    AI 新知週報 第四週（2026.03.18–03.25）&nbsp;·&nbsp;
+    <a href="https://notebooklm.google.com/notebook/bb9b2e5d-08c7-42c2-b512-44563b46670a" target="_blank">🎧 NotebookLM 語音摘要</a>&nbsp;·&nbsp;
+    <a href="../">📅 3月總覽</a>&nbsp;·&nbsp;
+    <a href="../../../">📚 歷史期刊</a>&nbsp;·&nbsp;
+    <a href="../../../../">🏠 返回首頁</a>
+  </p>
+</footer>
+
+</body>
+</html>
