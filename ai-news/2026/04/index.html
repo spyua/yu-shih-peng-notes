@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 年 4 月 AI 新知週報 | AI 新知週報</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1628;
+    --card: #141c2e;
+    --card-hover: #1a2440;
+    --border: #1e2d4a;
+    --accent1: #4f8ef7;
+    --accent2: #a855f7;
+    --accent3: #06b6d4;
+    --text: #e2e8f0;
+    --text-muted: #8892a4;
+    --text-dim: #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Noto Sans TC', 'Microsoft JhengHei', BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .site-header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 40%, #131b3a 100%);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .site-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 20px rgba(79,142,247,0.4);
+    flex-shrink: 0;
+  }
+  .logo-text { display: flex; flex-direction: column; }
+  .logo-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .logo-sub { font-size: 0.75rem; color: var(--text-muted); }
+  .header-nav { display: flex; gap: 8px; }
+  .nav-link {
+    color: var(--text-muted); text-decoration: none;
+    font-size: 0.85rem; padding: 6px 14px;
+    border: 1px solid var(--border); border-radius: 20px;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--accent1); border-color: var(--accent1); }
+
+  .breadcrumb {
+    max-width: 1200px; margin: 0 auto;
+    padding: 12px 24px;
+    font-size: 0.82rem; color: var(--text-muted);
+  }
+  .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--accent1); }
+  .breadcrumb span { margin: 0 6px; }
+
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 50%, #0f1a3a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 24px 52px;
+    text-align: center;
+  }
+  .hero-content { max-width: 700px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.3);
+    color: var(--accent1);
+    font-size: 0.85rem;
+    padding: 6px 18px;
+    border-radius: 20px;
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, var(--text) 0%, #a0b4d0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--text-muted); font-size: 0.97rem; margin-bottom: 28px; }
+  .hero-stats { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .stat-num {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent1), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+
+  .main { max-width: 1200px; margin: 0 auto; padding: 40px 24px 72px; }
+
+  .section-heading {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 24px;
+  }
+  .section-label {
+    font-size: 0.82rem; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+
+  .weeks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .week-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    text-decoration: none;
+    color: var(--text);
+    display: flex; flex-direction: column; gap: 14px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .week-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(79,142,247,0.05), rgba(168,85,247,0.05));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .week-card:hover { background: var(--card-hover); border-color: rgba(79,142,247,0.3); transform: translateY(-2px); }
+  .week-card:hover::before { opacity: 1; }
+  .week-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .week-icon.w1 { background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(6,182,212,0.2)); }
+  .week-icon.w2 { background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(236,72,153,0.2)); }
+  .week-icon.w3 { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.2)); }
+  .week-icon.w4 { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(239,68,68,0.2)); }
+  .week-icon.w5 { background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2)); }
+  .week-badge {
+    font-size: 0.72rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-latest { background: rgba(79,142,247,0.15); color: var(--accent1); border: 1px solid rgba(79,142,247,0.3); }
+  .badge-archive { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); }
+  .week-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .week-title { font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .week-date { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+  .week-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 0.75rem; padding: 3px 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-muted);
+  }
+  .week-arrow {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.82rem; color: var(--accent1);
+    font-weight: 600; margin-top: auto;
+  }
+
+  footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--text-muted); text-decoration: none; }
+  footer a:hover { color: var(--accent1); }
+
+  @media (max-width: 600px) {
+    .hero { padding: 40px 16px 36px; }
+    .main { padding: 32px 16px 48px; }
+    .weeks-grid { grid-template-columns: 1fr; }
+    .header-nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="../../" class="site-logo">
+      <div class="logo-icon">&#129302;</div>
+      <div class="logo-text">
+        <span class="logo-title">AI 新知週報</span>
+        <span class="logo-sub">每週 AI 趨勢精選</span>
+      </div>
+    </a>
+    <nav class="header-nav">
+      <a href="../../" class="nav-link">&#128218; 歷史期刊</a>
+      <a href="../../../" class="nav-link">&#127968; 首頁</a>
+    </nav>
+  </div>
+</header>
+
+<nav class="breadcrumb">
+  <a href="../../../">首頁</a>
+  <span>›</span>
+  <a href="../../">AI 新知週報</a>
+  <span>›</span>
+  <a href="../">2026</a>
+  <span>›</span>
+  <span style="color:var(--text)">4月</span>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">&#128197; 2026 年 4 月</div>
+    <h1>2026 年 4 月<br>AI 新知週報總覽</h1>
+    <p>彙整 2026 年 4 月各週 AI 領域重要動態，涵蓋模型發布、技術突破、產業應用與研究趨勢。</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">1</span>
+        <span class="stat-label">本月期數</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">12</span>
+        <span class="stat-label">精選新聞</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">2026/04</span>
+        <span class="stat-label">整理月份</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="main">
+
+  <div class="section-heading">
+    <span class="section-label">本月各週期刊</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="weeks-grid">
+
+    <!-- Week 1 -->
+    <a href="week1/" class="week-card">
+      <div class="week-header">
+        <div class="week-icon w1">&#128640;</div>
+        <span class="week-badge badge-latest">最新一期</span>
+      </div>
+      <div>
+        <div class="week-title">2026 年 4 月第一週</div>
+        <div class="week-date">2026/03/25 – 2026/04/01</div>
+      </div>
+      <div class="week-tags">
+        <span class="tag">GPT-5.4</span>
+        <span class="tag">Claude Opus 4.6</span>
+        <span class="tag">Gemini 3.1</span>
+        <span class="tag">MCP 9700萬</span>
+        <span class="tag">COMPUTEX 2026</span>
+      </div>
+      <div class="week-arrow">
+        閱讀本期
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </a>
+
+  </div>
+
+</main>
+
+<footer>
+  <p>AI 新知週報 · 2026 年 4 月總覽 · <a href="../../">歷史期刊</a> · <a href="../../../">返回首頁</a></p>
+</footer>
+
+</body>
+</html>

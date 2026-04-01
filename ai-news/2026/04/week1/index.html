@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026年4月 AI 新知週報（第一週）| YU-SHIH-PENG 筆記區</title>
+<style>
+  /* ==================== Variables ==================== */
+  :root {
+    --primary-color: #4f8ef7;
+    --secondary-color: #a855f7;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --bg-dark: #0a0e1a;
+    --bg-deeper: #0f1628;
+    --bg-card: #141c2e;
+    --bg-hover: #1a2440;
+    --border-color: #1e2d4a;
+    --text-primary: #e2e8f0;
+    --text-secondary: #8892a4;
+    --text-muted: #4a5568;
+    --tag-model-bg: rgba(79,142,247,0.15);
+    --tag-model-fg: #4f8ef7;
+    --tag-tool-bg: rgba(168,85,247,0.15);
+    --tag-tool-fg: #a855f7;
+    --tag-research-bg: rgba(6,182,212,0.15);
+    --tag-research-fg: #06b6d4;
+    --tag-policy-bg: rgba(245,158,11,0.15);
+    --tag-policy-fg: #f59e0b;
+    --tag-asia-bg: rgba(16,185,129,0.15);
+    --tag-asia-fg: #10b981;
+  }
+
+  /* ==================== Reset ==================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Noto Sans TC', 'Microsoft JhengHei', BlinkMacSystemFont, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  /* ==================== Site Header ==================== */
+  .site-header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 40%, #131b3a 100%);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px rgba(79,142,247,0.35);
+    flex-shrink: 0;
+  }
+  .logo-text { display: flex; flex-direction: column; }
+  .logo-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+  .logo-sub { font-size: 0.72rem; color: var(--text-secondary); }
+  .header-nav { display: flex; gap: 8px; }
+  .nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--primary-color); border-color: var(--primary-color); }
+
+  /* ==================== Hero ==================== */
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1535 50%, #0f1a3a 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 64px 24px 56px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba(79,142,247,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(79,142,247,0.12);
+    border: 1px solid rgba(79,142,247,0.3);
+    color: var(--primary-color);
+    font-size: 0.82rem;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+  .badge-dot {
+    width: 7px; height: 7px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--text-primary) 0%, #a0b4d0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-meta {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+  }
+  .hero-meta span { color: var(--accent-cyan); font-weight: 500; }
+  .hero-stats {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .stat-num {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label { font-size: 0.78rem; color: var(--text-secondary); }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--primary-color), #3b6fd4);
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(79,142,247,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,142,247,0.5); }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: var(--primary-color); }
+
+  /* ==================== Main Layout ==================== */
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ==================== NotebookLM CTA ==================== */
+  .notebooklm-cta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(168,85,247,0.1) 100%);
+    border: 1px solid rgba(79,142,247,0.25);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 40px;
+  }
+  .cta-icon { font-size: 2.5rem; flex-shrink: 0; }
+  .cta-content { flex: 1; }
+  .cta-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .cta-desc { font-size: 0.87rem; color: var(--text-secondary); }
+
+  /* ==================== Section ==================== */
+  .section { margin-bottom: 44px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .section-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .section-icon.model { background: var(--tag-model-bg); }
+  .section-icon.video { background: var(--tag-tool-bg); }
+  .section-icon.research { background: var(--tag-research-bg); }
+  .section-icon.infra { background: rgba(16,185,129,0.15); }
+  .section-icon.policy { background: var(--tag-policy-bg); }
+  .section-icon.asia { background: var(--tag-asia-bg); }
+  .section-title { font-size: 1.15rem; font-weight: 700; }
+  .section-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* ==================== News Grid ==================== */
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .news-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .news-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .news-card.model::before { background: linear-gradient(90deg, var(--primary-color), var(--accent-cyan)); }
+  .news-card.video::before { background: linear-gradient(90deg, var(--secondary-color), #e879f9); }
+  .news-card.research::before { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); }
+  .news-card.infra::before { background: linear-gradient(90deg, var(--accent-green), #34d399); }
+  .news-card.policy::before { background: linear-gradient(90deg, var(--accent-amber), #fbbf24); }
+  .news-card.asia::before { background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); }
+  .news-card:hover { background: var(--bg-hover); border-color: rgba(79,142,247,0.3); transform: translateY(-2px); }
+  .card-header { display: flex; align-items: center; gap: 10px; }
+  .card-num {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+  }
+  .card-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .model .card-tag { background: var(--tag-model-bg); color: var(--tag-model-fg); }
+  .video .card-tag { background: var(--tag-tool-bg); color: var(--tag-tool-fg); }
+  .research .card-tag { background: var(--tag-research-bg); color: var(--tag-research-fg); }
+  .infra .card-tag { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+  .policy .card-tag { background: var(--tag-policy-bg); color: var(--tag-policy-fg); }
+  .asia .card-tag { background: var(--tag-asia-bg); color: var(--tag-asia-fg); }
+  .card-title { font-size: 0.97rem; font-weight: 700; line-height: 1.45; }
+  .card-body { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.7; flex: 1; }
+  .card-body strong { color: var(--text-primary); }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.78rem;
+  }
+  .card-source { color: var(--text-muted); }
+  .card-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .card-link:hover { opacity: 0.7; }
+
+  /* ==================== Footer ==================== */
+  .site-footer {
+    background: var(--bg-deeper);
+    border-top: 1px solid var(--border-color);
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .footer-inner { max-width: 1100px; margin: 0 auto; }
+  .footer-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--primary-color); }
+  .footer-copy { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* ==================== Responsive ==================== */
+  @media (max-width: 768px) {
+    .news-grid { grid-template-columns: 1fr; }
+    .hero { padding: 48px 20px 40px; }
+    .notebooklm-cta { flex-direction: column; text-align: center; }
+    .hero-stats { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="../../../" class="site-logo">
+      <div class="logo-icon">🤖</div>
+      <div class="logo-text">
+        <span class="logo-title">AI 新知週報</span>
+        <span class="logo-sub">每週 AI 趨勢精選</span>
+      </div>
+    </a>
+    <nav class="header-nav">
+      <a href="../../../" class="nav-link">📚 歷史期刊</a>
+      <a href="../../../../" class="nav-link">🏠 首頁</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Breadcrumb -->
+<nav style="max-width:1100px;margin:0 auto;padding:12px 24px;font-size:0.82rem;color:var(--text-secondary)">
+  <a href="../../../../" style="color:var(--text-secondary);text-decoration:none">首頁</a>
+  <span style="margin:0 6px">›</span>
+  <a href="../../../" style="color:var(--text-secondary);text-decoration:none">AI 新知週報</a>
+  <span style="margin:0 6px">›</span>
+  <a href="../../" style="color:var(--text-secondary);text-decoration:none">2026</a>
+  <span style="margin:0 6px">›</span>
+  <a href="../" style="color:var(--text-secondary);text-decoration:none">4月</a>
+  <span style="margin:0 6px">›</span>
+  <span style="color:var(--text-primary)">第一週</span>
+</nav>
+
+<!-- ==================== Hero ==================== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      2026 年 · 4 月第一週
+    </div>
+    <h1>2026年4月 AI 新知週報<br>第一週（3/25–4/1）</h1>
+    <p class="hero-meta">整理期間：<span>2026.03.25 — 2026.04.01</span> · 來源：英中媒體綜合報導</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">12</span>
+        <span class="stat-label">本期新聞</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">6</span>
+        <span class="stat-label">分類主題</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">5</span>
+        <span class="stat-label">新模型</span>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <a href="https://notebooklm.google.com/notebook/b5c53ee7-e9e8-4026-be88-7afd4b9051be" target="_blank" class="btn-primary">
+        🎧 NotebookLM 語音摘要
+      </a>
+      <a href="../" class="btn-secondary">
+        📅 4月總覽
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== Main ==================== -->
+<main class="main">
+
+  <!-- NotebookLM CTA -->
+  <div class="notebooklm-cta">
+    <div class="cta-icon">🎙️</div>
+    <div class="cta-content">
+      <div class="cta-title">本期語音摘要已上架 NotebookLM</div>
+      <div class="cta-desc">透過 AI Podcast 形式聆聽本週 AI 重點新聞，隨時隨地掌握最新動態。</div>
+    </div>
+    <a href="https://notebooklm.google.com/notebook/b5c53ee7-e9e8-4026-be88-7afd4b9051be" target="_blank" class="btn-primary">
+      開啟 NotebookLM →
+    </a>
+  </div>
+
+  <!-- Section: 大型語言模型發布 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon model">🚀</div>
+      <span class="section-title">大型語言模型發布</span>
+      <span class="section-count">3 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">01</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">三強鼎立：GPT-5.4、Claude Opus 4.6、Gemini 3.1 齊發 3 月</div>
+        <div class="card-body">
+          3月見證 AI 史上最激烈旗艦競爭。OpenAI <strong>GPT-5.4</strong> 於3/5發布，上下文視窗 <strong>100 萬 token</strong>，錯誤率降 33%。三天後 Anthropic 的 <strong>Claude Opus 4.6</strong> 以 SWE-Bench 評測 <strong>80.8%</strong> 領先群雄。Google DeepMind 的 <strong>Gemini 3.1</strong> 涵蓋 Flash-Lite 至 Deep Think 多版本，Ultra 訂閱即可使用。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">LLM Stats · BuildFastWithAI</span>
+          <a href="https://www.buildfastwithai.com/blogs/ai-models-march-2026-releases" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">02</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">NVIDIA GTC 發布 Nemotron 3 Super：1200 億參數多智能體 MoE 模型</div>
+        <div class="card-body">
+          NVIDIA 於 3/11 GTC 大會推出 <strong>Nemotron 3 Super</strong>，總參數 1200 億但每次前向推理僅啟用 <strong>120 億</strong>活躍參數，採混合 MoE 架構。專為<strong>軟體開發、資安分類、多智能體工作流</strong>設計，是 AI Agent 應用的重要里程碑。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">NVIDIA GTC · 2026.03.11</span>
+          <a href="https://llm-stats.com/llm-updates" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card model">
+        <div class="card-header">
+          <div class="card-num">03</div>
+          <span class="card-tag">模型</span>
+        </div>
+        <div class="card-title">Qwen 3.5 9B 以小勝大，Mistral Small 4 亦登場</div>
+        <div class="card-body">
+          阿里巴巴 <strong>Qwen 3.5 9B</strong> 在研究生級別推理測試中超越 <strong>13 倍</strong>參數量的競爭模型，再次印證小型高效模型潛力。Mistral 同期推出 <strong>Small 4</strong>，1190 億總參數、65 億活躍參數，搭配 <strong>256k</strong> 超長上下文視窗。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Crescendo AI · 2026.03</span>
+          <a href="https://www.crescendo.ai/news/latest-ai-news-and-updates" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: AI 影音生成 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon video">🎬</div>
+      <span class="section-title">AI 影音生成</span>
+      <span class="section-count">2 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card video">
+        <div class="card-header">
+          <div class="card-num">04</div>
+          <span class="card-tag">影音</span>
+        </div>
+        <div class="card-title">單 GPU 實時 60 秒 4K 影片：Helios 與 LTX 2.3 突破生成極限</div>
+        <div class="card-body">
+          ByteDance、北京大學與 Canva 聯合推出 <strong>Helios</strong>，單 GPU 即可以<strong>實時速度</strong>生成完整 60 秒影片。Lightricks 開源 <strong>LTX 2.3</strong> 同步實現<strong>原生 4K 影片與音訊</strong>單次推理生成。另一方面，OpenAI 悄然關閉 <strong>Sora 公開 API</strong>，因每分鐘生成推理成本難以為繼。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Crescendo AI · 2026.03</span>
+          <a href="https://www.crescendo.ai/news/latest-ai-news-and-updates" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card video">
+        <div class="card-header">
+          <div class="card-num">05</div>
+          <span class="card-tag">影音</span>
+        </div>
+        <div class="card-title">Apple AI 版 Siri 隨 iOS 26.4 正式登場</div>
+        <div class="card-body">
+          Apple 宣布<strong>全面重新設計</strong>的 AI 版 Siri 將隨 <strong>iOS 26.4</strong> 於 3 月推出，標誌蘋果在邊緣 AI 助理的戰略反攻。新版 Siri 深度整合 Apple Intelligence，強調<strong>裝置端隱私運算</strong>，是近年 Siri 最重大的功能升級。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">LLM Stats · 2026.03</span>
+          <a href="https://llm-stats.com/llm-updates" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: AI 研究與機器人 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon research">🦾</div>
+      <span class="section-title">AI 研究與機器人</span>
+      <span class="section-count">2 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card research">
+        <div class="card-header">
+          <div class="card-num">06</div>
+          <span class="card-tag">研究</span>
+        </div>
+        <div class="card-title">具身 AI 崛起：視覺-語言-動作模型與世界模型成研究主流</div>
+        <div class="card-body">
+          2026 最熱門研究方向是「<strong>視覺-語言-動作（VLA）</strong>」模型，讓機器人能感知、推理並與人協作。Meta <strong>V-JEPA 2</strong> 僅用 <strong>62 小時</strong>訓練資料，在陌生環境取放任務達 <strong>65-80%</strong> 成功率。AMI Labs（獲 NVIDIA 與 Bezos Expeditions 支持）積極推進<strong>世界模型</strong>架構，目標應用於機器人與製造業。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Adaline Labs · TechCrunch 2026</span>
+          <a href="https://labs.adaline.ai/p/the-ai-research-landscape-in-2026" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card research">
+        <div class="card-header">
+          <div class="card-num">07</div>
+          <span class="card-tag">研究</span>
+        </div>
+        <div class="card-title">L3Harris × Shield AI：無人機自主電子戰實測成功</div>
+        <div class="card-body">
+          L3Harris Technologies 與 Shield AI 成功展示<strong>自主電子戰</strong>能力：無人機系統在<strong>零人工干預</strong>下即時偵測並回應電磁威脅，為 AI 在國防領域的重要進展。此成果也引發學界對 <strong>AI 武器自主化</strong>的倫理討論熱度持續升溫。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">DevFlokers · 2026.03.24</span>
+          <a href="https://www.devflokers.com/blog/ai-news-march-24-2026-releases-breakthroughs" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: 基礎設施與生態系 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon infra">⚙️</div>
+      <span class="section-title">基礎設施與生態系</span>
+      <span class="section-count">1 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card infra">
+        <div class="card-header">
+          <div class="card-num">08</div>
+          <span class="card-tag">生態</span>
+        </div>
+        <div class="card-title">MCP 協議突破 9700 萬安裝，代理 AI 基礎設施標準確立</div>
+        <div class="card-body">
+          <strong>Model Context Protocol（MCP）</strong>在 3 月突破 <strong>9700 萬次安裝</strong>，所有主要 AI 提供商現已出貨相容 MCP 的工具套件，從 OpenAI、Anthropic 到 Google 全面跟進。MCP 完成從實驗性標準到<strong>代理 AI 核心基礎設施</strong>的歷史性轉變，成為 2026 年 AI 生態系最重要的整合標準。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">Crescendo AI · LLM Stats 2026.03</span>
+          <a href="https://llm-stats.com/ai-news" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: AI 法規與政策 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon policy">📋</div>
+      <span class="section-title">AI 法規與政策</span>
+      <span class="section-count">2 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card policy">
+        <div class="card-header">
+          <div class="card-num">09</div>
+          <span class="card-tag">法規</span>
+        </div>
+        <div class="card-title">歐盟 Omnibus VII：高風險 AI 合規期延後 16 個月，新增性內容禁令</div>
+        <div class="card-body">
+          歐盟理事會 3/13 就 <strong>Omnibus VII</strong> 達成立場共識，提議高風險 AI 系統合規期延後最多 <strong>16 個月</strong>（至標準備妥後方啟動）。同時新增條款，<strong>明確禁止 AI 生成非合意性親密內容或兒童性剝削素材</strong>。企業須於 <strong>2026 年 8 月 2 日</strong>前符合透明度要求。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">EU Council · 2026.03.13</span>
+          <a href="https://www.consilium.europa.eu/en/press/press-releases/2026/03/13/council-agrees-position-to-streamline-rules-on-artificial-intelligence/" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card policy">
+        <div class="card-header">
+          <div class="card-num">10</div>
+          <span class="card-tag">政策</span>
+        </div>
+        <div class="card-title">白宮發布全國 AI 立法框架，擬以聯邦標準統一各州法規</div>
+        <div class="card-body">
+          白宮於 3/20 發布<strong>全面性全國 AI 立法框架</strong>，核心主張以<strong>單一聯邦標準</strong>取代日益龐雜的各州 AI 法規，防止監管碎片化。此框架目前屬政策聲明而非正式法律，但被普遍視為<strong>美國聯邦 AI 監管的重要風向球</strong>，全球 AI 業者密切關注後續立法動向。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">AI Journal · Wilson Sonsini 2026.03.20</span>
+          <a href="https://aijourn.net/ai-regulation-news-today-us-ai-laws-update-and-2026-changes/" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Section: 台灣 AI 動態 -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon asia">🇹🇼</div>
+      <span class="section-title">台灣 AI 動態</span>
+      <span class="section-count">2 則</span>
+    </div>
+    <div class="news-grid">
+
+      <article class="news-card asia">
+        <div class="card-header">
+          <div class="card-num">11</div>
+          <span class="card-tag">台灣</span>
+        </div>
+        <div class="card-title">COMPUTEX 2026「AI Together」：黃仁勳、陳立武等大咖確認主題演講</div>
+        <div class="card-body">
+          <strong>COMPUTEX 2026</strong> 將於 6/2-5 在台北盛大舉行，主題「<strong>AI Together</strong>」，涵蓋 AI & Computing、Robotics & Mobility、Next-Gen Tech。超過 <strong>1,500 家</strong>國際參展商確認參展，展位達 6,000 個。主題演講嘉賓包含 <strong>NVIDIA 黃仁勳、Intel 陳立武、高通 Cristiano Amon、MediaTek 蔡力行</strong>及 NXP CEO 等，新增機器人展區。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">COMPUTEX 官網 · PR Newswire 2026</span>
+          <a href="https://www.prnewswire.com/news-releases/computex-2026-brings-the-global-ai-ecosystem-to-taipei-302702075.html" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+      <article class="news-card asia">
+        <div class="card-header">
+          <div class="card-num">12</div>
+          <span class="card-tag">台灣</span>
+        </div>
+        <div class="card-title">鴻海攜手 NVIDIA 建 10,000 顆 Blackwell GPU AI 工廠，台廠液冷布局加速</div>
+        <div class="card-body">
+          鴻海旗下<strong>晶兆創新</strong>與 NVIDIA 合作建置搭載 <strong>10,000 顆 Blackwell GPU</strong> 的 AI 工廠，雙鴻、奇鋐等台廠液冷散熱解決方案持續深耕。全球資料中心用電量預計從 2024 年的 <strong>4,510 億度</strong>倍增至 2030 年 <strong>9,450 億度</strong>（約台灣全年用電量 3 倍），能效成關鍵競爭力。
+        </div>
+        <div class="card-footer">
+          <span class="card-source">bnext 數位時代 · TechNews 2026</span>
+          <a href="https://www.bnext.com.tw/article/89685/ai-industry-2026-trend-taiwan" target="_blank" class="card-link">閱讀更多 →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ==================== Footer ==================== -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="https://notebooklm.google.com/notebook/b5c53ee7-e9e8-4026-be88-7afd4b9051be" target="_blank">🎧 NotebookLM 語音摘要</a>&nbsp;·&nbsp;
+      <a href="../">📅 4月總覽</a>&nbsp;·&nbsp;
+      <a href="../../../">📚 歷史期刊</a>&nbsp;·&nbsp;
+      <a href="../../../../">🏠 首頁</a>
+    </div>
+    <div class="footer-copy">© 2026 YU-SHIH-PENG 筆記區 · AI 新知週報自動生成</div>
+  </div>
+</footer>
+
+</body>
+</html>
